@@ -58,9 +58,11 @@ The first lines of the file remind you: this must be a **Script** named **TeamAu
 
 1. When someone joins, it counts players on Red and Blue.
 2. It puts the new player on the team with **fewer** players (tie goes to Red first—that’s just how we coded it).
-3. It sets **Neutral** to **false** so Roblox knows they are on a real team.
-4. It calls **LoadCharacter** so they appear on the correct **SpawnLocation** for that team’s **TeamColor**.
+3. It sets **Neutral** to **false** **before** **Team** (Roblox’s recommended order so the player list and spawns work).
+4. If **CharacterAutoLoads** is on (default), Roblox spawns you on the right **SpawnLocation** after team is set. If you already spawned in the wrong place, the script respawns you once.
 5. When someone leaves, we do not need extra code—the counts update on the next join.
+
+**Optional (tricky neutral spawns):** In **Explorer → StarterPlayer**, you can set **CharacterAutoLoads** to **false** and let the script call **LoadCharacter** after picking a team. The updated script works with the default **true** as well.
 
 When you test alone, you are only one player—the script still picks Red or Blue for you.
 
@@ -70,7 +72,7 @@ When you test alone, you are only one player—the script still picks Red or Blu
 
 1. Click the **Play** button or press **F5** (testing tab may show **Play** at the top).
 2. Wait for your character to load.
-3. Look at the **player list** (top right in the test game). You should see your name on **Red** or **Blue**.
+3. Look at the **player list** (top right in the test game). You should see your name on **Red** or **Blue** (solo test: first player is usually **Red** when counts are tied—not **Neutral**).
 4. Check that you spawned on the **matching** side of the arena (Red spawn pad for Red, etc.).
 5. Press **Stop** (red square) or **Shift+F5** to end the test.
 
@@ -111,6 +113,8 @@ See also **[FOR-PARENTS.md](../FOR-PARENTS.md)**.
 | Problem | What to try |
 |---------|-------------|
 | Error in **Output** window about `Red` or `Blue` | Team **Names** must be exactly `Red` and `Blue` (capital R and B). |
+| Name shows **Neutral** in the player list | Teams missing or misspelled; check **Output** for `[TeamAutoBalance]` warnings. Paste the latest script from GitHub (waits for teams, sets **Neutral** before **Team**). |
+| Spawned in the **middle** or default pad | Delete or disable the **baseplate** SpawnLocation, or turn **Neutral** **off** on team spawns only. Middle pads often have **Neutral** **on**, so anyone can spawn there. |
 | Everyone spawns on the same pad | Each spawn **Neutral** off; **TeamColor** matches the team—not just pad **Color**. |
 | Script does nothing | Script must be under **ServerScriptService**, type **Script**, not LocalScript. |
 | Second player same team every time | Test with **2 Players**; first joiner fills one side, second should balance. |
