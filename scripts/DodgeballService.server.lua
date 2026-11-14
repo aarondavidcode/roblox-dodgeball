@@ -173,23 +173,21 @@ local function isMatchParticipant(player: Player): boolean
 	return player:GetAttribute("MatchParticipant") == true
 end
 
+local function setPlayerCharacterAutoLoads(player: Player, enabled: boolean)
+	pcall(function()
+		player.CharacterAutoLoads = enabled
+	end)
+end
+
 local function applyOutRespawnGate(player: Player)
 	if player:GetAttribute("IsOut") == true then
-		player.CharacterAutoLoads = false
+		setPlayerCharacterAutoLoads(player, false)
 	else
-		player.CharacterAutoLoads = true
+		setPlayerCharacterAutoLoads(player, true)
 	end
 end
 
-local function suppressOutPlayerCharacter(player: Player, character: Model)
-	if player:GetAttribute("IsOut") ~= true then
-		return
-	end
-	player.CharacterAutoLoads = false
-	local humanoid = character:FindFirstChildOfClass("Humanoid")
-	if humanoid and humanoid.Health > 0 then
-		humanoid.Health = 0
-	end
+local function destroyOutCharacterWhenReady(player: Player, character: Model)
 	task.defer(function()
 		if player:GetAttribute("IsOut") ~= true then
 			return
@@ -200,6 +198,34 @@ local function suppressOutPlayerCharacter(player: Player, character: Model)
 	end)
 end
 
+local function hookOutHumanoidDeath(player: Player, character: Model)
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+	if not humanoid then
+		return
+	end
+	humanoid.Died:Connect(function()
+		if player:GetAttribute("IsOut") ~= true then
+			return
+		end
+		setPlayerCharacterAutoLoads(player, false)
+		destroyOutCharacterWhenReady(player, character)
+	end)
+end
+
+local function suppressOutPlayerCharacter(player: Player, character: Model)
+	if player:GetAttribute("IsOut") ~= true then
+		return
+	end
+	setPlayerCharacterAutoLoads(player, false)
+	hookOutHumanoidDeath(player, character)
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+	if humanoid and humanoid.Health > 0 then
+		humanoid.Health = 0
+	elseif humanoid and humanoid.Health <= 0 then
+		destroyOutCharacterWhenReady(player, character)
+	end
+end
+
 local playerEliminatedEvent: BindableEvent? = nil
 
 local function setPlayerOut(player: Player)
@@ -207,13 +233,10 @@ local function setPlayerOut(player: Player)
 		dropBallFromPlayer(player)
 	end
 	player:SetAttribute("IsOut", true)
-	player.CharacterAutoLoads = false
+	setPlayerCharacterAutoLoads(player, false)
 	local character = player.Character
 	if character then
-		local humanoid = character:FindFirstChildOfClass("Humanoid")
-		if humanoid then
-			humanoid.Health = 0
-		end
+		suppressOutPlayerCharacter(player, character)
 	end
 	if playerEliminatedEvent then
 		playerEliminatedEvent:Fire(player)
@@ -226,7 +249,7 @@ local function clearPlayerOutIfNewLife(player: Player, character: Model)
 		suppressOutPlayerCharacter(player, character)
 		return
 	end
-	player.CharacterAutoLoads = true
+	setPlayerCharacterAutoLoads(player, true)
 	local humanoid = character:FindFirstChildOfClass("Humanoid")
 	if humanoid then
 		humanoid.WalkSpeed = Config.DEFAULT_WALK_SPEED
@@ -525,7 +548,7 @@ end
 local function clearEveryPlayerOut()
 	for _, player in Players:GetPlayers() do
 		player:SetAttribute("IsOut", false)
-		player.CharacterAutoLoads = true
+		setPlayerCharacterAutoLoads(player, true)
 		local character = player.Character
 		if character then
 			local humanoid = character:FindFirstChildOfClass("Humanoid")

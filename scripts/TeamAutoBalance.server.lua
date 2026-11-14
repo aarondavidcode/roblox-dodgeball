@@ -101,9 +101,15 @@ local function sortedPlayers(): { Player }
 end
 
 local function maybeLoadCharacter(player: Player, needsRespawn: boolean)
+	if matchIsLive() and player:GetAttribute("IsOut") == true then
+		return
+	end
 	local shouldLoad = needsRespawn
 	if not player.Character and not StarterPlayer.CharacterAutoLoads then
 		shouldLoad = true
+	end
+	if shouldLoad and matchIsLive() and player:GetAttribute("IsOut") == true then
+		return
 	end
 	if shouldLoad then
 		player:LoadCharacter()
@@ -173,6 +179,9 @@ local function trySpawnSafetyNet(player: Player)
 			return
 		end
 		if player.Team ~= nil and not player.Neutral then
+			return
+		end
+		if player:GetAttribute("IsOut") == true then
 			return
 		end
 		if usedSpawnSafetyNet[player] then
