@@ -233,6 +233,22 @@ local function teleportCharacterToLobbySpawn(player: Player)
 	end
 end
 
+-- Fallback B: OUT player got a stray character mid-match — lobby sideline, no team arena, still IsOut.
+local function sidelineOutCharacterAtLobby(player: Player)
+	if matchPhase ~= PHASE_IN_MATCH then
+		return
+	end
+	if player:GetAttribute("IsOut") ~= true or not isMatchParticipant(player) then
+		return
+	end
+	local character = player.Character
+	if not character then
+		return
+	end
+	teleportCharacterToLobbySpawn(player)
+	warn(`[LobbyService] {player.Name} (OUT) sidelined to lobby — no throw until round reset.`)
+end
+
 local function respawnPlayerAtLobby(player: Player)
 	if matchPhase == PHASE_IN_MATCH and isMatchParticipant(player) then
 		return
@@ -448,6 +464,20 @@ local function wireRoundBridge()
 			return false
 		end
 		respawnAllPlayersAtTeamArena()
+		return true
+	end
+
+	local sidelineFn = bridge:FindFirstChild("SidelineOutCharacterAtLobby")
+	if not sidelineFn then
+		sidelineFn = Instance.new("BindableFunction")
+		sidelineFn.Name = "SidelineOutCharacterAtLobby"
+		sidelineFn.Parent = bridge
+	end
+
+	(sidelineFn :: BindableFunction).OnInvoke = function(player: Instance): boolean
+		if player and player:IsA("Player") then
+			sidelineOutCharacterAtLobby(player)
+		end
 		return true
 	end
 end
