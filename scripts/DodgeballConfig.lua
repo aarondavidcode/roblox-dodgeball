@@ -36,6 +36,24 @@ local DodgeballConfig = {
 
 	-- After you throw, wait this long before you can pick up again (studs/s spam guard).
 	PICKUP_COOLDOWN_SECONDS = 0.15,
+
+	-- === Round reset (step 5) — change these to tune between-round pacing ===
+
+	-- Team names must match Explorer → Teams (same as TeamAutoBalance).
+	TEAM_NAMES = { "Red", "Blue" },
+
+	-- Countdown after a team wins before the next round (0 = skip straight to reset).
+	ROUND_INTERMISSION_SECONDS = 5,
+
+	-- If everyone is OUT at once, wait this long then reset anyway (tie / chaos).
+	ROUND_TIE_RESET_DELAY_SECONDS = 2,
+
+	-- Folder under ReplicatedStorage — RoundService writes RoundState + RoundNumber here.
+	ROUND_STATUS_FOLDER_NAME = "RoundStatus",
+
+	-- Walk/jump restored when a round clears OUT (before LoadCharacter).
+	DEFAULT_WALK_SPEED = 16,
+	DEFAULT_JUMP_POWER = 50,
 }
 
 return DodgeballConfig

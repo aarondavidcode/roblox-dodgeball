@@ -70,6 +70,8 @@ local function isPlayerOut(player: Player): boolean
 	return player:GetAttribute("IsOut") == true
 end
 
+local playerEliminatedEvent: BindableEvent? = nil
+
 local function setPlayerOut(player: Player)
 	player:SetAttribute("IsOut", true)
 	local character = player.Character
@@ -79,6 +81,9 @@ local function setPlayerOut(player: Player)
 			humanoid.WalkSpeed = 0
 			humanoid.JumpPower = 0
 		end
+	end
+	if playerEliminatedEvent then
+		playerEliminatedEvent:Fire(player)
 	end
 end
 
@@ -313,6 +318,102 @@ local function gatherBalls(): { BasePart }
 	return list
 end
 
+local function rememberBallSpawn(ball: BasePart)
+	-- Saved once so RoundService can put balls back after each round.
+	if ball:GetAttribute("SpawnCFrame") == nil then
+		ball:SetAttribute("SpawnCFrame", ball.CFrame)
+	end
+end
+
+local function dropEveryHeldBall()
+	for player, _ in heldByPlayer do
+		dropBallFromPlayer(player)
+	end
+end
+
+local function clearEveryPlayerOut()
+	for _, player in Players:GetPlayers() do
+		player:SetAttribute("IsOut", false)
+		local character = player.Character
+		if character then
+			local humanoid = character:FindFirstChildOfClass("Humanoid")
+			if humanoid then
+				humanoid.WalkSpeed = Config.DEFAULT_WALK_SPEED
+				humanoid.JumpPower = Config.DEFAULT_JUMP_POWER
+			end
+		end
+	end
+end
+
+local function resetEveryBallToSpawn()
+	for _, ball in gatherBalls() do
+		local spawnCf = ball:GetAttribute("SpawnCFrame")
+		if typeof(spawnCf) == "CFrame" then
+			ball.CFrame = spawnCf
+		end
+		ball.AssemblyLinearVelocity = Vector3.zero
+		ball.AssemblyAngularVelocity = Vector3.zero
+		ball.Anchored = false
+		ball.CanCollide = true
+		ball:SetAttribute("HolderUserId", nil)
+		ball:SetAttribute("LastThrowerUserId", nil)
+		ball:SetAttribute("LastThrowTime", 0)
+	end
+	dropEveryHeldBall()
+end
+
+local function ensureRoundBridge(): Folder
+	local bridge = ServerScriptService:FindFirstChild("DodgeballRoundBridge")
+	if bridge and bridge:IsA("Folder") then
+		return bridge
+	end
+	bridge = Instance.new("Folder")
+	bridge.Name = "DodgeballRoundBridge"
+	bridge.Parent = ServerScriptService
+	return bridge
+end
+
+local function ensureBindableFunction(parent: Instance, name: string): BindableFunction
+	local existing = parent:FindFirstChild(name)
+	if existing and existing:IsA("BindableFunction") then
+		return existing
+	end
+	local fn = Instance.new("BindableFunction")
+	fn.Name = name
+	fn.Parent = parent
+	return fn
+end
+
+local function wireRoundBridge()
+	local bridge = ensureRoundBridge()
+
+	playerEliminatedEvent = bridge:FindFirstChild("PlayerEliminated") :: BindableEvent?
+	if not playerEliminatedEvent then
+		local ev = Instance.new("BindableEvent")
+		ev.Name = "PlayerEliminated"
+		ev.Parent = bridge
+		playerEliminatedEvent = ev
+	end
+
+	local dropFn = ensureBindableFunction(bridge, "DropAllHeldBalls")
+	dropFn.OnInvoke = function()
+		dropEveryHeldBall()
+		return true
+	end
+
+	local clearFn = ensureBindableFunction(bridge, "ClearAllOuts")
+	clearFn.OnInvoke = function()
+		clearEveryPlayerOut()
+		return true
+	end
+
+	local resetFn = ensureBindableFunction(bridge, "ResetBallsToSpawn")
+	resetFn.OnInvoke = function()
+		resetEveryBallToSpawn()
+		return true
+	end
+end
+
 local function initializeBalls()
 	local balls = gatherBalls()
 	if #balls == 0 then
@@ -322,6 +423,7 @@ local function initializeBalls()
 		return
 	end
 	for _, ball in balls do
+		rememberBallSpawn(ball)
 		hookBall(ball)
 	end
 end
@@ -336,11 +438,13 @@ local function watchBallFolder()
 	end
 	folder.ChildAdded:Connect(function(child)
 		if child:IsA("BasePart") then
+			rememberBallSpawn(child)
 			hookBall(child)
 		end
 	end)
 	CollectionService:GetInstanceAddedSignal(Config.DODGEBALL_TAG):Connect(function(instance)
 		if instance:IsA("BasePart") then
+			rememberBallSpawn(instance)
 			hookBall(instance)
 		end
 	end)
@@ -387,5 +491,6 @@ for _, player in Players:GetPlayers() do
 	end)
 end
 
+wireRoundBridge()
 watchBallFolder()
 initializeBalls()
