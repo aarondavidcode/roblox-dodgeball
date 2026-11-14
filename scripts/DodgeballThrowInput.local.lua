@@ -10,132 +10,217 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local ContextActionService = game:GetService("ContextActionService")
 
+local SCRIPT_TAG = "[DodgeballThrowInput]"
+
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 local AIM_FALLBACK_STUDS = 200
 local ACTION_THROW_AIM = "DodgeballThrowAim"
+local ROUND_STATUS_FOLDER = "RoundStatus"
 
-local remotes = ReplicatedStorage:WaitForChild("DodgeballRemotes", 15)
-if not remotes then
-	warn("[DodgeballThrowInput] DodgeballRemotes folder missing — is DodgeballService running?")
-	return
-end
+-- Tunables (defaults until DodgeballRemotes folder replicates)
+local aimPowerChargeSeconds = 1.25
+local aimMaxSeconds = 4
+local ballMaxHoldSeconds = 5
 
-local throwRemote = remotes:WaitForChild("RequestThrow", 10) :: RemoteEvent
-local startAimingRemote = remotes:WaitForChild("StartAiming", 10) :: RemoteEvent
+local remotes: Folder? = nil
+local throwRemote: RemoteEvent? = nil
+local startAimingRemote: RemoteEvent? = nil
+local warnedMissingStartAiming = false
+local warnedMissingThrow = false
+local warnedMissingRemotesFolder = false
 
 local function readTunable(name: string, fallback: number): number
-	local value = remotes:GetAttribute(name)
-	if typeof(value) == "number" and value > 0 then
-		return value
+	if remotes then
+		local value = remotes:GetAttribute(name)
+		if typeof(value) == "number" and value > 0 then
+			return value
+		end
 	end
 	return fallback
 end
 
-local aimPowerChargeSeconds = readTunable("AIM_POWER_CHARGE_SECONDS", 1.25)
-local aimMaxSeconds = readTunable("AIM_MAX_SECONDS", 4)
-local ballMaxHoldSeconds = readTunable("BALL_MAX_HOLD_SECONDS", 5)
-
-remotes:GetAttributeChangedSignal("AIM_POWER_CHARGE_SECONDS"):Connect(function()
+local function hookTunableSignals()
+	if not remotes then
+		return
+	end
+	remotes:GetAttributeChangedSignal("AIM_POWER_CHARGE_SECONDS"):Connect(function()
+		aimPowerChargeSeconds = readTunable("AIM_POWER_CHARGE_SECONDS", 1.25)
+	end)
+	remotes:GetAttributeChangedSignal("AIM_MAX_SECONDS"):Connect(function()
+		aimMaxSeconds = readTunable("AIM_MAX_SECONDS", 4)
+	end)
+	remotes:GetAttributeChangedSignal("BALL_MAX_HOLD_SECONDS"):Connect(function()
+		ballMaxHoldSeconds = readTunable("BALL_MAX_HOLD_SECONDS", 5)
+	end)
 	aimPowerChargeSeconds = readTunable("AIM_POWER_CHARGE_SECONDS", 1.25)
-end)
-remotes:GetAttributeChangedSignal("AIM_MAX_SECONDS"):Connect(function()
 	aimMaxSeconds = readTunable("AIM_MAX_SECONDS", 4)
-end)
-remotes:GetAttributeChangedSignal("BALL_MAX_HOLD_SECONDS"):Connect(function()
 	ballMaxHoldSeconds = readTunable("BALL_MAX_HOLD_SECONDS", 5)
+end
+
+local function attachRemotes(folder: Folder)
+	remotes = folder
+	local throw = folder:WaitForChild("RequestThrow", 30)
+	if throw and throw:IsA("RemoteEvent") then
+		throwRemote = throw
+	else
+		if not warnedMissingThrow then
+			warnedMissingThrow = true
+			warn(`{SCRIPT_TAG} RequestThrow RemoteEvent missing — re-paste DodgeballService from the repo.`)
+		end
+	end
+	local startAiming = folder:WaitForChild("StartAiming", 30)
+	if startAiming and startAiming:IsA("RemoteEvent") then
+		startAimingRemote = startAiming
+	else
+		if not warnedMissingStartAiming then
+			warnedMissingStartAiming = true
+			warn(`{SCRIPT_TAG} StartAiming RemoteEvent missing — re-paste DodgeballService from the repo (needed for hold rules).`)
+		end
+	end
+	hookTunableSignals()
+end
+
+task.spawn(function()
+	local folder = ReplicatedStorage:WaitForChild("DodgeballRemotes", 60)
+	if folder and folder:IsA("Folder") then
+		attachRemotes(folder)
+		return
+	end
+	if not warnedMissingRemotesFolder then
+		warnedMissingRemotesFolder = true
+		warn(`{SCRIPT_TAG} DodgeballRemotes folder missing after 60s — is DodgeballService running under ServerScriptService?`)
+	end
+	ReplicatedStorage.ChildAdded:Connect(function(child)
+		if child.Name == "DodgeballRemotes" and child:IsA("Folder") then
+			attachRemotes(child)
+		end
+	end)
 end)
+
+-- ScreenGui is created immediately so Explorer shows DodgeballAimGui even if remotes are slow.
+local staleGui = playerGui:FindFirstChild("DodgeballAimGui")
+if staleGui then
+	staleGui:Destroy()
+end
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "DodgeballAimGui"
 screenGui.ResetOnSpawn = false
 screenGui.IgnoreGuiInset = true
+screenGui.DisplayOrder = 50
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.Enabled = true
 screenGui.Parent = playerGui
+
+local function strokeFrame(frame: Frame, thickness: number, color: Color3)
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = thickness
+	stroke.Color = color
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Parent = frame
+	return stroke
+end
 
 local crosshair = Instance.new("Frame")
 crosshair.Name = "Crosshair"
 crosshair.AnchorPoint = Vector2.new(0.5, 0.5)
 crosshair.Position = UDim2.fromScale(0.5, 0.5)
-crosshair.Size = UDim2.fromOffset(20, 20)
+crosshair.Size = UDim2.fromOffset(32, 32)
 crosshair.BackgroundTransparency = 1
 crosshair.Visible = false
+crosshair.ZIndex = 10
 crosshair.Parent = screenGui
 
 local crosshairH = Instance.new("Frame")
 crosshairH.Name = "LineH"
-crosshairH.Size = UDim2.new(1, 0, 0, 2)
+crosshairH.Size = UDim2.new(1, 0, 0, 3)
 crosshairH.Position = UDim2.fromScale(0, 0.5)
 crosshairH.AnchorPoint = Vector2.new(0, 0.5)
-crosshairH.BackgroundColor3 = Color3.new(1, 1, 1)
+crosshairH.BackgroundColor3 = Color3.fromRGB(255, 240, 64)
 crosshairH.BorderSizePixel = 0
+crosshairH.ZIndex = 11
 crosshairH.Parent = crosshair
+strokeFrame(crosshairH, 1.5, Color3.fromRGB(20, 20, 20))
 
 local crosshairV = Instance.new("Frame")
 crosshairV.Name = "LineV"
-crosshairV.Size = UDim2.new(0, 2, 1, 0)
+crosshairV.Size = UDim2.new(0, 3, 1, 0)
 crosshairV.Position = UDim2.fromScale(0.5, 0)
 crosshairV.AnchorPoint = Vector2.new(0.5, 0)
-crosshairV.BackgroundColor3 = Color3.new(1, 1, 1)
+crosshairV.BackgroundColor3 = Color3.fromRGB(255, 240, 64)
 crosshairV.BorderSizePixel = 0
+crosshairV.ZIndex = 11
 crosshairV.Parent = crosshair
+strokeFrame(crosshairV, 1.5, Color3.fromRGB(20, 20, 20))
 
 local holdBarBack = Instance.new("Frame")
 holdBarBack.Name = "HoldBarBackground"
 holdBarBack.AnchorPoint = Vector2.new(0.5, 1)
 holdBarBack.Position = UDim2.new(0.5, 0, 1, -80)
-holdBarBack.Size = UDim2.fromOffset(200, 14)
-holdBarBack.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+holdBarBack.Size = UDim2.fromOffset(220, 16)
+holdBarBack.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 holdBarBack.BorderSizePixel = 0
 holdBarBack.Visible = false
+holdBarBack.ZIndex = 5
 holdBarBack.Parent = screenGui
+strokeFrame(holdBarBack, 1, Color3.fromRGB(80, 80, 80))
 
 local holdBarFill = Instance.new("Frame")
 holdBarFill.Name = "HoldBarFill"
 holdBarFill.Size = UDim2.fromScale(0, 1)
 holdBarFill.BackgroundColor3 = Color3.fromRGB(255, 200, 80)
 holdBarFill.BorderSizePixel = 0
+holdBarFill.ZIndex = 6
 holdBarFill.Parent = holdBarBack
 
 local holdBarLabel = Instance.new("TextLabel")
 holdBarLabel.Name = "HoldBarLabel"
-holdBarLabel.Size = UDim2.new(1, 0, 0, 20)
-holdBarLabel.Position = UDim2.new(0, 0, 0, -22)
+holdBarLabel.Size = UDim2.new(1, 0, 0, 22)
+holdBarLabel.Position = UDim2.new(0, 0, 0, -24)
 holdBarLabel.BackgroundTransparency = 1
 holdBarLabel.TextColor3 = Color3.new(1, 1, 1)
-holdBarLabel.TextStrokeTransparency = 0.5
+holdBarLabel.TextStrokeTransparency = 0.3
+holdBarLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
 holdBarLabel.Font = Enum.Font.GothamBold
-holdBarLabel.TextSize = 14
+holdBarLabel.TextSize = 15
 holdBarLabel.Text = "Hold ball — aim soon!"
+holdBarLabel.ZIndex = 7
 holdBarLabel.Parent = holdBarBack
 
 local powerBarBack = Instance.new("Frame")
 powerBarBack.Name = "PowerBarBackground"
 powerBarBack.AnchorPoint = Vector2.new(0.5, 1)
-powerBarBack.Position = UDim2.new(0.5, 0, 1, -50)
-powerBarBack.Size = UDim2.fromOffset(200, 18)
-powerBarBack.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+powerBarBack.Position = UDim2.new(0.5, 0, 1, -52)
+powerBarBack.Size = UDim2.fromOffset(220, 20)
+powerBarBack.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 powerBarBack.BorderSizePixel = 0
 powerBarBack.Visible = false
+powerBarBack.ZIndex = 5
 powerBarBack.Parent = screenGui
+strokeFrame(powerBarBack, 1, Color3.fromRGB(80, 80, 80))
 
 local powerBarFill = Instance.new("Frame")
 powerBarFill.Name = "PowerBarFill"
 powerBarFill.Size = UDim2.fromScale(0, 1)
-powerBarFill.BackgroundColor3 = Color3.fromRGB(80, 180, 255)
+powerBarFill.BackgroundColor3 = Color3.fromRGB(80, 200, 255)
 powerBarFill.BorderSizePixel = 0
+powerBarFill.ZIndex = 6
 powerBarFill.Parent = powerBarBack
 
 local powerBarLabel = Instance.new("TextLabel")
 powerBarLabel.Name = "PowerBarLabel"
-powerBarLabel.Size = UDim2.new(1, 0, 0, 20)
-powerBarLabel.Position = UDim2.new(0, 0, 0, -22)
+powerBarLabel.Size = UDim2.new(1, 0, 0, 22)
+powerBarLabel.Position = UDim2.new(0, 0, 0, -24)
 powerBarLabel.BackgroundTransparency = 1
 powerBarLabel.TextColor3 = Color3.new(1, 1, 1)
-powerBarLabel.TextStrokeTransparency = 0.5
+powerBarLabel.TextStrokeTransparency = 0.3
+powerBarLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
 powerBarLabel.Font = Enum.Font.GothamBold
-powerBarLabel.TextSize = 14
+powerBarLabel.TextSize = 15
 powerBarLabel.Text = "Power 0%"
+powerBarLabel.ZIndex = 7
 powerBarLabel.Parent = powerBarBack
 
 local aiming = false
@@ -144,13 +229,36 @@ local holdBallSince: number? = nil
 local heartbeatConn: RBXScriptConnection? = nil
 local lastAimWorldPoint: Vector3? = nil
 
-local function isSpectatorOrOut(): boolean
-	if player:GetAttribute("MatchParticipant") ~= true then
-		return true
+local function getMatchPhase(): string?
+	local folder = ReplicatedStorage:FindFirstChild(ROUND_STATUS_FOLDER)
+	if folder and folder:IsA("Folder") then
+		local phase = folder:GetAttribute("MatchPhase")
+		if typeof(phase) == "string" then
+			return phase
+		end
 	end
+	return nil
+end
+
+-- During InMatch: block only explicit spectators (MatchParticipant == false) and OUT players.
+-- Missing RoundStatus (step 4 only): allow when not OUT.
+-- Lobby phase: block (no active match).
+local function isSpectatorOrOut(): boolean
 	if player:GetAttribute("IsOut") == true then
 		return true
 	end
+	local phase = getMatchPhase()
+	if phase == "InMatch" then
+		local participant = player:GetAttribute("MatchParticipant")
+		if participant == false then
+			return true
+		end
+		return false
+	end
+	if phase == "Lobby" then
+		return true
+	end
+	-- No lobby system / step 4 sandbox: not a spectator unless OUT (handled above).
 	return false
 end
 
@@ -159,9 +267,13 @@ local function localPlayerHoldsBall(): boolean
 	if not character then
 		return false
 	end
-	for _, child in character:GetChildren() do
-		if child:IsA("BasePart") and typeof(child:GetAttribute("HolderUserId")) == "number" then
-			if child:GetAttribute("HolderUserId") == player.UserId then
+	for _, desc in character:GetDescendants() do
+		if desc:IsA("BasePart") then
+			local holderId = desc:GetAttribute("HolderUserId")
+			if typeof(holderId) == "number" and holderId == player.UserId then
+				return true
+			end
+			if desc:FindFirstChild("DodgeballHoldWeld") then
 				return true
 			end
 		end
@@ -247,6 +359,14 @@ local function endAimUi()
 end
 
 local function fireThrow(powerRatio: number)
+	if not throwRemote then
+		if not warnedMissingThrow then
+			warnedMissingThrow = true
+			warn(`{SCRIPT_TAG} Cannot throw — RequestThrow remote missing. Re-paste DodgeballService.`)
+		end
+		endAimUi()
+		return
+	end
 	local aimPoint = lastAimWorldPoint
 	if not aimPoint then
 		aimPoint = computeAimWorldPoint()
@@ -267,13 +387,22 @@ local function fireThrow(powerRatio: number)
 	holdBarBack.Visible = false
 end
 
+local function fireStartAiming()
+	if startAimingRemote then
+		startAimingRemote:FireServer()
+	elseif not warnedMissingStartAiming then
+		warnedMissingStartAiming = true
+		warn(`{SCRIPT_TAG} StartAiming remote missing — server may force roll on hold timeout. Re-paste DodgeballService.`)
+	end
+end
+
 local function beginAim()
 	if aiming or isSpectatorOrOut() or not localPlayerHoldsBall() then
 		return
 	end
 	aiming = true
 	aimBeganAt = os.clock()
-	startAimingRemote:FireServer()
+	fireStartAiming()
 	holdBallSince = nil
 	holdBarBack.Visible = false
 
@@ -382,3 +511,14 @@ player:GetAttributeChangedSignal("MatchParticipant"):Connect(function()
 		holdBarBack.Visible = false
 	end
 end)
+
+local roundStatus = ReplicatedStorage:WaitForChild(ROUND_STATUS_FOLDER, 5)
+if roundStatus and roundStatus:IsA("Folder") then
+	roundStatus:GetAttributeChangedSignal("MatchPhase"):Connect(function()
+		if isSpectatorOrOut() then
+			endAimUi()
+			holdBallSince = nil
+			holdBarBack.Visible = false
+		end
+	end)
+end

@@ -23,6 +23,14 @@ Walkthrough: **[03-add-your-first-script](../03-add-your-first-script/README.md)
 
 Walkthrough: **[04-balls-and-throwing](../04-balls-and-throwing/README.md)** (aim, power charge, hold timer, and UI names).
 
+### DodgeballThrowInput Studio checklist
+
+- **One** LocalScript named `DodgeballThrowInput`, only under **StarterPlayer → StarterPlayerScripts** (never **StarterGui**).
+- Remove older throw LocalScripts (pre-aim “tap F to throw” versions).
+- **DodgeballService** must be the current repo copy so **ReplicatedStorage → DodgeballRemotes** includes **RequestThrow** and **StartAiming**.
+- **F5** → **Output**: search for `[DodgeballThrowInput]` — fix any “remotes missing” or **StartAiming** warnings before testing.
+- **F5** → pick up a ball during **InMatch** → yellow **hold bar**; hold F → crosshair + blue **power bar**. **PlayerGui → DodgeballAimGui** should exist while Play runs.
+
 Default throw lives in **`throw/`** so you can add more **ModuleScripts** later and switch **`ACTIVE_THROW_PROFILE`** in **DodgeballConfig**.
 
 ---
