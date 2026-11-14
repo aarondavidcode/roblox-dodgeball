@@ -73,8 +73,9 @@ New settings at the bottom:
 **What changed:**
 
 - Getting hit **kills** your character for that round (`Humanoid.Health = 0`).
-- You **do not** respawn until **RoundService** starts the next round (or a new match).
+- You **do not** respawn until **RoundService** starts the next round (or a new match) — no lobby pad, no team pad, no new character while `IsOut` is true.
 - `IsOut` stays **true** so the round still ends correctly.
+- Match and arena respawns face the **other team’s** spawn pad when pads are wired in step 2.
 - No more **WalkSpeed = 0** freeze.
 
 ---

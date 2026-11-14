@@ -7,6 +7,7 @@ local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
+local Teams = game:GetService("Teams")
 local Workspace = game:GetService("Workspace")
 
 local Config = require(ServerScriptService:WaitForChild("DodgeballConfig"))
@@ -104,6 +105,39 @@ local function findTeamSpawnLocation(team: Team): SpawnLocation?
 	return nil
 end
 
+local function findOpposingTeamSpawnLocation(team: Team): SpawnLocation?
+	for _, teamName in Config.TEAM_NAMES do
+		if typeof(teamName) == "string" and teamName ~= team.Name then
+			local opposing = Teams:FindFirstChild(teamName)
+			if opposing and opposing:IsA("Team") then
+				return findTeamSpawnLocation(opposing)
+			end
+		end
+	end
+	return nil
+end
+
+local function arenaSpawnCFrame(teamSpawn: SpawnLocation, opposingSpawn: SpawnLocation?): CFrame
+	local pos = teamSpawn.CFrame.Position + Vector3.new(0, SPAWN_Y_OFFSET, 0)
+	if opposingSpawn then
+		local target = opposingSpawn.CFrame.Position
+		local lookAt = Vector3.new(target.X, pos.Y, target.Z)
+		if (lookAt - pos).Magnitude > 0.5 then
+			return CFrame.lookAt(pos, lookAt)
+		end
+	end
+	return teamSpawn.CFrame + Vector3.new(0, SPAWN_Y_OFFSET, 0)
+end
+
+local function loadCharacterIfAllowed(player: Player, context: string): boolean
+	if player:GetAttribute("IsOut") == true then
+		warn(`[LobbyService] Blocked LoadCharacter for {player.Name} — still OUT ({context}).`)
+		return false
+	end
+	player:LoadCharacter()
+	return true
+end
+
 local function isMatchParticipant(player: Player): boolean
 	return player:GetAttribute(ATTR_MATCH_PARTICIPANT) == true
 end
@@ -138,8 +172,9 @@ local function teleportCharacterToTeamSpawn(player: Player)
 	end
 	local hrp = character:WaitForChild("HumanoidRootPart", 10) :: BasePart?
 	if hrp then
-		hrp.CFrame = spawn.CFrame + Vector3.new(0, SPAWN_Y_OFFSET, 0)
-		warn(`[LobbyService] {player.Name} placed on {spawn.Name} (TeamColor match for {team.Name}).`)
+		local opposingSpawn = findOpposingTeamSpawnLocation(team)
+		hrp.CFrame = arenaSpawnCFrame(spawn, opposingSpawn)
+		warn(`[LobbyService] {player.Name} placed on {spawn.Name} facing {team.Name} vs opponents.`)
 	end
 end
 
@@ -157,7 +192,9 @@ local function spawnPlayerAtTeamArena(player: Player)
 		return
 	end
 	player.Neutral = false
-	player:LoadCharacter()
+	if not loadCharacterIfAllowed(player, "spawnPlayerAtTeamArena") then
+		return
+	end
 	teleportCharacterToTeamSpawn(player)
 end
 
@@ -171,9 +208,14 @@ local function respawnAllPlayersAtTeamArena()
 		return a.UserId < b.UserId
 	end)
 	for _, player in playerList do
-		if isMatchParticipant(player) and player.Team then
-			spawnPlayerAtTeamArena(player)
+		if not isMatchParticipant(player) or not player.Team then
+			continue
 		end
+		if player:GetAttribute("IsOut") == true then
+			warn(`[LobbyService] Skipping arena respawn for {player.Name} — still OUT (wait for ClearAllOuts).`)
+			continue
+		end
+		spawnPlayerAtTeamArena(player)
 	end
 end
 
@@ -189,6 +231,22 @@ local function teleportCharacterToLobbySpawn(player: Player)
 			hrp.CFrame = spawn.CFrame + Vector3.new(0, SPAWN_Y_OFFSET, 0)
 		end
 	end
+end
+
+-- Fallback B: OUT player got a stray character mid-match — lobby sideline, no team arena, still IsOut.
+local function sidelineOutCharacterAtLobby(player: Player)
+	if matchPhase ~= PHASE_IN_MATCH then
+		return
+	end
+	if player:GetAttribute("IsOut") ~= true or not isMatchParticipant(player) then
+		return
+	end
+	local character = player.Character
+	if not character then
+		return
+	end
+	teleportCharacterToLobbySpawn(player)
+	warn(`[LobbyService] {player.Name} (OUT) sidelined to lobby — no throw until round reset.`)
 end
 
 local function respawnPlayerAtLobby(player: Player)
@@ -406,6 +464,20 @@ local function wireRoundBridge()
 			return false
 		end
 		respawnAllPlayersAtTeamArena()
+		return true
+	end
+
+	local sidelineFn = bridge:FindFirstChild("SidelineOutCharacterAtLobby")
+	if not sidelineFn then
+		sidelineFn = Instance.new("BindableFunction")
+		sidelineFn.Name = "SidelineOutCharacterAtLobby"
+		sidelineFn.Parent = bridge
+	end
+
+	(sidelineFn :: BindableFunction).OnInvoke = function(player: Instance): boolean
+		if player and player:IsA("Player") then
+			sidelineOutCharacterAtLobby(player)
+		end
 		return true
 	end
 end

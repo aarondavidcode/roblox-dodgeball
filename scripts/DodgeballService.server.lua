@@ -16,6 +16,11 @@ local Workspace = game:GetService("Workspace")
 
 local Config = require(ServerScriptService:WaitForChild("DodgeballConfig"))
 
+-- Roblox only documents Players.CharacterAutoLoads (global). When false, the engine does not
+-- auto-call LoadCharacter after death; RespawnTime (default 5s) applies only while global is true.
+-- All joins and round resets use explicit LoadCharacter from LobbyService / RoundService.
+Players.CharacterAutoLoads = false
+
 local throwFolder = ServerScriptService:WaitForChild("throw")
 local DefaultThrow = require(throwFolder:WaitForChild("DefaultThrow"))
 
@@ -173,23 +178,42 @@ local function isMatchParticipant(player: Player): boolean
 	return player:GetAttribute("MatchParticipant") == true
 end
 
-local function applyOutRespawnGate(player: Player)
-	if player:GetAttribute("IsOut") == true then
-		player.CharacterAutoLoads = false
-	else
-		player.CharacterAutoLoads = true
+-- Player.CharacterAutoLoads is not in the public Player API (Studio may error); keep a pcall for forward compatibility.
+local function setPlayerCharacterAutoLoads(_player: Player, _enabled: boolean)
+	pcall(function()
+		-- (_player :: any).CharacterAutoLoads = _enabled
+	end)
+end
+
+local function getMatchPhase(): string
+	local folder = ReplicatedStorage:FindFirstChild(Config.ROUND_STATUS_FOLDER_NAME)
+	if folder and folder:IsA("Folder") then
+		local phase = folder:GetAttribute("MatchPhase")
+		if typeof(phase) == "string" then
+			return phase
+		end
+	end
+	return "Lobby"
+end
+
+local function sidelineOutPlayerViaBridge(player: Player)
+	local bridge = ServerScriptService:FindFirstChild("DodgeballRoundBridge")
+	if not bridge then
+		return
+	end
+	local bindable = bridge:FindFirstChild("SidelineOutCharacterAtLobby")
+	if bindable and bindable:IsA("BindableFunction") then
+		pcall(function()
+			(bindable :: BindableFunction):Invoke(player)
+		end)
 	end
 end
 
-local function suppressOutPlayerCharacter(player: Player, character: Model)
-	if player:GetAttribute("IsOut") ~= true then
-		return
-	end
-	player.CharacterAutoLoads = false
-	local humanoid = character:FindFirstChildOfClass("Humanoid")
-	if humanoid and humanoid.Health > 0 then
-		humanoid.Health = 0
-	end
+local function applyOutRespawnGate(_player: Player)
+	-- Global Players.CharacterAutoLoads = false handles auto-respawn; IsOut gates explicit LoadCharacter.
+end
+
+local function destroyOutCharacterWhenReady(player: Player, character: Model)
 	task.defer(function()
 		if player:GetAttribute("IsOut") ~= true then
 			return
@@ -200,6 +224,57 @@ local function suppressOutPlayerCharacter(player: Player, character: Model)
 	end)
 end
 
+local function hookOutHumanoidDeath(player: Player, character: Model)
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+	if not humanoid then
+		return
+	end
+	humanoid.Died:Connect(function()
+		if player:GetAttribute("IsOut") ~= true then
+			return
+		end
+		setPlayerCharacterAutoLoads(player, false)
+		destroyOutCharacterWhenReady(player, character)
+	end)
+end
+
+local function handleStrayOutCharacterAfterDelay(player: Player)
+	task.delay(0.2, function()
+		if player:GetAttribute("IsOut") ~= true then
+			return
+		end
+		local character = player.Character
+		if not character or character.Parent == nil then
+			return
+		end
+		if getMatchPhase() ~= "InMatch" or not isMatchParticipant(player) then
+			character:Destroy()
+			return
+		end
+		local fallback = Config.OUT_STRAY_RESPAWN_FALLBACK
+		if typeof(fallback) == "string" and fallback == "lobby" then
+			warn(`[DodgeballService] Stray OUT respawn for {player.Name} — sideline to lobby (fallback).`)
+			sidelineOutPlayerViaBridge(player)
+			return
+		end
+		character:Destroy()
+	end)
+end
+
+local function suppressOutPlayerCharacter(player: Player, character: Model)
+	if player:GetAttribute("IsOut") ~= true then
+		return
+	end
+	setPlayerCharacterAutoLoads(player, false)
+	hookOutHumanoidDeath(player, character)
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+	if humanoid and humanoid.Health > 0 then
+		humanoid.Health = 0
+	end
+	destroyOutCharacterWhenReady(player, character)
+	handleStrayOutCharacterAfterDelay(player)
+end
+
 local playerEliminatedEvent: BindableEvent? = nil
 
 local function setPlayerOut(player: Player)
@@ -207,13 +282,10 @@ local function setPlayerOut(player: Player)
 		dropBallFromPlayer(player)
 	end
 	player:SetAttribute("IsOut", true)
-	player.CharacterAutoLoads = false
+	setPlayerCharacterAutoLoads(player, false)
 	local character = player.Character
 	if character then
-		local humanoid = character:FindFirstChildOfClass("Humanoid")
-		if humanoid then
-			humanoid.Health = 0
-		end
+		suppressOutPlayerCharacter(player, character)
 	end
 	if playerEliminatedEvent then
 		playerEliminatedEvent:Fire(player)
@@ -222,11 +294,11 @@ end
 
 local function clearPlayerOutIfNewLife(player: Player, character: Model)
 	if player:GetAttribute("IsOut") == true then
-		-- Still OUT this round — block CharacterAutoLoads respawn until round reset LoadCharacter.
+		-- OUT mid-round: no Roblox auto-respawn (Players.CharacterAutoLoads = false); destroy stray bodies or sideline fallback.
 		suppressOutPlayerCharacter(player, character)
 		return
 	end
-	player.CharacterAutoLoads = true
+	setPlayerCharacterAutoLoads(player, true)
 	local humanoid = character:FindFirstChildOfClass("Humanoid")
 	if humanoid then
 		humanoid.WalkSpeed = Config.DEFAULT_WALK_SPEED
@@ -525,7 +597,7 @@ end
 local function clearEveryPlayerOut()
 	for _, player in Players:GetPlayers() do
 		player:SetAttribute("IsOut", false)
-		player.CharacterAutoLoads = true
+		setPlayerCharacterAutoLoads(player, true)
 		local character = player.Character
 		if character then
 			local humanoid = character:FindFirstChildOfClass("Humanoid")

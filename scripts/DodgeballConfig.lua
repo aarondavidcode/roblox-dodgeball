@@ -58,6 +58,10 @@ local DodgeballConfig = {
 	DEFAULT_WALK_SPEED = 16,
 	DEFAULT_JUMP_POWER = 50,
 
+	-- If a stray character still appears while OUT mid-match, "destroy" removes it (default).
+	-- "lobby" teleports to LobbySpawn as sideline spectator (still IsOut, no throw) until round reset.
+	OUT_STRAY_RESPAWN_FALLBACK = "destroy",
+
 	-- === Lobby + match format (step 6) ===
 
 	-- Seconds to wait in lobby when 2+ players before a match starts (paused / reset if only 1 player).
