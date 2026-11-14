@@ -69,35 +69,27 @@ local function waitForTeams(): boolean
 	return true
 end
 
-local function countPlayersOnTeam(team: Team): number
-	local total = 0
-	for _, player in Players:GetPlayers() do
-		if player.Team == team then
-			total += 1
-		end
-	end
-	return total
-end
-
-local function assignBalancedTeam(player: Player, needsRespawn: boolean)
+local function teamsReady(): boolean
 	if not redTeam or not blueTeam then
 		warn("[TeamAutoBalance] Red or Blue team is not ready yet. Check Teams in Explorer.")
-		return
+		return false
 	end
-
-	local redCount = countPlayersOnTeam(redTeam)
-	local blueCount = countPlayersOnTeam(blueTeam)
-
-	local chosenTeam: Team
-	if redCount <= blueCount then
-		chosenTeam = redTeam
-	else
-		chosenTeam = blueTeam
+	if redTeam == blueTeam then
+		warn("[TeamAutoBalance] Red and Blue resolved to the same Team instance — fix Explorer → Teams.")
+		return false
 	end
+	return true
+end
 
-	player.Neutral = false
-	player.Team = chosenTeam
+local function sortedPlayers(): { Player }
+	local list = Players:GetPlayers()
+	table.sort(list, function(a: Player, b: Player)
+		return a.UserId < b.UserId
+	end)
+	return list
+end
 
+local function maybeLoadCharacter(player: Player, needsRespawn: boolean)
 	local shouldLoad = needsRespawn
 	if not player.Character and not StarterPlayer.CharacterAutoLoads then
 		shouldLoad = true
@@ -107,15 +99,45 @@ local function assignBalancedTeam(player: Player, needsRespawn: boolean)
 	end
 end
 
+-- Deterministic batch balance: sort by UserId, assign each to the smaller team count.
+local function assignAllPlayersBalanced(needsRespawn: boolean): boolean
+	if not teamsReady() then
+		return false
+	end
+
+	local redCount = 0
+	local blueCount = 0
+
+	for _, player in sortedPlayers() do
+		local chosenTeam: Team
+		if redCount <= blueCount then
+			chosenTeam = redTeam :: Team
+			redCount += 1
+		else
+			chosenTeam = blueTeam :: Team
+			blueCount += 1
+		end
+
+		player.Neutral = false
+		player.Team = chosenTeam
+		warn(`[TeamAutoBalance] Match teams: {player.Name} (UserId {player.UserId}) → {chosenTeam.Name}`)
+		maybeLoadCharacter(player, needsRespawn)
+	end
+
+	warn(`[TeamAutoBalance] Final counts — Red: {redCount}, Blue: {blueCount}`)
+	return true
+end
+
+local function assignBalancedTeam(player: Player, needsRespawn: boolean)
+	assignAllPlayersBalanced(false)
+	if needsRespawn then
+		maybeLoadCharacter(player, true)
+	end
+end
+
 local function setLobbyNeutral(player: Player)
 	player.Neutral = true
 	player.Team = nil
-end
-
-local function assignAllPlayersBalanced(needsRespawn: boolean)
-	for _, player in Players:GetPlayers() do
-		assignBalancedTeam(player, needsRespawn)
-	end
 end
 
 local function neutralizeAllPlayers()
@@ -164,10 +186,10 @@ end
 
 local function onMatchPhaseChanged()
 	if matchIsLive() then
-		assignAllPlayersBalanced(false)
-	else
-		neutralizeAllPlayers()
+		-- Team assignment is triggered by LobbyService via AssignMatchTeams (after phase publish).
+		return
 	end
+	neutralizeAllPlayers()
 end
 
 local function wireRoundBridge()
@@ -186,8 +208,7 @@ local function wireRoundBridge()
 	end
 
 	(assignFn :: BindableFunction).OnInvoke = function(): boolean
-		assignAllPlayersBalanced(false)
-		return true
+		return assignAllPlayersBalanced(false)
 	end
 end
 

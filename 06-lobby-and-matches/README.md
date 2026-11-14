@@ -15,7 +15,7 @@ You already have dodgeballs, OUT rules, and **round** wins. This step adds a **l
 | Updated rounds | `RoundService` | **ServerScriptService** (paste fresh copy) |
 | Lobby + match flow | `LobbyService` | **ServerScriptService** (Script, **new**) |
 | **Your** lobby pad | `LobbySpawn` (or your name from config) | **Workspace** — **you** choose where |
-| Optional UI | `MatchStatus` | **StarterGui** (ScreenGui + LocalScript) |
+| Optional UI | `RoundStatus` | **StarterGui** (same UI as step 5 — paste updated **RoundStatusClient**) |
 
 Repo files to copy:
 
@@ -139,62 +139,17 @@ You should have **four** game scripts: **TeamAutoBalance**, **DodgeballService**
 
 ---
 
-## Step 9 — Optional MatchStatus UI
+## Step 9 — Optional RoundStatus UI
 
-1. Under **StarterGui**, insert **ScreenGui**, rename **`MatchStatus`**.
-2. Insert **TextLabel** → **`StatusLabel`** (top center, **TextScaled** on).
-3. Insert **LocalScript** → **`MatchStatusClient`**, paste:
+Use the **same** ScreenGui as **[05-round-reset — Step 5](../05-round-reset/README.md#step-5--optional-roundstatus-ui-countdown-text)** (`RoundStatus` / `CountdownLabel` / `RoundStatusClient` LocalScript).
 
-```lua
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+If you already pasted the old step 5 script, **replace** it with the latest **[scripts/RoundStatusClient.local.lua](../scripts/RoundStatusClient.local.lua)** so lobby countdown shows instead of `Round N — PLAY!` while `MatchPhase` is **Lobby**.
 
-local label = script.Parent:WaitForChild("StatusLabel") :: TextLabel
-local folder = ReplicatedStorage:WaitForChild("RoundStatus", 30)
-if not folder then
-	return
-end
+**Checklist**
 
-local function refresh()
-	local phase = folder:GetAttribute("MatchPhase")
-	local red = folder:GetAttribute("MatchScore_Red") or 0
-	local blue = folder:GetAttribute("MatchScore_Blue") or 0
-	local toWin = folder:GetAttribute("MatchPointsToWin") or 3
-	local roundState = folder:GetAttribute("RoundState")
-	local roundNum = folder:GetAttribute("RoundNumber") or 1
-
-	if phase == "Lobby" then
-		local endsAt = folder:GetAttribute("LobbyCountdownEndsAt")
-		if typeof(endsAt) == "number" then
-			local left = math.max(0, math.ceil(endsAt - workspace:GetServerTimeNow()))
-			label.Text = `Lobby — match starts in {left}s | Need 2+ players`
-		else
-			label.Text = "Lobby — waiting for 2+ players"
-		end
-	elseif roundState == "Intermission" then
-		local endsAt = folder:GetAttribute("IntermissionEndsAt")
-		if typeof(endsAt) == "number" then
-			local left = math.max(0, math.ceil(endsAt - workspace:GetServerTimeNow()))
-			label.Text = `Score {red}-{blue} (first {toWin}) | Next round in {left}s`
-		else
-			label.Text = `Score {red}-{blue} | Break...`
-		end
-	else
-		label.Text = `Score {red}-{blue} | Round {roundNum}`
-	end
-end
-
-for _, name in { "MatchPhase", "MatchScore_Red", "MatchScore_Blue", "LobbyCountdownEndsAt", "RoundState", "RoundNumber", "IntermissionEndsAt", "MatchPointsToWin" } do
-	folder:GetAttributeChangedSignal(name):Connect(refresh)
-end
-
-task.spawn(function()
-	while true do
-		refresh()
-		task.wait(0.25)
-	end
-end)
-refresh()
-```
+- ScreenGui named **`RoundStatus`** (not `MatchStatus`).
+- TextLabel named **`CountdownLabel`**; **Text** property empty.
+- Child script is **`RoundStatusClient`**, class **LocalScript**, code from the repo file above.
 
 ---
 

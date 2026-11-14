@@ -75,65 +75,43 @@ Watch **Output** for lines like `[RoundService] Round 1 over — Blue wins!`
 
 ## Step 5 — Optional RoundStatus UI (countdown text)
 
-This is only on **your** screen — copy-paste friendly.
+This is only on **your** screen — copy-paste friendly. Use this **one** UI for step 5 and step 6 (lobby + matches).
+
+### Hierarchy (exact names)
+
+```
+StarterGui
+  RoundStatus          ← ScreenGui
+    CountdownLabel     ← TextLabel (clear **Text** so it stays empty until the script runs)
+    RoundStatusClient  ← LocalScript (must be **LocalScript**, not Script)
+```
+
+### What each phase shows
+
+| Server state | On-screen text |
+|--------------|----------------|
+| **Lobby**, fewer than 2 players | `Lobby — waiting for another player…` |
+| **Lobby**, countdown running | `Lobby — match starts in Ns` |
+| **InMatch** + **Playing** | Match score + `Round N — PLAY!` |
+| **InMatch** + **Intermission** | Match score + time until next round |
+| **InMatch** + **Resetting** | Match score + `Resetting arena…` |
+
+Data comes from **`ReplicatedStorage/RoundStatus`** attributes (`MatchPhase`, `LobbyCountdownEndsAt`, `RoundState`, scores).
+
+### Build it in Studio
 
 1. Under **StarterGui**, insert **ScreenGui**, rename **`RoundStatus`**.
-2. Inside it, insert **TextLabel**, rename **`CountdownLabel`**.
+2. Inside it, insert **TextLabel**, rename **`CountdownLabel`** (not `Label` or `StatusLabel`).
 3. Set **CountdownLabel** Properties (rough guide):
-   - **Size** = `{0.4, 0}, {0.08, 0}` (scale)
-   - **Position** = `{0.3, 0}, {0.05, 0}`
+   - **Size** = `{0.55, 0}, {0.08, 0}` (scale)
+   - **Position** = `{0.225, 0}, {0.05, 0}`
    - **BackgroundTransparency** = `0.3`
    - **TextScaled** = on
-   - **Text** = `Round 1`
-4. Insert a **LocalScript** inside **RoundStatus**, rename **`RoundStatusClient`**.
-5. Paste:
+   - **Text** = *(leave empty)*
+4. Insert **LocalScript** inside **RoundStatus**, rename **`RoundStatusClient`**.
+5. Copy all code from **[scripts/RoundStatusClient.local.lua](../scripts/RoundStatusClient.local.lua)** on GitHub and paste into the LocalScript.
 
-```lua
--- LocalScript: RoundStatusClient inside StarterGui/RoundStatus
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local label = script.Parent:WaitForChild("CountdownLabel") :: TextLabel
-local roundFolder = ReplicatedStorage:WaitForChild("RoundStatus", 30)
-if not roundFolder then
-	warn("[RoundStatus] RoundStatus folder missing — is RoundService running?")
-	return
-end
-
-local function refresh()
-	local state = roundFolder:GetAttribute("RoundState")
-	local roundNum = roundFolder:GetAttribute("RoundNumber")
-	if typeof(roundNum) ~= "number" then
-		roundNum = 1
-	end
-
-	if state == "Intermission" then
-		local endsAt = roundFolder:GetAttribute("IntermissionEndsAt")
-		if typeof(endsAt) == "number" then
-			local left = math.max(0, math.ceil(endsAt - workspace:GetServerTimeNow()))
-			label.Text = `Next round in {left}...`
-		else
-			label.Text = "Next round soon..."
-		end
-	elseif state == "Resetting" then
-		label.Text = "Resetting..."
-	else
-		label.Text = `Round {roundNum} — PLAY!`
-	end
-end
-
-roundFolder:GetAttributeChangedSignal("RoundState"):Connect(refresh)
-roundFolder:GetAttributeChangedSignal("RoundNumber"):Connect(refresh)
-roundFolder:GetAttributeChangedSignal("IntermissionEndsAt"):Connect(refresh)
-
-task.spawn(function()
-	while true do
-		refresh()
-		task.wait(0.25)
-	end
-end)
-
-refresh()
-```
+If the label still says **"Label"**, you renamed the wrong object or the script could not find **`CountdownLabel`** — check **Output** for `[RoundStatusClient]` warnings.
 
 ---
 
