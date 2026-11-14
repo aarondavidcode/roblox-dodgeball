@@ -16,6 +16,7 @@ You already have dodgeballs, OUT rules, and **round** wins. This step adds a **l
 | Lobby + match flow | `LobbyService` | **ServerScriptService** (Script, **new**) |
 | **Your** lobby pad | `LobbySpawn` (or your name from config) | **Workspace** — **you** choose where |
 | Optional UI | `RoundStatus` | **StarterGui** (same UI as step 5 — paste updated **RoundStatusClient**) |
+| Next-match opt-in UI | `LobbyJoinNextMatchClient` | **StarterPlayerScripts** (**LocalScript**, **new**) — builds **JoinNextMatch** ScreenGui at run time |
 
 Repo files to copy:
 
@@ -24,6 +25,8 @@ Repo files to copy:
 - [RoundService.server.lua](../scripts/RoundService.server.lua)
 - [LobbyService.server.lua](../scripts/LobbyService.server.lua) — **new**
 - [TeamAutoBalance.server.lua](../scripts/TeamAutoBalance.server.lua) — **updated** (lobby = Neutral, no team)
+- [LobbyJoinNextMatchClient.local.lua](../scripts/LobbyJoinNextMatchClient.local.lua) — **new** (lobby opt-in button)
+- [RoundStatusClient.local.lua](../scripts/RoundStatusClient.local.lua) — **updated** (opted-in count in lobby text)
 
 Leave **throw/DefaultThrow** and **DodgeballThrowInput** as they are.
 
@@ -112,6 +115,39 @@ You should have **four** game scripts: **TeamAutoBalance**, **DodgeballService**
 
 ---
 
+## Step 6b — Lobby opt-in for the next match (optional UI)
+
+**Neutral** players in the **lobby** choose whether they join the upcoming match. Spectators who stay out of the countdown still hang out on the lobby pad and **cannot** throw until they opt in (or the match ends).
+
+1. Under **StarterPlayer**, open **StarterPlayerScripts**.
+2. Insert a **LocalScript**.
+3. Rename it **`LobbyJoinNextMatchClient`**.
+4. Paste from **[scripts/LobbyJoinNextMatchClient.local.lua](../scripts/LobbyJoinNextMatchClient.local.lua)**.
+
+At run time it creates a ScreenGui named **`JoinNextMatch`** with a button **`OptInToggle`** (you do not need to build the GUI by hand).
+
+**Who sees the button**
+
+| Situation | Button |
+|-----------|--------|
+| **Lobby**, Neutral, no team | Visible — tap to opt **in** or **out** |
+| Already on Red/Blue in lobby (should not happen with fresh **TeamAutoBalance**) | Hidden |
+| **InMatch** and playing (`MatchParticipant` true) | Hidden |
+| **InMatch** spectator (joined mid-match or stayed out) | Hidden until back in **lobby** |
+
+**Server rules**
+
+- Player attribute **`JoinNextMatch`** (default **false** for new joins).
+- **RemoteEvent** **`SetJoinNextMatch`** under **`ReplicatedStorage/DodgeballRemotes`** (created by **LobbyService**).
+- Lobby countdown runs only when **at least 2** players have **`JoinNextMatch` true** — not merely 2 players in the server.
+- When the countdown ends, only opted-in players get **Red/Blue** teams and arena spawns; everyone else stays a lobby spectator for that match (`MatchParticipant` **false**).
+- **Opt-in persists** across countdown pauses and resets until the player toggles it or leaves. Players who **play** a match have **`JoinNextMatch` cleared** when that match starts so they must opt in again for the following lobby cycle.
+- Mid-match joiners are unchanged: they remain spectators until the match ends (see below).
+
+Re-paste **LobbyService**, **TeamAutoBalance**, **DodgeballConfig**, and **RoundStatusClient** when you update.
+
+---
+
 ## Joining during a match
 
 When **`MatchPhase`** is **`InMatch`** and a new player joins:
@@ -120,7 +156,7 @@ When **`MatchPhase`** is **`InMatch`** and a new player joins:
 - They spawn and stay on the **lobby** pad — not Red/Blue arena spawns.
 - **Round resets** and **intermissions** do **not** move them; only players in the match (`MatchParticipant` **true**) respawn on team pads.
 - They cannot pick up or throw dodgeballs until the match ends.
-- When the match ends → **lobby** phase → they count toward the lobby countdown and can play the **next** match like everyone else.
+- When the match ends → **lobby** phase → they can **opt in** with **LobbyJoinNextMatchClient** like everyone else (still default **false** until they tap join).
 
 Re-paste **LobbyService**, **TeamAutoBalance**, **RoundService**, and **DodgeballService** after updating.
 
@@ -129,11 +165,13 @@ Re-paste **LobbyService**, **TeamAutoBalance**, **RoundService**, and **Dodgebal
 ## Step 7 — How it plays
 
 1. **Lobby** — Everyone spawns at your **lobby** pad. **Output** says `[LobbyService] Lobby phase`.
-2. **Countdown** — With **2 or more** players, a **30** second lobby timer runs (change in config).
-3. **One player left** — Timer **pauses** and resets to full **30** until 2+ are back.
-4. **Match start** — Timer hits 0 → **`InMatch`** → players load on **Red/Blue** spawns → **Round 1**.
-5. **Round win** — Same as step 5 (one team all OUT) → **+1 match point** for that team.
-6. **Match win** — First team to **3** match points → back to **lobby**, scores **0**, countdown again.
+2. **Opt in** — Neutral players tap **Play next match** (or use **SetJoinNextMatch** from your own UI later).
+3. **Countdown** — With **2 or more opted-in** players, a **30** second lobby timer runs (change in config).
+4. **Not enough opted in** — Timer **pauses** and resets until **2+** have joined the next match (even if more players are standing in the lobby).
+5. **One player left in server** — Same pause/reset until someone else joins.
+6. **Match start** — Timer hits 0 → **`InMatch`** → **only opted-in** players load on **Red/Blue** spawns → **Round 1**; others stay lobby spectators for that match.
+7. **Round win** — Same as step 5 (one team all OUT) → **+1 match point** for that team.
+8. **Match win** — First team to **3** match points → back to **lobby**, scores **0**, everyone neutral; opt in again for the next countdown.
 
 ---
 
@@ -148,6 +186,7 @@ Re-paste **LobbyService**, **TeamAutoBalance**, **RoundService**, and **Dodgebal
 | `MatchScore_Blue` | Blue’s match points |
 | `MatchPointsToWin` | Usually **3** |
 | `LobbyCountdownEndsAt` | Server time when lobby countdown ends (nil if paused) |
+| `LobbyOptedInCount` | How many players opted in for the next match (lobby UI) |
 | `RoundState` | `LobbyIdle`, `Playing`, `Intermission`, `Resetting` |
 | `RoundNumber` | Current arena round in the match |
 | `IntermissionEndsAt` | Between-round countdown (step 5) |
@@ -168,15 +207,24 @@ If you already pasted the old step 5 script, **replace** it with the latest **[s
 
 ---
 
-## Step 10 — Test with F5 and 2 Players
+## Step 10 — Test with F5
+
+### Two players (basic)
 
 1. **Save** the place.
 2. **F5** (Play). **View → Output** — look for `[LobbyService]` and `[RoundService] Waiting for lobby match start`.
 3. **Test → 2 Players**.
-4. Stand on lobby spawn; watch lobby countdown in Output or UI.
+4. On **both** clients, tap **Play next match** so the countdown starts.
 5. When the match starts, play until one team wins **3 rounds** (you can lower `MATCH_POINTS_TO_WIN` in config for a quick test).
 6. Confirm OUT players **die** and stay out until the round resets.
 7. After match win, both players should return to **lobby** and scores reset.
+
+### Three players (opt-in + spectator)
+
+1. **Test → 3 Players**.
+2. **Player A** and **Player B**: opt **in**. **Player C**: leave opt **out** (default).
+3. Confirm countdown runs; when it hits **0**, **A** and **B** spawn on arena pads; **C** stays on **LobbySpawn** and cannot throw.
+4. Let the match finish → all return to lobby → **C** can opt in for the next cycle.
 
 **Stop** when done.
 
@@ -195,8 +243,12 @@ ServerScriptService
   throw/
     DefaultThrow
 ReplicatedStorage
-  DodgeballRemotes/
+  DodgeballRemotes/                   ← SetJoinNextMatch RemoteEvent
   RoundStatus/                        ← MatchPhase, scores, round state
+StarterPlayer
+  StarterPlayerScripts/
+    DodgeballThrowInput
+    LobbyJoinNextMatchClient          ← builds JoinNextMatch UI
 Workspace
   LobbySpawn                          ← your SpawnLocation (name or tag)
   Red spawn / Blue spawn              ← from step 2
@@ -209,7 +261,8 @@ Workspace
 
 | Problem | What to try |
 |---------|-------------|
-| Countdown never starts | Need **2** players; check Output for pause message |
+| Countdown never starts | Need **2+ opted-in** players (tap **Play next match** on two clients); check Output for pause message |
+| Everyone in lobby but timer paused | At least **2** must opt in — spectators alone do not start the countdown |
 | Stuck at lobby spawn after countdown | Team pads can be named anything (e.g. **RedSpawn** / **BlueSpawn**). Each must have **Neutral off** and **TeamColor** matching **Teams → Red** or **Teams → Blue** — not the pad name. **LobbySpawn** must have **Neutral on**. Re-paste **LobbyService** and watch Output for the TeamColor hint. |
 | Wrong lobby spot | Fix **Name** or **Tag** vs **DodgeballConfig** |
 | Rounds start immediately | Paste new **LobbyService** + **RoundService**; delete old duplicates |

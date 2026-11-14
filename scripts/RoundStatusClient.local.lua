@@ -138,13 +138,19 @@ local function buildStatusText(): string
 
 	if matchPhase == "Lobby" then
 		local endsAt = folder:GetAttribute("LobbyCountdownEndsAt")
+		local optedIn = folder:GetAttribute("LobbyOptedInCount")
+		if typeof(optedIn) ~= "number" then
+			optedIn = 0
+		end
 		if #Players:GetPlayers() < 2 then
 			return "Lobby — waiting for another player…"
+		elseif optedIn < 2 then
+			return `Lobby — {optedIn} joined next match (need 2)…`
 		elseif typeof(endsAt) == "number" then
 			local left = math.max(0, math.ceil(endsAt - workspace:GetServerTimeNow()))
-			return `Lobby — match starts in {left}s`
+			return `Lobby — match starts in {left}s ({optedIn} playing)`
 		else
-			return "Lobby — waiting for another player…"
+			return `Lobby — tap Play next match to join ({optedIn}/2+)…`
 		end
 	end
 
@@ -181,6 +187,7 @@ for _, name in {
 	"MatchScore_Blue",
 	"MatchPointsToWin",
 	"LobbyCountdownEndsAt",
+	"LobbyOptedInCount",
 	"RoundState",
 	"RoundNumber",
 	"IntermissionEndsAt",
