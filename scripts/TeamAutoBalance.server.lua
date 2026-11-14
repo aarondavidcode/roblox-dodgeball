@@ -162,9 +162,6 @@ local function trySpawnSafetyNet(player: Player)
 		return
 	end
 
-	if matchIsLive() then
-		return
-	end
 	if player.Team ~= nil or not player.Neutral then
 		if usedSpawnSafetyNet[player] then
 			return
