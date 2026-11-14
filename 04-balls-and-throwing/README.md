@@ -36,6 +36,7 @@ Repo files to copy:
 4. In **Properties** for the Part:
    - **Anchored** = **off** (unchecked)
    - **CanCollide** = **on**
+   - **CanTouch** = **on** (so slow rolling pickup still works)
    - Shape: **Ball** (optional neon Material for fun)
    - Size: about `2, 2, 2` studs (tweak to taste)
 5. Duplicate the Part for more balls (Ctrl+D).
@@ -123,7 +124,7 @@ end)
 1. **Slow touch = pickup** — If a ball bumps you gently (under **PICKUP_MAX_SPEED** in config), you **hold** it on your right hand.
 2. **One ball each** — You can only hold one ball at a time.
 3. **Throw** — Press **F** or **click**. The server releases the ball and adds speed (**DefaultThrow** module).
-4. **Fast hit = maybe OUT** — If a thrown ball hits an enemy **fast enough** (**HIT_MIN_SPEED**) and **soon enough** after the throw (**THROW_OUT_WINDOW_SECONDS**), that player is **OUT** (`IsOut` attribute, cannot move). The server remembers **throw speed** at release because Roblox **Touched** can fire *after* the bounce, when the ball already looks “slow.”
+4. **Fast hit = maybe OUT** — During a throw, the server **sweeps** the ball path each frame (not **Touched**) so fast throws still count. Enemy hits must be **fast enough** (**HIT_MIN_SPEED**) and **soon enough** (**THROW_OUT_WINDOW_SECONDS**). That player is **OUT** (`IsOut` attribute, cannot move).
 5. **Old rolls don’t count** — A ball rolling on the ground after the time window is just a pickup, not an elimination (only **instant** speed is used then).
 6. **Same team** — Friendly hits do not eliminate.
 
@@ -150,7 +151,7 @@ Press **Stop** when done.
 ```
 Workspace
   Dodgeballs/          ← folder
-    Ball1              ← Part, Anchored off, CanCollide on, tag Dodgeball
+    Ball1              ← Part, Anchored off, CanCollide on, CanTouch on, tag Dodgeball
     Ball2
 ServerScriptService
   TeamAutoBalance      ← from step 3
@@ -180,7 +181,7 @@ ReplicatedStorage
 
 ### Ball hits but no OUT
 
-Roblox runs **physics first**, then your **Touched** script. On a hard throw the ball can look almost **stopped** in code even though the hit was real. Old scripts treated that slow touch as **pickup** instead of elimination.
+Fast throws often **never fire Touched** (the ball tunnels through the player between physics steps). Even when Touched runs, it can be **late** or the ball can have the **wrong network owner**, so scripts that only listen to Touched miss the hit.
 
 **Fix:** Copy the latest three files from this repo into Studio again (replace what you have):
 
@@ -188,13 +189,13 @@ Roblox runs **physics first**, then your **Touched** script. On a hard throw the
 2. **[DodgeballService.server.lua](../scripts/DodgeballService.server.lua)** → Script `DodgeballService`
 3. **[throw/DefaultThrow.lua](../scripts/throw/DefaultThrow.lua)** → ModuleScript `DefaultThrow` under `throw`
 
-After that, throws store **LastThrowSpeed** / **PeakThrowSpeed** and stay in a short **throw window**. Hits on enemies during that window use that speed—not the flaky touch-time velocity.
+The service uses **server spherecast sweeps** while the ball is in the throw window. **Touched** is only for **slow pickup** when nobody just threw the ball. On each ball Part, keep **CanTouch** and **CanCollide** on.
 
 **Still stuck?**
 
 - Test with **Test → 2 Players**; players must be on **different teams** (TeamAutoBalance from step 3).
 - Check **HIT_MIN_SPEED** in config (default 25). **THROW_IMPULSE** (default 80) should stay above it.
-- Set **`DEBUG_ELIMINATION = true`** in `DodgeballConfig` and watch **Output** when a hit fails (same team, window expired, etc.).
+- Set **`DEBUG_ELIMINATION = true`** in `DodgeballConfig` and watch **Output** for throw start, sweep hits, blocked eliminations, and successes.
 
 ---
 
