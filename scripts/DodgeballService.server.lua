@@ -173,6 +173,33 @@ local function isMatchParticipant(player: Player): boolean
 	return player:GetAttribute("MatchParticipant") == true
 end
 
+local function applyOutRespawnGate(player: Player)
+	if player:GetAttribute("IsOut") == true then
+		player.CharacterAutoLoads = false
+	else
+		player.CharacterAutoLoads = true
+	end
+end
+
+local function suppressOutPlayerCharacter(player: Player, character: Model)
+	if player:GetAttribute("IsOut") ~= true then
+		return
+	end
+	player.CharacterAutoLoads = false
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+	if humanoid and humanoid.Health > 0 then
+		humanoid.Health = 0
+	end
+	task.defer(function()
+		if player:GetAttribute("IsOut") ~= true then
+			return
+		end
+		if player.Character == character and character.Parent then
+			character:Destroy()
+		end
+	end)
+end
+
 local playerEliminatedEvent: BindableEvent? = nil
 
 local function setPlayerOut(player: Player)
@@ -180,6 +207,7 @@ local function setPlayerOut(player: Player)
 		dropBallFromPlayer(player)
 	end
 	player:SetAttribute("IsOut", true)
+	player.CharacterAutoLoads = false
 	local character = player.Character
 	if character then
 		local humanoid = character:FindFirstChildOfClass("Humanoid")
@@ -194,18 +222,11 @@ end
 
 local function clearPlayerOutIfNewLife(player: Player, character: Model)
 	if player:GetAttribute("IsOut") == true then
-		-- Still OUT this round — no instant respawn play; wait for RoundService LoadCharacter.
-		task.defer(function()
-			if player:GetAttribute("IsOut") ~= true then
-				return
-			end
-			local humanoid = character:FindFirstChildOfClass("Humanoid")
-			if humanoid and humanoid.Health > 0 then
-				humanoid.Health = 0
-			end
-		end)
+		-- Still OUT this round — block CharacterAutoLoads respawn until round reset LoadCharacter.
+		suppressOutPlayerCharacter(player, character)
 		return
 	end
+	player.CharacterAutoLoads = true
 	local humanoid = character:FindFirstChildOfClass("Humanoid")
 	if humanoid then
 		humanoid.WalkSpeed = Config.DEFAULT_WALK_SPEED
@@ -504,6 +525,7 @@ end
 local function clearEveryPlayerOut()
 	for _, player in Players:GetPlayers() do
 		player:SetAttribute("IsOut", false)
+		player.CharacterAutoLoads = true
 		local character = player.Character
 		if character then
 			local humanoid = character:FindFirstChildOfClass("Humanoid")
@@ -513,6 +535,13 @@ local function clearEveryPlayerOut()
 			end
 		end
 	end
+end
+
+local function hookOutRespawnGate(player: Player)
+	applyOutRespawnGate(player)
+	player:GetAttributeChangedSignal("IsOut"):Connect(function()
+		applyOutRespawnGate(player)
+	end)
 end
 
 local function resetEveryBallToSpawn()
@@ -651,6 +680,7 @@ throwRemote.OnServerEvent:Connect(function(player: Player, direction: any)
 end)
 
 Players.PlayerAdded:Connect(function(player)
+	hookOutRespawnGate(player)
 	player.CharacterAdded:Connect(function(character)
 		clearPlayerOutIfNewLife(player, character)
 	end)
@@ -662,6 +692,7 @@ Players.PlayerRemoving:Connect(function(player)
 end)
 
 for _, player in Players:GetPlayers() do
+	hookOutRespawnGate(player)
 	player.CharacterAdded:Connect(function(character)
 		clearPlayerOutIfNewLife(player, character)
 	end)
