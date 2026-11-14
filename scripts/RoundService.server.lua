@@ -182,8 +182,10 @@ local function respawnAllPlayersAtArena()
 		"[RoundService] RespawnAllAtTeamArena missing or failed — re-paste LobbyService. Falling back to LoadCharacter only (winners may spawn at lobby pad)."
 	)
 	for _, player in Players:GetPlayers() do
-		player.Neutral = false
-		player:LoadCharacter()
+		if player:GetAttribute("MatchParticipant") == true then
+			player.Neutral = false
+			player:LoadCharacter()
+		end
 	end
 end
 

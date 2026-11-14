@@ -1,7 +1,8 @@
 -- Paste this as a Script named TeamAutoBalance under ServerScriptService.
 -- Teams in your place must be named exactly Red and Blue (see TEAM_NAMES below).
 -- During lobby (MatchPhase "Lobby" on RoundStatus), players stay Neutral with no team.
--- Red/Blue assignment runs when a match starts and when someone joins mid-match.
+-- Red/Blue assignment runs when a match starts (LobbyService AssignMatchTeams).
+-- Mid-match joiners stay Neutral at the lobby pad (MatchParticipant false) until the match ends.
 
 --!strict
 
@@ -14,6 +15,7 @@ local Teams = game:GetService("Teams")
 local Config = require(ServerScriptService:WaitForChild("DodgeballConfig"))
 
 local MATCH_PHASE_IN_MATCH = "InMatch"
+local ATTR_MATCH_PARTICIPANT = "MatchParticipant"
 
 local TEAM_NAMES = Config.TEAM_NAMES
 
@@ -45,6 +47,15 @@ end
 
 local function matchIsLive(): boolean
 	return getMatchPhase() == MATCH_PHASE_IN_MATCH
+end
+
+local function isMatchParticipant(player: Player): boolean
+	return player:GetAttribute(ATTR_MATCH_PARTICIPANT) == true
+end
+
+local function setSpectatorNeutral(player: Player)
+	player.Neutral = true
+	player.Team = nil
 end
 
 local function waitForTeams(): boolean
@@ -109,6 +120,9 @@ local function assignAllPlayersBalanced(needsRespawn: boolean): boolean
 	local blueCount = 0
 
 	for _, player in sortedPlayers() do
+		if matchIsLive() and player:GetAttribute(ATTR_MATCH_PARTICIPANT) == false then
+			continue
+		end
 		local chosenTeam: Team
 		if redCount <= blueCount then
 			chosenTeam = redTeam :: Team
@@ -152,6 +166,12 @@ end
 local function trySpawnSafetyNet(player: Player)
 	-- InMatch round resets: LobbyService teleports to team pads; never strip team or force lobby here.
 	if matchIsLive() then
+		if not isMatchParticipant(player) then
+			if player.Team ~= nil or not player.Neutral then
+				setSpectatorNeutral(player)
+			end
+			return
+		end
 		if player.Team ~= nil and not player.Neutral then
 			return
 		end
@@ -182,7 +202,11 @@ local function onPlayerAdded(player: Player)
 	hookCharacterAdded(player)
 
 	if matchIsLive() then
-		assignBalancedTeam(player, player.Character ~= nil)
+		if isMatchParticipant(player) then
+			assignBalancedTeam(player, player.Character ~= nil)
+		else
+			setSpectatorNeutral(player)
+		end
 	else
 		setLobbyNeutral(player)
 	end

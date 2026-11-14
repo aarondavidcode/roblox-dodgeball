@@ -169,6 +169,10 @@ local function isPlayerOut(player: Player): boolean
 	return player:GetAttribute("IsOut") == true
 end
 
+local function isMatchParticipant(player: Player): boolean
+	return player:GetAttribute("MatchParticipant") == true
+end
+
 local playerEliminatedEvent: BindableEvent? = nil
 
 local function setPlayerOut(player: Player)
@@ -283,6 +287,9 @@ local function releaseBallForThrow(player: Player): BasePart?
 end
 
 local function throwBall(player: Player, lookDirection: Vector3)
+	if not isMatchParticipant(player) then
+		return
+	end
 	if isPlayerOut(player) then
 		return
 	end
@@ -326,6 +333,9 @@ end
 local lastPickupTime: { [Player]: number } = {}
 
 local function tryPickup(player: Player, ball: BasePart)
+	if not isMatchParticipant(player) then
+		return
+	end
 	if isPlayerOut(player) then
 		return
 	end
@@ -629,6 +639,9 @@ end
 throwRemote.OnServerEvent:Connect(function(player: Player, direction: any)
 	local dir = sanitizeDirection(direction)
 	if not dir then
+		return
+	end
+	if not isMatchParticipant(player) then
 		return
 	end
 	if not heldByPlayer[player] then
