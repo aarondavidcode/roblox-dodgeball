@@ -175,6 +175,12 @@ local function describeWinningTeam(): Team?
 end
 
 local function respawnAllPlayersAtArena()
+	if invokeBridge("RespawnAllAtTeamArena") then
+		return
+	end
+	warn(
+		"[RoundService] RespawnAllAtTeamArena missing or failed — re-paste LobbyService. Falling back to LoadCharacter only (winners may spawn at lobby pad)."
+	)
 	for _, player in Players:GetPlayers() do
 		player.Neutral = false
 		player:LoadCharacter()

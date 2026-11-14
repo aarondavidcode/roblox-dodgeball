@@ -150,6 +150,7 @@ local function neutralizeAllPlayers()
 end
 
 local function trySpawnSafetyNet(player: Player)
+	-- InMatch round resets: LobbyService teleports to team pads; never strip team or force lobby here.
 	if matchIsLive() then
 		if player.Team ~= nil and not player.Neutral then
 			return
