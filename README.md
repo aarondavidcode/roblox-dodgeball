@@ -13,7 +13,8 @@ You are making a **Red vs Blue dodgeball** map:
 3. **Add** the **TeamAutoBalance** server script so new players join the smaller team.
 4. **Add dodgeballs** — pickup, throw, and OUT rules (**DodgeballService**).
 5. **Round reset** — when a team wins, countdown and respawn (**RoundService**).
-6. **Test** with **F5**, then **2 Players**, then publish with a parent when you are ready.
+6. **Lobby + matches** — lobby countdown, first team to **3** round wins (**LobbyService**).
+7. **Test** with **F5**, then **2 Players**, then publish with a parent when you are ready.
 
 ## Start with step 1
 
@@ -26,6 +27,7 @@ Go to **[01-build-your-map](01-build-your-map/README.md)** and follow the folder
 | [03-add-your-first-script](03-add-your-first-script/README.md) | Paste **TeamAutoBalance** from [scripts/](scripts/) |
 | [04-balls-and-throwing](04-balls-and-throwing/README.md) | Balls in **Workspace**, **DodgeballService**, throw with **F** or click |
 | [05-round-reset](05-round-reset/README.md) | **RoundService**, win detection, ball respawn, optional countdown UI |
+| [06-lobby-and-matches](06-lobby-and-matches/README.md) | **LobbyService**, lobby spawn wiring, first-to-3 matches |
 
 Parents: read **[FOR-PARENTS.md](FOR-PARENTS.md)**. Roadmap: **[WHATS-NEXT.md](WHATS-NEXT.md)**.
 

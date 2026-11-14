@@ -57,6 +57,20 @@ local DodgeballConfig = {
 	-- Walk/jump restored when a round clears OUT (before LoadCharacter).
 	DEFAULT_WALK_SPEED = 16,
 	DEFAULT_JUMP_POWER = 50,
+
+	-- === Lobby + match format (step 6) ===
+
+	-- Seconds to wait in lobby when 2+ players before a match starts (paused / reset if only 1 player).
+	LOBBY_COUNTDOWN_SECONDS = 30,
+
+	-- Round wins needed to win the whole match (then back to lobby).
+	MATCH_POINTS_TO_WIN = 3,
+
+	-- Lobby spawn wiring (kids place this SpawnLocation — not where to build):
+	-- Option A: rename a SpawnLocation to this exact name and set TeamColor Neutral / AllowTeamChangeOnTouch off.
+	LOBBY_SPAWN_NAME = "LobbySpawn",
+	-- Option B: tag a SpawnLocation with CollectionService (leave empty string to use name only).
+	LOBBY_SPAWN_TAG = "",
 }
 
 return DodgeballConfig

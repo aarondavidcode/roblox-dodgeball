@@ -172,26 +172,41 @@ end
 local playerEliminatedEvent: BindableEvent? = nil
 
 local function setPlayerOut(player: Player)
+	if heldByPlayer[player] then
+		dropBallFromPlayer(player)
+	end
 	player:SetAttribute("IsOut", true)
 	local character = player.Character
 	if character then
 		local humanoid = character:FindFirstChildOfClass("Humanoid")
 		if humanoid then
-			humanoid.WalkSpeed = 0
-			humanoid.JumpPower = 0
+			humanoid.Health = 0
 		end
 	end
+	player.CharacterAutoLoads = false
 	if playerEliminatedEvent then
 		playerEliminatedEvent:Fire(player)
 	end
 end
 
 local function clearPlayerOutIfNewLife(player: Player, character: Model)
-	player:SetAttribute("IsOut", false)
+	if player:GetAttribute("IsOut") == true then
+		-- Still OUT this round — no instant respawn play; wait for RoundService LoadCharacter.
+		task.defer(function()
+			if player:GetAttribute("IsOut") ~= true then
+				return
+			end
+			local humanoid = character:FindFirstChildOfClass("Humanoid")
+			if humanoid and humanoid.Health > 0 then
+				humanoid.Health = 0
+			end
+		end)
+		return
+	end
 	local humanoid = character:FindFirstChildOfClass("Humanoid")
 	if humanoid then
-		humanoid.WalkSpeed = 16
-		humanoid.JumpPower = 50
+		humanoid.WalkSpeed = Config.DEFAULT_WALK_SPEED
+		humanoid.JumpPower = Config.DEFAULT_JUMP_POWER
 	end
 end
 
@@ -480,6 +495,7 @@ end
 local function clearEveryPlayerOut()
 	for _, player in Players:GetPlayers() do
 		player:SetAttribute("IsOut", false)
+		player.CharacterAutoLoads = true
 		local character = player.Character
 		if character then
 			local humanoid = character:FindFirstChildOfClass("Humanoid")
