@@ -19,8 +19,9 @@ Walkthrough: **[03-add-your-first-script](../03-add-your-first-script/README.md)
 | [DodgeballConfig.lua](DodgeballConfig.lua) | `DodgeballConfig` | ModuleScript |
 | [DodgeballService.server.lua](DodgeballService.server.lua) | `DodgeballService` | Script |
 | [throw/DefaultThrow.lua](throw/DefaultThrow.lua) | `throw/DefaultThrow` | ModuleScript |
+| [DodgeballThrowInput.local.lua](DodgeballThrowInput.local.lua) | `DodgeballThrowInput` under **StarterPlayerScripts** | **LocalScript** |
 
-Walkthrough: **[04-balls-and-throwing](../04-balls-and-throwing/README.md)** (includes the **LocalScript** for throw input).
+Walkthrough: **[04-balls-and-throwing](../04-balls-and-throwing/README.md)** (aim, power charge, hold timer, and UI names).
 
 Default throw lives in **`throw/`** so you can add more **ModuleScripts** later and switch **`ACTIVE_THROW_PROFILE`** in **DodgeballConfig**.
 

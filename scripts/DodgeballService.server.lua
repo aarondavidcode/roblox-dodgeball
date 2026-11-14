@@ -12,6 +12,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local ServerScriptService = game:GetService("ServerScriptService")
+local Teams = game:GetService("Teams")
 local Workspace = game:GetService("Workspace")
 
 local Config = require(ServerScriptService:WaitForChild("DodgeballConfig"))
@@ -39,6 +40,13 @@ end
 local heldByPlayer: { [Player]: BasePart } = {}
 local ballHeldConnection: { [BasePart]: RBXScriptConnection } = {}
 local throwSweepWatch: { [BasePart]: RBXScriptConnection } = {}
+
+local ATTR_HOLD_PENALTY_PICKUP_UNTIL = "HoldPenaltyPickupUntil"
+local START_AIMING_REMOTE_NAME = "StartAiming"
+
+local aimingBeforeThrow: { [Player]: boolean } = {}
+local holdWatchToken: { [Player]: number } = {}
+local holdPenaltySlowToken: { [Player]: number } = {}
 
 local function debugElimination(message: string)
 	if Config.DEBUG_ELIMINATION then
@@ -168,7 +176,28 @@ local function getThrowRemote(): RemoteEvent
 	return newRemote
 end
 
+local function getStartAimingRemote(): RemoteEvent
+	local folder = getOrCreateRemotesFolder()
+	local remote = folder:FindFirstChild(START_AIMING_REMOTE_NAME)
+	if remote and remote:IsA("RemoteEvent") then
+		return remote
+	end
+	local newRemote = Instance.new("RemoteEvent")
+	newRemote.Name = START_AIMING_REMOTE_NAME
+	newRemote.Parent = folder
+	return newRemote
+end
+
+local function publishClientTunables()
+	local folder = getOrCreateRemotesFolder()
+	folder:SetAttribute("AIM_POWER_CHARGE_SECONDS", Config.AIM_POWER_CHARGE_SECONDS)
+	folder:SetAttribute("AIM_MAX_SECONDS", Config.AIM_MAX_SECONDS)
+	folder:SetAttribute("BALL_MAX_HOLD_SECONDS", Config.BALL_MAX_HOLD_SECONDS)
+end
+
 local throwRemote = getThrowRemote()
+local startAimingRemote = getStartAimingRemote()
+publishClientTunables()
 
 local function isPlayerOut(player: Player): boolean
 	return player:GetAttribute("IsOut") == true
@@ -176,6 +205,147 @@ end
 
 local function isMatchParticipant(player: Player): boolean
 	return player:GetAttribute("MatchParticipant") == true
+end
+
+local function isLobbySpawn(spawn: SpawnLocation): boolean
+	local name = Config.LOBBY_SPAWN_NAME
+	if typeof(name) == "string" and name ~= "" and spawn.Name == name then
+		return true
+	end
+	local tag = Config.LOBBY_SPAWN_TAG
+	if typeof(tag) == "string" and tag ~= "" and CollectionService:HasTag(spawn, tag) then
+		return true
+	end
+	return false
+end
+
+local function findTeamSpawnLocation(team: Team): SpawnLocation?
+	for _, descendant in Workspace:GetDescendants() do
+		if descendant:IsA("SpawnLocation") and not isLobbySpawn(descendant) then
+			if descendant.Neutral == false and descendant.TeamColor == team.TeamColor then
+				return descendant
+			end
+		end
+	end
+	return nil
+end
+
+local function findOpposingTeamSpawnLocation(team: Team): SpawnLocation?
+	for _, teamName in Config.TEAM_NAMES do
+		if typeof(teamName) == "string" and teamName ~= team.Name then
+			local opposing = Teams:FindFirstChild(teamName)
+			if opposing and opposing:IsA("Team") then
+				return findTeamSpawnLocation(opposing)
+			end
+		end
+	end
+	return nil
+end
+
+local function rollDirectionForPlayer(player: Player): Vector3
+	local character = player.Character
+	local origin = if character then character:GetPivot().Position else Vector3.zero
+	local fallback = Vector3.new(0, 0, -1)
+	local team = player.Team
+	if not team then
+		return fallback
+	end
+	local opposingSpawn = findOpposingTeamSpawnLocation(team)
+	if not opposingSpawn then
+		return fallback
+	end
+	local target = opposingSpawn.CFrame.Position
+	local flat = Vector3.new(target.X - origin.X, 0, target.Z - origin.Z)
+	if flat.Magnitude < 0.5 then
+		return fallback
+	end
+	return flat.Unit
+end
+
+local function clearHoldPenaltyForPlayer(player: Player)
+	holdPenaltySlowToken[player] = (holdPenaltySlowToken[player] or 0) + 1
+	player:SetAttribute(ATTR_HOLD_PENALTY_PICKUP_UNTIL, nil)
+	local character = player.Character
+	if character then
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
+		if humanoid and player:GetAttribute("IsOut") ~= true then
+			humanoid.WalkSpeed = Config.DEFAULT_WALK_SPEED
+			humanoid.JumpPower = Config.DEFAULT_JUMP_POWER
+		end
+	end
+end
+
+local function applyHoldPenalty(player: Player)
+	local now = workspace:GetServerTimeNow()
+	player:SetAttribute(
+		ATTR_HOLD_PENALTY_PICKUP_UNTIL,
+		now + Config.HOLD_PENALTY_PICKUP_COOLDOWN_SECONDS
+	)
+
+	holdPenaltySlowToken[player] = (holdPenaltySlowToken[player] or 0) + 1
+	local slowToken = holdPenaltySlowToken[player]
+
+	local character = player.Character
+	if character then
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
+		if humanoid and player:GetAttribute("IsOut") ~= true then
+			local mult = Config.HOLD_PENALTY_WALK_SPEED_MULTIPLIER
+			if typeof(mult) ~= "number" or mult <= 0 then
+				mult = 0.5
+			end
+			humanoid.WalkSpeed = Config.DEFAULT_WALK_SPEED * mult
+		end
+	end
+
+	task.delay(Config.HOLD_PENALTY_SLOW_SECONDS, function()
+		if holdPenaltySlowToken[player] ~= slowToken then
+			return
+		end
+		if player.Parent == nil then
+			return
+		end
+		local penaltyUntil = player:GetAttribute(ATTR_HOLD_PENALTY_PICKUP_UNTIL)
+		if typeof(penaltyUntil) == "number" and workspace:GetServerTimeNow() < penaltyUntil then
+			-- Still in pickup cooldown; restore walk when slow ends anyway.
+		end
+		local char = player.Character
+		if char and player:GetAttribute("IsOut") ~= true then
+			local hum = char:FindFirstChildOfClass("Humanoid")
+			if hum then
+				hum.WalkSpeed = Config.DEFAULT_WALK_SPEED
+				hum.JumpPower = Config.DEFAULT_JUMP_POWER
+			end
+		end
+	end)
+
+	warn(`[DodgeballService] {player.Name} held the ball too long — rolled away + short penalty.`)
+end
+
+local rollBallFromMaxHold: (Player) -> ()
+
+local function cancelHoldWatch(player: Player)
+	holdWatchToken[player] = (holdWatchToken[player] or 0) + 1
+	aimingBeforeThrow[player] = false
+end
+
+local function startHoldWatch(player: Player)
+	cancelHoldWatch(player)
+	aimingBeforeThrow[player] = false
+	holdWatchToken[player] = (holdWatchToken[player] or 0) + 1
+	local token = holdWatchToken[player]
+	local maxHold = Config.BALL_MAX_HOLD_SECONDS
+	task.delay(maxHold, function()
+		if holdWatchToken[player] ~= token then
+			return
+		end
+		if aimingBeforeThrow[player] then
+			return
+		end
+		if not heldByPlayer[player] then
+			return
+		end
+		rollBallFromMaxHold(player)
+	end)
 end
 
 -- Player.CharacterAutoLoads is not in the public Player API (Studio may error); keep a pcall for forward compatibility.
@@ -281,6 +451,7 @@ local function setPlayerOut(player: Player)
 	if heldByPlayer[player] then
 		dropBallFromPlayer(player)
 	end
+	clearHoldPenaltyForPlayer(player)
 	player:SetAttribute("IsOut", true)
 	setPlayerCharacterAutoLoads(player, false)
 	local character = player.Character
@@ -307,6 +478,7 @@ local function clearPlayerOutIfNewLife(player: Player, character: Model)
 end
 
 dropBallFromPlayer = function(player: Player)
+	cancelHoldWatch(player)
 	local ball = heldByPlayer[player]
 	if not ball then
 		return
@@ -359,6 +531,7 @@ local function attachBallToPlayer(player: Player, ball: BasePart)
 
 	heldByPlayer[player] = ball
 	ball:SetAttribute("HolderUserId", player.UserId)
+	startHoldWatch(player)
 end
 
 local function releaseBallForThrow(player: Player): BasePart?
@@ -379,7 +552,41 @@ local function releaseBallForThrow(player: Player): BasePart?
 	return ball
 end
 
-local function throwBall(player: Player, lookDirection: Vector3)
+rollBallFromMaxHold = function(player: Player)
+	if not isMatchParticipant(player) or isPlayerOut(player) then
+		return
+	end
+	local ball = heldByPlayer[player]
+	if not ball then
+		return
+	end
+	cancelHoldWatch(player)
+
+	local direction = rollDirectionForPlayer(player)
+	local released = releaseBallForThrow(player)
+	if not released then
+		return
+	end
+
+	released:SetAttribute("LastThrowTime", 0)
+	released:SetAttribute("LastThrowerUserId", nil)
+	released:SetAttribute("LastThrowSpeed", 0)
+	released:SetAttribute("InThrowWindow", false)
+
+	local mass = released.AssemblyMass
+	released:ApplyImpulse(direction * Config.HOLD_ROLL_IMPULSE * mass)
+
+	applyHoldPenalty(player)
+end
+
+local function sanitizePowerMultiplier(input: any): number
+	if typeof(input) ~= "number" then
+		return 1
+	end
+	return math.clamp(input, 0, 1)
+end
+
+local function throwBall(player: Player, lookDirection: Vector3, powerMultiplier: number)
 	if not isMatchParticipant(player) then
 		return
 	end
@@ -393,7 +600,9 @@ local function throwBall(player: Player, lookDirection: Vector3)
 	if lookDirection.Magnitude < 0.01 then
 		return
 	end
+	cancelHoldWatch(player)
 	local direction = lookDirection.Unit
+	local power = sanitizePowerMultiplier(powerMultiplier)
 	local released = releaseBallForThrow(player)
 	if not released then
 		return
@@ -402,11 +611,13 @@ local function throwBall(player: Player, lookDirection: Vector3)
 		ball = released,
 		thrower = player,
 		direction = direction,
+		powerMultiplier = power,
 	})
 	ACTIVE_PROFILE:throw({
 		ball = released,
 		thrower = player,
 		direction = direction,
+		powerMultiplier = power,
 	})
 
 	released.CanTouch = true
@@ -440,6 +651,10 @@ local function tryPickup(player: Player, ball: BasePart)
 		return
 	end
 	local now = workspace:GetServerTimeNow()
+	local penaltyUntil = player:GetAttribute(ATTR_HOLD_PENALTY_PICKUP_UNTIL)
+	if typeof(penaltyUntil) == "number" and now < penaltyUntil then
+		return
+	end
 	local last = lastPickupTime[player]
 	if last and now - last < Config.PICKUP_COOLDOWN_SECONDS then
 		return
@@ -598,14 +813,7 @@ local function clearEveryPlayerOut()
 	for _, player in Players:GetPlayers() do
 		player:SetAttribute("IsOut", false)
 		setPlayerCharacterAutoLoads(player, true)
-		local character = player.Character
-		if character then
-			local humanoid = character:FindFirstChildOfClass("Humanoid")
-			if humanoid then
-				humanoid.WalkSpeed = Config.DEFAULT_WALK_SPEED
-				humanoid.JumpPower = Config.DEFAULT_JUMP_POWER
-			end
-		end
+		clearHoldPenaltyForPlayer(player)
 	end
 end
 
@@ -737,7 +945,17 @@ local function sanitizeDirection(input: any): Vector3?
 	return input.Unit
 end
 
-throwRemote.OnServerEvent:Connect(function(player: Player, direction: any)
+startAimingRemote.OnServerEvent:Connect(function(player: Player)
+	if not isMatchParticipant(player) or isPlayerOut(player) then
+		return
+	end
+	if not heldByPlayer[player] then
+		return
+	end
+	aimingBeforeThrow[player] = true
+end)
+
+throwRemote.OnServerEvent:Connect(function(player: Player, direction: any, powerMultiplier: any)
 	local dir = sanitizeDirection(direction)
 	if not dir then
 		return
@@ -745,10 +963,13 @@ throwRemote.OnServerEvent:Connect(function(player: Player, direction: any)
 	if not isMatchParticipant(player) then
 		return
 	end
+	if isPlayerOut(player) then
+		return
+	end
 	if not heldByPlayer[player] then
 		return
 	end
-	throwBall(player, dir)
+	throwBall(player, dir, powerMultiplier)
 end)
 
 Players.PlayerAdded:Connect(function(player)
@@ -761,6 +982,8 @@ end)
 Players.PlayerRemoving:Connect(function(player)
 	dropBallFromPlayer(player)
 	heldByPlayer[player] = nil
+	cancelHoldWatch(player)
+	holdPenaltySlowToken[player] = nil
 end)
 
 for _, player in Players:GetPlayers() do
