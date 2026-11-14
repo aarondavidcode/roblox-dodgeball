@@ -1,5 +1,6 @@
--- Paste as Script named RoundService under ServerScriptService (with TeamAutoBalance + DodgeballService).
+-- Paste as Script named RoundService under ServerScriptService (with TeamAutoBalance + DodgeballService + LobbyService).
 -- Ends a round when one team is all OUT; optional countdown; clears outs, respawns players and balls.
+-- Rounds only run during match phase (LobbyService sets MatchPhase on ReplicatedStorage/RoundStatus).
 
 --!strict
 
@@ -10,22 +11,16 @@ local Teams = game:GetService("Teams")
 
 local Config = require(ServerScriptService:WaitForChild("DodgeballConfig"))
 
+local ROUND_STATE_LOBBY_IDLE = "LobbyIdle"
 local ROUND_STATE_PLAYING = "Playing"
 local ROUND_STATE_INTERMISSION = "Intermission"
 local ROUND_STATE_RESETTING = "Resetting"
 
-local roundNumber = 1
-local phase: string = ROUND_STATE_PLAYING
-local resetScheduled = false
+local MATCH_PHASE_IN_MATCH = "InMatch"
 
-local function getTeam(name: string): Team?
-	local team = Teams:FindFirstChild(name)
-	if team and team:IsA("Team") then
-		return team
-	end
-	warn(`[RoundService] Missing Team "{name}". Check TeamAutoBalance teams in Explorer.`)
-	return nil
-end
+local roundNumber = 1
+local phase: string = ROUND_STATE_LOBBY_IDLE
+local resetScheduled = false
 
 local function getOrCreateRoundStatusFolder(): Folder
 	local existing = ReplicatedStorage:FindFirstChild(Config.ROUND_STATUS_FOLDER_NAME)
@@ -39,6 +34,27 @@ local function getOrCreateRoundStatusFolder(): Folder
 end
 
 local roundStatus = getOrCreateRoundStatusFolder()
+
+local function getMatchPhase(): string
+	local matchPhase = roundStatus:GetAttribute("MatchPhase")
+	if typeof(matchPhase) == "string" then
+		return matchPhase
+	end
+	return "Lobby"
+end
+
+local function matchIsLive(): boolean
+	return getMatchPhase() == MATCH_PHASE_IN_MATCH
+end
+
+local function getTeam(name: string): Team?
+	local team = Teams:FindFirstChild(name)
+	if team and team:IsA("Team") then
+		return team
+	end
+	warn(`[RoundService] Missing Team "{name}". Check TeamAutoBalance teams in Explorer.`)
+	return nil
+end
 
 local function publishRoundStatus(state: string, intermissionEndsAt: number?)
 	roundStatus:SetAttribute("RoundState", state)
@@ -84,11 +100,26 @@ local function invokeBridge(functionName: string): boolean
 	return false
 end
 
+local function shouldContinueMatchAfterRound(winningTeam: Team?): boolean
+	if not winningTeam or not bridge then
+		return true
+	end
+	local notify = bridge:FindFirstChild("NotifyRoundWin")
+	if notify and notify:IsA("BindableFunction") then
+		local ok, result = pcall(function()
+			return (notify :: BindableFunction):Invoke(winningTeam)
+		end)
+		if ok and result == false then
+			return false
+		end
+	end
+	return true
+end
+
 local function isPlayerOut(player: Player): boolean
 	return player:GetAttribute("IsOut") == true
 end
 
--- True when every player on this team is OUT and at least one player is on the team.
 local function isTeamFullyOut(team: Team): boolean
 	local hasMember = false
 	for _, player in Players:GetPlayers() do
@@ -143,15 +174,27 @@ local function describeWinningTeam(): Team?
 	return nil
 end
 
-local function respawnAllPlayers()
+local function respawnAllPlayersAtArena()
 	for _, player in Players:GetPlayers() do
-		-- LoadCharacter uses team SpawnLocations (TeamColor) from step 2.
+		player.Neutral = false
+		player.CharacterAutoLoads = true
 		player:LoadCharacter()
 	end
 end
 
+local function beginArenaRound(roundLabel: number)
+	roundNumber = roundLabel
+	phase = ROUND_STATE_PLAYING
+	resetScheduled = false
+	publishRoundStatus(ROUND_STATE_PLAYING, nil)
+	warn(`[RoundService] Round {roundNumber} started — good luck!`)
+end
+
 local function runRoundReset(winningTeam: Team?, reason: string)
 	if resetScheduled then
+		return
+	end
+	if not matchIsLive() then
 		return
 	end
 	resetScheduled = true
@@ -171,23 +214,29 @@ local function runRoundReset(winningTeam: Team?, reason: string)
 		task.wait(intermission)
 	end
 
+	local continueMatch = shouldContinueMatchAfterRound(winningTeam)
+
 	publishRoundStatus(ROUND_STATE_RESETTING, nil)
 
-	-- Balls first (drops anything players hold), then clear OUT flags, then fresh characters.
 	invokeBridge("DropAllHeldBalls")
 	invokeBridge("ClearAllOuts")
 	invokeBridge("ResetBallsToSpawn")
-	respawnAllPlayers()
 
-	roundNumber += 1
-	phase = ROUND_STATE_PLAYING
+	if continueMatch and matchIsLive() then
+		respawnAllPlayersAtArena()
+		beginArenaRound(roundNumber + 1)
+		return
+	end
+
+	roundNumber = 1
+	phase = ROUND_STATE_LOBBY_IDLE
 	resetScheduled = false
-	publishRoundStatus(ROUND_STATE_PLAYING, nil)
-	warn(`[RoundService] Round {roundNumber} started — good luck!`)
+	publishRoundStatus(ROUND_STATE_LOBBY_IDLE, nil)
+	warn("[RoundService] Match ended or lobby phase — arena rounds paused.")
 end
 
 local function evaluateWinCondition()
-	if phase ~= ROUND_STATE_PLAYING or resetScheduled then
+	if not matchIsLive() or phase ~= ROUND_STATE_PLAYING or resetScheduled then
 		return
 	end
 
@@ -199,7 +248,7 @@ local function evaluateWinCondition()
 
 	if everyoneInGameIsOut() then
 		task.delay(Config.ROUND_TIE_RESET_DELAY_SECONDS, function()
-			if phase == ROUND_STATE_PLAYING and not resetScheduled and everyoneInGameIsOut() then
+			if matchIsLive() and phase == ROUND_STATE_PLAYING and not resetScheduled and everyoneInGameIsOut() then
 				runRoundReset(nil, "tie — all OUT")
 			end
 		end)
@@ -226,7 +275,25 @@ if bridge then
 			task.defer(evaluateWinCondition)
 		end)
 	end
+
+	local beginMatch = bridge:FindFirstChild("BeginMatchRound")
+	if not beginMatch then
+		beginMatch = Instance.new("BindableEvent")
+		beginMatch.Name = "BeginMatchRound"
+		beginMatch.Parent = bridge
+	end
+	(beginMatch :: BindableEvent).Event:Connect(function()
+		beginArenaRound(1)
+	end)
 end
 
-publishRoundStatus(ROUND_STATE_PLAYING, nil)
-warn(`[RoundService] Watching for round wins. Round {roundNumber} is live.`)
+roundStatus:GetAttributeChangedSignal("MatchPhase"):Connect(function()
+	if getMatchPhase() ~= MATCH_PHASE_IN_MATCH then
+		phase = ROUND_STATE_LOBBY_IDLE
+		resetScheduled = false
+		publishRoundStatus(ROUND_STATE_LOBBY_IDLE, nil)
+	end
+end)
+
+publishRoundStatus(ROUND_STATE_LOBBY_IDLE, nil)
+warn("[RoundService] Waiting for lobby match start — rounds run only during InMatch.")

@@ -35,3 +35,16 @@ Default throw lives in **`throw/`** so you can add more **ModuleScripts** later 
 | [RoundService.server.lua](RoundService.server.lua) | `RoundService` | Script (new) |
 
 Walkthrough: **[05-round-reset](../05-round-reset/README.md)** (optional **RoundStatus** UI LocalScript is in that guide only).
+
+---
+
+## Lobby + matches (step 6)
+
+| Repo file | Studio object | Type |
+|-----------|---------------|------|
+| [DodgeballConfig.lua](DodgeballConfig.lua) | `DodgeballConfig` | ModuleScript (paste over step 5 copy) |
+| [DodgeballService.server.lua](DodgeballService.server.lua) | `DodgeballService` | Script (paste over step 5 copy) |
+| [RoundService.server.lua](RoundService.server.lua) | `RoundService` | Script (paste over step 5 copy) |
+| [LobbyService.server.lua](LobbyService.server.lua) | `LobbyService` | Script (**new**) |
+
+Walkthrough: **[06-lobby-and-matches](../06-lobby-and-matches/README.md)** (lobby **SpawnLocation** wiring + optional **MatchStatus** UI).
