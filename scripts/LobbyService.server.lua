@@ -165,13 +165,29 @@ local function startMatchFromLobby()
 	publishMatchStatus()
 	warn("[LobbyService] Match started — teams to arena spawns!")
 
-	invokeBridge("AssignMatchTeams")
+	if not invokeBridge("AssignMatchTeams") then
+		warn("[LobbyService] Match start aborted — could not assign teams (is TeamAutoBalance running?).")
+		matchPhase = PHASE_LOBBY
+		publishMatchStatus()
+		task.defer(ensureLobbyCountdownRunning)
+		return
+	end
 
-	for _, player in Players:GetPlayers() do
-		player.Neutral = false
-		player.CharacterAutoLoads = true
-		player:SetAttribute("IsOut", false)
-		player:LoadCharacter()
+	local playerList = Players:GetPlayers()
+	table.sort(playerList, function(a, b)
+		return a.UserId < b.UserId
+	end)
+
+	for _, player in playerList do
+		if player.Team then
+			player.Neutral = false
+			player.CharacterAutoLoads = true
+			player:SetAttribute("IsOut", false)
+			player:LoadCharacter()
+			warn(`[LobbyService] Spawn {player.Name} on team {player.Team.Name} (LoadCharacter → team SpawnLocation).`)
+		else
+			warn(`[LobbyService] {player.Name} has no team after AssignMatchTeams — skipping spawn.`)
+		end
 	end
 
 	local bridge = ServerScriptService:FindFirstChild("DodgeballRoundBridge")
@@ -269,11 +285,16 @@ local function onPlayerAdded(player: Player)
 			end
 		end)
 	elseif matchPhase == PHASE_IN_MATCH then
-		invokeBridge("AssignMatchTeams")
-		player.Neutral = false
-		player:SetAttribute("IsOut", false)
-		player.CharacterAutoLoads = true
-		player:LoadCharacter()
+		if invokeBridge("AssignMatchTeams") then
+			player.Neutral = false
+			player:SetAttribute("IsOut", false)
+			player.CharacterAutoLoads = true
+			if player.Team then
+				player:LoadCharacter()
+			else
+				warn(`[LobbyService] {player.Name} joined mid-match but has no team after balance.`)
+			end
+		end
 	end
 end
 

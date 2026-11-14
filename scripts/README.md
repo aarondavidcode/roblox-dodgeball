@@ -34,7 +34,13 @@ Default throw lives in **`throw/`** so you can add more **ModuleScripts** later 
 | [DodgeballService.server.lua](DodgeballService.server.lua) | `DodgeballService` | Script (paste over step 4 copy) |
 | [RoundService.server.lua](RoundService.server.lua) | `RoundService` | Script (new) |
 
-Walkthrough: **[05-round-reset](../05-round-reset/README.md)** (optional **RoundStatus** UI LocalScript is in that guide only).
+Walkthrough: **[05-round-reset](../05-round-reset/README.md)**.
+
+| Repo file | Studio object | Type |
+|-----------|---------------|------|
+| [RoundStatusClient.local.lua](RoundStatusClient.local.lua) | `RoundStatusClient` under **StarterGui/RoundStatus** | **LocalScript** |
+
+Optional UI works for step 5 and step 6.
 
 ---
 
@@ -48,4 +54,4 @@ Walkthrough: **[05-round-reset](../05-round-reset/README.md)** (optional **Round
 | [RoundService.server.lua](RoundService.server.lua) | `RoundService` | Script (paste over step 5 copy) |
 | [LobbyService.server.lua](LobbyService.server.lua) | `LobbyService` | Script (**new**) |
 
-Walkthrough: **[06-lobby-and-matches](../06-lobby-and-matches/README.md)** (lobby **SpawnLocation** wiring + optional **MatchStatus** UI).
+Walkthrough: **[06-lobby-and-matches](../06-lobby-and-matches/README.md)** (lobby **SpawnLocation** + refresh **RoundStatusClient** if you added UI in step 5).
