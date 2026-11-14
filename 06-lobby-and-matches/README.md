@@ -23,8 +23,9 @@ Repo files to copy:
 - [DodgeballService.server.lua](../scripts/DodgeballService.server.lua)
 - [RoundService.server.lua](../scripts/RoundService.server.lua)
 - [LobbyService.server.lua](../scripts/LobbyService.server.lua) — **new**
+- [TeamAutoBalance.server.lua](../scripts/TeamAutoBalance.server.lua) — **updated** (lobby = Neutral, no team)
 
-Leave **TeamAutoBalance**, **throw/DefaultThrow**, and **DodgeballThrowInput** as they are.
+Leave **throw/DefaultThrow** and **DodgeballThrowInput** as they are.
 
 ---
 
@@ -91,7 +92,16 @@ New settings at the bottom:
 
 ---
 
-## Step 5 — Add LobbyService
+## Step 5 — Update TeamAutoBalance (lobby-safe teams)
+
+1. Replace **TeamAutoBalance** with **[scripts/TeamAutoBalance.server.lua](../scripts/TeamAutoBalance.server.lua)**.
+
+**What changed:**
+
+- In **lobby**, players stay **Neutral** with **no** Red/Blue team (fixes wrong arena spawn while waiting).
+- **Red/Blue** assignment happens when the lobby countdown ends and a match starts (and when someone joins mid-match).
+
+## Step 6 — Add LobbyService
 
 1. Under **ServerScriptService**, insert a **Script**.
 2. Rename it **`LobbyService`**.
@@ -101,7 +111,7 @@ You should have **four** game scripts: **TeamAutoBalance**, **DodgeballService**
 
 ---
 
-## Step 6 — How it plays
+## Step 7 — How it plays
 
 1. **Lobby** — Everyone spawns at your **lobby** pad. **Output** says `[LobbyService] Lobby phase`.
 2. **Countdown** — With **2 or more** players, a **30** second lobby timer runs (change in config).
@@ -112,7 +122,7 @@ You should have **four** game scripts: **TeamAutoBalance**, **DodgeballService**
 
 ---
 
-## Step 7 — Status for UI (ReplicatedStorage)
+## Step 8 — Status for UI (ReplicatedStorage)
 
 **LobbyService** and **RoundService** write to **`ReplicatedStorage/RoundStatus`** (same folder as step 5):
 
@@ -129,7 +139,7 @@ You should have **four** game scripts: **TeamAutoBalance**, **DodgeballService**
 
 ---
 
-## Step 8 — Optional MatchStatus UI
+## Step 9 — Optional MatchStatus UI
 
 1. Under **StarterGui**, insert **ScreenGui**, rename **`MatchStatus`**.
 2. Insert **TextLabel** → **`StatusLabel`** (top center, **TextScaled** on).
@@ -188,7 +198,7 @@ refresh()
 
 ---
 
-## Step 9 — Test with F5 and 2 Players
+## Step 10 — Test with F5 and 2 Players
 
 1. **Save** the place.
 2. **F5** (Play). **View → Output** — look for `[LobbyService]` and `[RoundService] Waiting for lobby match start`.
@@ -233,6 +243,8 @@ Workspace
 | Stuck in lobby after countdown | Team **SpawnLocations** must match **Red** / **Blue** colors (step 2) |
 | Wrong lobby spot | Fix **Name** or **Tag** vs **DodgeballConfig** |
 | Rounds start immediately | Paste new **LobbyService** + **RoundService**; delete old duplicates |
+| Neutral name but Blue spawn | Re-paste **TeamAutoBalance** + **LobbyService** (lobby clears `Team`) |
+| Solo player in arena / no lobby | Same — old TeamAutoBalance assigned Red/Blue on join |
 | OUT player walks around | Re-paste **DodgeballService** (OUT should kill, not freeze) |
 | Match score stuck | Watch **RoundStatus** attributes while a round ends |
 

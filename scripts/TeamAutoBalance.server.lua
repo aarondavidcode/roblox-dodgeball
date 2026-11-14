@@ -1,35 +1,66 @@
 -- Paste this as a Script named TeamAutoBalance under ServerScriptService.
 -- Teams in your place must be named exactly Red and Blue (see TEAM_NAMES below).
+-- During lobby (MatchPhase "Lobby" on RoundStatus), players stay Neutral with no team.
+-- Red/Blue assignment runs when a match starts and when someone joins mid-match.
 
 --!strict
 
 local Players = game:GetService("Players")
-local Teams = game:GetService("Teams")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
 local StarterPlayer = game:GetService("StarterPlayer")
+local Teams = game:GetService("Teams")
 
--- Change these only if you rename teams in Studio (names must match Explorer).
-local TEAM_NAMES = { "Red", "Blue" }
+local Config = require(ServerScriptService:WaitForChild("DodgeballConfig"))
 
--- How long we wait for Teams to show up (Studio can load folders in any order).
+local MATCH_PHASE_IN_MATCH = "InMatch"
+
+local TEAM_NAMES = Config.TEAM_NAMES
+
 local TEAM_WAIT_SECONDS = 10
 
 local redTeam: Team?
 local blueTeam: Team?
 
--- One safety-net respawn per player (stops endless LoadCharacter loops).
 local usedSpawnSafetyNet: { [Player]: boolean } = {}
 
--- Wait for both teams by exact name. Warn clearly if a name is wrong or missing.
+local function getRoundStatusFolder(): Folder?
+	local existing = ReplicatedStorage:FindFirstChild(Config.ROUND_STATUS_FOLDER_NAME)
+	if existing and existing:IsA("Folder") then
+		return existing
+	end
+	return nil
+end
+
+local function getMatchPhase(): string
+	local folder = getRoundStatusFolder()
+	if folder then
+		local matchPhase = folder:GetAttribute("MatchPhase")
+		if typeof(matchPhase) == "string" then
+			return matchPhase
+		end
+	end
+	return "Lobby"
+end
+
+local function matchIsLive(): boolean
+	return getMatchPhase() == MATCH_PHASE_IN_MATCH
+end
+
 local function waitForTeams(): boolean
 	local red = Teams:WaitForChild(TEAM_NAMES[1], TEAM_WAIT_SECONDS)
 	if not red or not red:IsA("Team") then
-		warn(`[TeamAutoBalance] Missing Team named "{TEAM_NAMES[1]}" after {TEAM_WAIT_SECONDS}s. Check Explorer → Teams (spelling and capitals).`)
+		warn(
+			`[TeamAutoBalance] Missing Team named "{TEAM_NAMES[1]}" after {TEAM_WAIT_SECONDS}s. Check Explorer → Teams (spelling and capitals).`
+		)
 		return false
 	end
 
 	local blue = Teams:WaitForChild(TEAM_NAMES[2], TEAM_WAIT_SECONDS)
 	if not blue or not blue:IsA("Team") then
-		warn(`[TeamAutoBalance] Missing Team named "{TEAM_NAMES[2]}" after {TEAM_WAIT_SECONDS}s. Check Explorer → Teams (spelling and capitals).`)
+		warn(
+			`[TeamAutoBalance] Missing Team named "{TEAM_NAMES[2]}" after {TEAM_WAIT_SECONDS}s. Check Explorer → Teams (spelling and capitals).`
+		)
 		return false
 	end
 
@@ -38,7 +69,6 @@ local function waitForTeams(): boolean
 	return true
 end
 
--- How many players are currently on this team?
 local function countPlayersOnTeam(team: Team): number
 	local total = 0
 	for _, player in Players:GetPlayers() do
@@ -49,7 +79,6 @@ local function countPlayersOnTeam(team: Team): number
 	return total
 end
 
--- Put the player on Red or Blue, whichever has fewer players right now.
 local function assignBalancedTeam(player: Player, needsRespawn: boolean)
 	if not redTeam or not blueTeam then
 		warn("[TeamAutoBalance] Red or Blue team is not ready yet. Check Teams in Explorer.")
@@ -59,7 +88,6 @@ local function assignBalancedTeam(player: Player, needsRespawn: boolean)
 	local redCount = countPlayersOnTeam(redTeam)
 	local blueCount = countPlayersOnTeam(blueTeam)
 
-	-- Fewer players wins; if tied, Red gets the next player (simple and predictable).
 	local chosenTeam: Team
 	if redCount <= blueCount then
 		chosenTeam = redTeam
@@ -67,12 +95,9 @@ local function assignBalancedTeam(player: Player, needsRespawn: boolean)
 		chosenTeam = blueTeam
 	end
 
-	-- Roblox works best when Neutral is off *before* you set Team (team spawn + player list).
 	player.Neutral = false
 	player.Team = chosenTeam
 
-	-- If CharacterAutoLoads is on, Roblox spawns for us once team + Neutral are set.
-	-- We only call LoadCharacter when we must fix a spawn or when auto-load is off.
 	local shouldLoad = needsRespawn
 	if not player.Character and not StarterPlayer.CharacterAutoLoads then
 		shouldLoad = true
@@ -82,16 +107,43 @@ local function assignBalancedTeam(player: Player, needsRespawn: boolean)
 	end
 end
 
--- If CharacterAutoLoads spawns you before team assignment, fix team once and respawn.
+local function setLobbyNeutral(player: Player)
+	player.Neutral = true
+	player.Team = nil
+end
+
+local function assignAllPlayersBalanced(needsRespawn: boolean)
+	for _, player in Players:GetPlayers() do
+		assignBalancedTeam(player, needsRespawn)
+	end
+end
+
+local function neutralizeAllPlayers()
+	for _, player in Players:GetPlayers() do
+		setLobbyNeutral(player)
+	end
+end
+
 local function trySpawnSafetyNet(player: Player)
-	if player.Team ~= nil and not player.Neutral then
+	if matchIsLive() then
+		if player.Team ~= nil and not player.Neutral then
+			return
+		end
+		if usedSpawnSafetyNet[player] then
+			return
+		end
+		usedSpawnSafetyNet[player] = true
+		assignBalancedTeam(player, true)
 		return
 	end
-	if usedSpawnSafetyNet[player] then
-		return
+
+	if player.Team ~= nil or not player.Neutral then
+		if usedSpawnSafetyNet[player] then
+			return
+		end
+		usedSpawnSafetyNet[player] = true
+		setLobbyNeutral(player)
 	end
-	usedSpawnSafetyNet[player] = true
-	assignBalancedTeam(player, true)
 end
 
 local function hookCharacterAdded(player: Player)
@@ -100,12 +152,60 @@ local function hookCharacterAdded(player: Player)
 	end)
 end
 
--- Run when someone new joins the experience (including Studio test players).
 local function onPlayerAdded(player: Player)
 	hookCharacterAdded(player)
 
-	-- Set team right away. Respawn only if a character already appeared (often Neutral first).
-	assignBalancedTeam(player, player.Character ~= nil)
+	if matchIsLive() then
+		assignBalancedTeam(player, player.Character ~= nil)
+	else
+		setLobbyNeutral(player)
+	end
+end
+
+local function onMatchPhaseChanged()
+	if matchIsLive() then
+		assignAllPlayersBalanced(false)
+	else
+		neutralizeAllPlayers()
+	end
+end
+
+local function wireRoundBridge()
+	local bridge = ServerScriptService:FindFirstChild("DodgeballRoundBridge")
+	if not bridge or not bridge:IsA("Folder") then
+		bridge = Instance.new("Folder")
+		bridge.Name = "DodgeballRoundBridge"
+		bridge.Parent = ServerScriptService
+	end
+
+	local assignFn = bridge:FindFirstChild("AssignMatchTeams")
+	if not assignFn then
+		assignFn = Instance.new("BindableFunction")
+		assignFn.Name = "AssignMatchTeams"
+		assignFn.Parent = bridge
+	end
+
+	(assignFn :: BindableFunction).OnInvoke = function(): boolean
+		assignAllPlayersBalanced(false)
+		return true
+	end
+end
+
+local function hookMatchPhaseSignal()
+	local folder = getRoundStatusFolder()
+	if not folder then
+		local deadline = os.clock() + 15
+		while os.clock() < deadline do
+			folder = getRoundStatusFolder()
+			if folder then
+				break
+			end
+			task.wait(0.1)
+		end
+	end
+	if folder then
+		folder:GetAttributeChangedSignal("MatchPhase"):Connect(onMatchPhaseChanged)
+	end
 end
 
 Players.PlayerRemoving:Connect(function(player)
@@ -117,13 +217,17 @@ if not waitForTeams() then
 	return
 end
 
+wireRoundBridge()
+hookMatchPhaseSignal()
+
 Players.PlayerAdded:Connect(onPlayerAdded)
 
--- Studio: if you press Play after the script loads, catch players who joined first.
 for _, player in Players:GetPlayers() do
 	task.defer(function()
 		onPlayerAdded(player)
 	end)
 end
 
--- PlayerRemoving: no extra logic needed; next join re-counts both teams.
+if not matchIsLive() then
+	neutralizeAllPlayers()
+end

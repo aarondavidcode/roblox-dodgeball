@@ -42,6 +42,7 @@ Walkthrough: **[05-round-reset](../05-round-reset/README.md)** (optional **Round
 
 | Repo file | Studio object | Type |
 |-----------|---------------|------|
+| [TeamAutoBalance.server.lua](TeamAutoBalance.server.lua) | `TeamAutoBalance` | Script (paste over step 3 copy — lobby-aware teams) |
 | [DodgeballConfig.lua](DodgeballConfig.lua) | `DodgeballConfig` | ModuleScript (paste over step 5 copy) |
 | [DodgeballService.server.lua](DodgeballService.server.lua) | `DodgeballService` | Script (paste over step 5 copy) |
 | [RoundService.server.lua](RoundService.server.lua) | `RoundService` | Script (paste over step 5 copy) |

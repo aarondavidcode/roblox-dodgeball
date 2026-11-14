@@ -77,6 +77,7 @@ local function findLobbySpawnLocation(): SpawnLocation?
 end
 
 local function respawnPlayerAtLobby(player: Player)
+	player.Team = nil
 	player.Neutral = true
 	player:LoadCharacter()
 	local spawn = findLobbySpawnLocation()
@@ -133,6 +134,26 @@ local function enterLobbyPhase(reason: string)
 	task.defer(ensureLobbyCountdownRunning)
 end
 
+local function invokeBridge(functionName: string): boolean
+	local bridge = ServerScriptService:FindFirstChild("DodgeballRoundBridge")
+	if not bridge then
+		return false
+	end
+	local bindable = bridge:FindFirstChild(functionName)
+	if bindable and bindable:IsA("BindableFunction") then
+		local ok, result = pcall(function()
+			return (bindable :: BindableFunction):Invoke()
+		end)
+		if not ok then
+			warn(`[LobbyService] {functionName} failed: {result}`)
+			return false
+		end
+		return result == true
+	end
+	warn(`[LobbyService] Missing BindableFunction {functionName}. Is TeamAutoBalance loaded?`)
+	return false
+end
+
 local function startMatchFromLobby()
 	if countPlayers() < 2 then
 		resetLobbyCountdownFull()
@@ -143,6 +164,8 @@ local function startMatchFromLobby()
 	countdownPaused = true
 	publishMatchStatus()
 	warn("[LobbyService] Match started — teams to arena spawns!")
+
+	invokeBridge("AssignMatchTeams")
 
 	for _, player in Players:GetPlayers() do
 		player.Neutral = false
@@ -246,7 +269,11 @@ local function onPlayerAdded(player: Player)
 			end
 		end)
 	elseif matchPhase == PHASE_IN_MATCH then
+		invokeBridge("AssignMatchTeams")
 		player.Neutral = false
+		player:SetAttribute("IsOut", false)
+		player.CharacterAutoLoads = true
+		player:LoadCharacter()
 	end
 end
 
