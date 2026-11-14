@@ -6,6 +6,7 @@
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local ServerScriptService = game:GetService("ServerScriptService")
 local Workspace = game:GetService("Workspace")
 
@@ -28,6 +29,81 @@ end
 
 local heldByPlayer: { [Player]: BasePart } = {}
 local ballHeldConnection: { [BasePart]: RBXScriptConnection } = {}
+local throwSpeedWatch: { [BasePart]: RBXScriptConnection } = {}
+
+local function debugElimination(reason: string)
+	if Config.DEBUG_ELIMINATION then
+		warn(`[DodgeballService] Elimination blocked: {reason}`)
+	end
+end
+
+-- Thrown ball: Touched often fires after physics settles, so AssemblyLinearVelocity can read ~0.
+local function isLiveThrow(ball: BasePart): boolean
+	local throwTime = ball:GetAttribute("LastThrowTime")
+	local throwerId = ball:GetAttribute("LastThrowerUserId")
+	if typeof(throwTime) ~= "number" or typeof(throwerId) ~= "number" then
+		return false
+	end
+	if throwTime <= 0 then
+		return false
+	end
+	local now = workspace:GetServerTimeNow()
+	if now - throwTime > Config.THROW_OUT_WINDOW_SECONDS then
+		return false
+	end
+	return ball:GetAttribute("InThrowWindow") == true
+end
+
+local function effectiveHitSpeed(ball: BasePart): number
+	local inst = ball.AssemblyLinearVelocity.Magnitude
+	if not isLiveThrow(ball) then
+		return inst
+	end
+	local stored = 0
+	local lastThrow = ball:GetAttribute("LastThrowSpeed")
+	local peak = ball:GetAttribute("PeakThrowSpeed")
+	if typeof(lastThrow) == "number" then
+		stored = lastThrow
+	end
+	if typeof(peak) == "number" then
+		stored = math.max(stored, peak)
+	end
+	return math.max(inst, stored)
+end
+
+local function stopThrowSpeedWatch(ball: BasePart)
+	local conn = throwSpeedWatch[ball]
+	if conn then
+		conn:Disconnect()
+		throwSpeedWatch[ball] = nil
+	end
+end
+
+local function startThrowSpeedWatch(ball: BasePart)
+	stopThrowSpeedWatch(ball)
+	local peak = ball.AssemblyLinearVelocity.Magnitude
+	local lastThrow = ball:GetAttribute("LastThrowSpeed")
+	if typeof(lastThrow) == "number" then
+		peak = math.max(peak, lastThrow)
+	end
+	ball:SetAttribute("PeakThrowSpeed", peak)
+	ball:SetAttribute("InThrowWindow", true)
+
+	throwSpeedWatch[ball] = RunService.Heartbeat:Connect(function()
+		local currentPeak = ball:GetAttribute("PeakThrowSpeed")
+		if typeof(currentPeak) ~= "number" then
+			currentPeak = 0
+		end
+		local speed = ball.AssemblyLinearVelocity.Magnitude
+		if speed > currentPeak then
+			ball:SetAttribute("PeakThrowSpeed", speed)
+		end
+		if not isLiveThrow(ball) then
+			ball:SetAttribute("InThrowWindow", false)
+			stopThrowSpeedWatch(ball)
+		end
+	end)
+end
 
 local function getOrCreateRemotesFolder(): Folder
 	local existing = ReplicatedStorage:FindFirstChild(Config.REMOTES_FOLDER_NAME)
@@ -190,6 +266,7 @@ local function throwBall(player: Player, lookDirection: Vector3)
 		thrower = player,
 		direction = direction,
 	})
+	startThrowSpeedWatch(released)
 end
 
 local lastPickupTime: { [Player]: number } = {}
@@ -219,32 +296,50 @@ local function tryPickup(player: Player, ball: BasePart)
 end
 
 local function tryEliminateOnHit(ball: BasePart, victim: Player)
-	local speed = ball.AssemblyLinearVelocity.Magnitude
-	if speed < Config.HIT_MIN_SPEED then
-		return
+	local live = isLiveThrow(ball)
+	local speed = effectiveHitSpeed(ball)
+	if not live then
+		if speed < Config.HIT_MIN_SPEED then
+			debugElimination("ball too slow (not a live throw)")
+			return
+		end
+	else
+		-- During the throw window, trust LastThrowSpeed / PeakThrowSpeed; Touched velocity is unreliable.
+		if speed < Config.HIT_MIN_SPEED then
+			debugElimination(`live throw but effective speed {speed} < HIT_MIN_SPEED {Config.HIT_MIN_SPEED}`)
+			return
+		end
 	end
 	local throwTime = ball:GetAttribute("LastThrowTime")
 	local throwerId = ball:GetAttribute("LastThrowerUserId")
 	if typeof(throwTime) ~= "number" or typeof(throwerId) ~= "number" then
+		debugElimination("missing LastThrowTime or LastThrowerUserId")
 		return
 	end
 	local now = workspace:GetServerTimeNow()
 	if now - throwTime > Config.THROW_OUT_WINDOW_SECONDS then
+		debugElimination("throw window expired")
 		return
 	end
 	if victim.UserId == throwerId then
+		debugElimination("victim is thrower")
 		return
 	end
 	local thrower = Players:GetPlayerByUserId(throwerId)
 	if not thrower or not thrower.Team or not victim.Team then
+		debugElimination("thrower or victim has no team")
 		return
 	end
 	if thrower.Team == victim.Team then
+		debugElimination("same team (friendly)")
 		return
 	end
 	if isPlayerOut(victim) then
+		debugElimination("victim already out")
 		return
 	end
+	ball:SetAttribute("InThrowWindow", false)
+	stopThrowSpeedWatch(ball)
 	setPlayerOut(victim)
 	dropBallFromPlayer(victim)
 	warn(`[DodgeballService] {victim.Name} is OUT (hit by throw from user {throwerId}).`)
@@ -270,6 +365,16 @@ local function onBallTouched(ball: BasePart, hit: BasePart)
 		return
 	end
 
+	if isLiveThrow(ball) then
+		local throwerId = ball:GetAttribute("LastThrowerUserId")
+		if typeof(throwerId) == "number" and victim.UserId == throwerId then
+			return
+		end
+		tryEliminateOnHit(ball, victim)
+		return
+	end
+
+	-- Rolling / settled ball: instantaneous speed decides pickup vs elimination.
 	local speed = ball.AssemblyLinearVelocity.Magnitude
 	if speed >= Config.HIT_MIN_SPEED then
 		tryEliminateOnHit(ball, victim)
@@ -283,6 +388,11 @@ local function hookBall(ball: BasePart)
 		return
 	end
 	ball:SetAttribute("LastThrowTime", ball:GetAttribute("LastThrowTime") or 0)
+	ball:SetAttribute("LastThrowSpeed", ball:GetAttribute("LastThrowSpeed") or 0)
+	ball:SetAttribute("PeakThrowSpeed", ball:GetAttribute("PeakThrowSpeed") or 0)
+	if ball:GetAttribute("InThrowWindow") == nil then
+		ball:SetAttribute("InThrowWindow", false)
+	end
 	ball.Touched:Connect(function(hit)
 		onBallTouched(ball, hit)
 	end)
