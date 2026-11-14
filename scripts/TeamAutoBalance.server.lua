@@ -5,18 +5,37 @@
 
 local Players = game:GetService("Players")
 local Teams = game:GetService("Teams")
+local StarterPlayer = game:GetService("StarterPlayer")
 
 -- Change these only if you rename teams in Studio (names must match Explorer).
 local TEAM_NAMES = { "Red", "Blue" }
 
--- Find a team by exact name, or warn in Output if something is misspelled.
-local function getTeam(name: string): Team?
-	local team = Teams:FindFirstChild(name)
-	if team and team:IsA("Team") then
-		return team
+-- How long we wait for Teams to show up (Studio can load folders in any order).
+local TEAM_WAIT_SECONDS = 10
+
+local redTeam: Team?
+local blueTeam: Team?
+
+-- One safety-net respawn per player (stops endless LoadCharacter loops).
+local usedSpawnSafetyNet: { [Player]: boolean } = {}
+
+-- Wait for both teams by exact name. Warn clearly if a name is wrong or missing.
+local function waitForTeams(): boolean
+	local red = Teams:WaitForChild(TEAM_NAMES[1], TEAM_WAIT_SECONDS)
+	if not red or not red:IsA("Team") then
+		warn(`[TeamAutoBalance] Missing Team named "{TEAM_NAMES[1]}" after {TEAM_WAIT_SECONDS}s. Check Explorer → Teams (spelling and capitals).`)
+		return false
 	end
-	warn(`[TeamAutoBalance] Missing Team named {name}. Check Explorer → Teams.`)
-	return nil
+
+	local blue = Teams:WaitForChild(TEAM_NAMES[2], TEAM_WAIT_SECONDS)
+	if not blue or not blue:IsA("Team") then
+		warn(`[TeamAutoBalance] Missing Team named "{TEAM_NAMES[2]}" after {TEAM_WAIT_SECONDS}s. Check Explorer → Teams (spelling and capitals).`)
+		return false
+	end
+
+	redTeam = red
+	blueTeam = blue
+	return true
 end
 
 -- How many players are currently on this team?
@@ -31,10 +50,9 @@ local function countPlayersOnTeam(team: Team): number
 end
 
 -- Put the player on Red or Blue, whichever has fewer players right now.
-local function assignBalancedTeam(player: Player)
-	local redTeam = getTeam(TEAM_NAMES[1])
-	local blueTeam = getTeam(TEAM_NAMES[2])
+local function assignBalancedTeam(player: Player, needsRespawn: boolean)
 	if not redTeam or not blueTeam then
+		warn("[TeamAutoBalance] Red or Blue team is not ready yet. Check Teams in Explorer.")
 		return
 	end
 
@@ -49,16 +67,54 @@ local function assignBalancedTeam(player: Player)
 		chosenTeam = blueTeam
 	end
 
+	-- Roblox works best when Neutral is off *before* you set Team (team spawn + player list).
+	player.Neutral = false
 	player.Team = chosenTeam
-	player.Neutral = false -- Must be false so team spawns and colors work.
 
-	-- Loads (or reloads) the character so Roblox uses the right SpawnLocation.
-	player:LoadCharacter()
+	-- If CharacterAutoLoads is on, Roblox spawns for us once team + Neutral are set.
+	-- We only call LoadCharacter when we must fix a spawn or when auto-load is off.
+	local shouldLoad = needsRespawn
+	if not player.Character and not StarterPlayer.CharacterAutoLoads then
+		shouldLoad = true
+	end
+	if shouldLoad then
+		player:LoadCharacter()
+	end
+end
+
+-- If CharacterAutoLoads spawns you before team assignment, fix team once and respawn.
+local function trySpawnSafetyNet(player: Player)
+	if player.Team ~= nil and not player.Neutral then
+		return
+	end
+	if usedSpawnSafetyNet[player] then
+		return
+	end
+	usedSpawnSafetyNet[player] = true
+	assignBalancedTeam(player, true)
+end
+
+local function hookCharacterAdded(player: Player)
+	player.CharacterAdded:Connect(function()
+		trySpawnSafetyNet(player)
+	end)
 end
 
 -- Run when someone new joins the experience (including Studio test players).
 local function onPlayerAdded(player: Player)
-	assignBalancedTeam(player)
+	hookCharacterAdded(player)
+
+	-- Set team right away. Respawn only if a character already appeared (often Neutral first).
+	assignBalancedTeam(player, player.Character ~= nil)
+end
+
+Players.PlayerRemoving:Connect(function(player)
+	usedSpawnSafetyNet[player] = nil
+end)
+
+if not waitForTeams() then
+	warn("[TeamAutoBalance] Stopping — create teams named Red and Blue, then play again.")
+	return
 end
 
 Players.PlayerAdded:Connect(onPlayerAdded)
@@ -66,7 +122,7 @@ Players.PlayerAdded:Connect(onPlayerAdded)
 -- Studio: if you press Play after the script loads, catch players who joined first.
 for _, player in Players:GetPlayers() do
 	task.defer(function()
-		assignBalancedTeam(player)
+		onPlayerAdded(player)
 	end)
 end
 
