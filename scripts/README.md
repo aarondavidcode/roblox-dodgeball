@@ -1,12 +1,25 @@
 # Scripts folder
 
-Copy these **server** scripts into **Roblox Studio** when a guide tells you to.
+Copy these into **Roblox Studio** when a guide tells you to. Server scripts go under **ServerScriptService** unless noted.
 
 ## TeamAutoBalance.server.lua
 
-1. In Studio, under **ServerScriptService**, insert a **Script** (not LocalScript).
+1. Under **ServerScriptService**, insert a **Script** (not LocalScript).
 2. Rename it **`TeamAutoBalance`**.
-3. Open **[TeamAutoBalance.server.lua](TeamAutoBalance.server.lua)** on GitHub, copy all the code, and paste into that Script.
-4. Save your place and test with **F5**.
+3. Copy from **[TeamAutoBalance.server.lua](TeamAutoBalance.server.lua)**.
 
 Walkthrough: **[03-add-your-first-script](../03-add-your-first-script/README.md)**.
+
+---
+
+## Dodgeball system (step 4)
+
+| Repo file | Studio object | Type |
+|-----------|---------------|------|
+| [DodgeballConfig.lua](DodgeballConfig.lua) | `DodgeballConfig` | ModuleScript |
+| [DodgeballService.server.lua](DodgeballService.server.lua) | `DodgeballService` | Script |
+| [throw/DefaultThrow.lua](throw/DefaultThrow.lua) | `throw/DefaultThrow` | ModuleScript |
+
+Walkthrough: **[04-balls-and-throwing](../04-balls-and-throwing/README.md)** (includes the **LocalScript** for throw input).
+
+Default throw lives in **`throw/`** so you can add more **ModuleScripts** later and switch **`ACTIVE_THROW_PROFILE`** in **DodgeballConfig**.
