@@ -3,19 +3,23 @@
 You have enough to **test in Studio** and land on the correct side of **your** map:
 
 - [02-studio-setup](02-studio-setup/README.md) — teams and spawns  
-- [03-add-your-first-script](03-add-your-first-script/README.md) — **TeamAutoBalance**  
-- [scripts/TeamAutoBalance.server.lua](scripts/TeamAutoBalance.server.lua)
+- [03-add-your-first-script](03-add-your-first-script/README.md) — **TeamAutoBalance** ✅  
+- [04-balls-and-throwing](04-balls-and-throwing/README.md) — dodgeballs, throw, OUT rules ✅  
+- [scripts/TeamAutoBalance.server.lua](scripts/TeamAutoBalance.server.lua)  
+- [scripts/DodgeballService.server.lua](scripts/DodgeballService.server.lua)  
+- [scripts/DodgeballConfig.lua](scripts/DodgeballConfig.lua)  
+- [scripts/throw/DefaultThrow.lua](scripts/throw/DefaultThrow.lua)
 
 ---
 
 ## Roadmap: scripts to add later
 
-Short list of what comes next (not all written in this repo yet):
+Short list of what comes next:
 
-- **Dodgeball tool** — Give each player a ball (Tool in StarterPack or server equips), throw force, cooldown so spam is fair.
-- **Out-of-bounds / hit rules** — When a ball touches an opponent, mark them “out” (humanoid health, tag attribute, or sit-out zone)—agree one rule set for your family.
-- **Round reset** — When one team wins, teleport everyone back, clear outs, respawn balls, optional countdown UI.
-- **Lobby vs arena** — Neutral spawn between rounds (optional **Neutral** SpawnLocation), then team spawns when round starts—like many official team tutorials.
+- **Round reset** — When one team wins, teleport everyone back, clear `IsOut`, respawn balls, optional countdown UI.
+- **Lobby vs arena** — Neutral spawn between rounds (optional **Neutral** SpawnLocation), then team spawns when round starts.
+- **Special throws** — New modules under `ServerScriptService/throw/` and set **ACTIVE_THROW_PROFILE** in **DodgeballConfig** (curveball, fastball, etc.).
+- **Spectator / sit-out zone** — Teleport OUT players to sidelines instead of freezing in place.
 
 Kids keep iterating the **map** (cover, boundaries, spectator spots); each bullet above is a **small script milestone** you can add one at a time.
 
