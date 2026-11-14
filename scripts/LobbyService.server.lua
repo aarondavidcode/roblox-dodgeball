@@ -56,6 +56,20 @@ local function publishMatchStatus()
 	end
 end
 
+local SPAWN_Y_OFFSET = 4
+
+local function isLobbySpawn(spawn: SpawnLocation): boolean
+	local name = Config.LOBBY_SPAWN_NAME
+	if typeof(name) == "string" and name ~= "" and spawn.Name == name then
+		return true
+	end
+	local tag = Config.LOBBY_SPAWN_TAG
+	if typeof(tag) == "string" and tag ~= "" and CollectionService:HasTag(spawn, tag) then
+		return true
+	end
+	return false
+end
+
 local function findLobbySpawnLocation(): SpawnLocation?
 	local name = Config.LOBBY_SPAWN_NAME
 	if typeof(name) == "string" and name ~= "" then
@@ -76,7 +90,48 @@ local function findLobbySpawnLocation(): SpawnLocation?
 	return nil
 end
 
+-- Roblox LoadCharacter() picks SpawnLocation by TeamColor match; names like RedSpawn/BlueSpawn are fine.
+local function findTeamSpawnLocation(team: Team): SpawnLocation?
+	for _, descendant in Workspace:GetDescendants() do
+		if descendant:IsA("SpawnLocation") and not isLobbySpawn(descendant) then
+			if descendant.Neutral == false and descendant.TeamColor == team.TeamColor then
+				return descendant
+			end
+		end
+	end
+	return nil
+end
+
+local function teleportCharacterToTeamSpawn(player: Player)
+	local team = player.Team
+	if not team then
+		return
+	end
+	local spawn = findTeamSpawnLocation(team)
+	if not spawn then
+		warn(
+			`[LobbyService] No arena SpawnLocation for {team.Name} — on your team pad set Neutral off and TeamColor to match Teams → {team.Name}. Pad names like RedSpawn/BlueSpawn are OK.`
+		)
+		return
+	end
+	local character = player.Character
+	if not character then
+		character = player.CharacterAdded:Wait()
+	end
+	if not player.Parent or matchPhase ~= PHASE_IN_MATCH then
+		return
+	end
+	local hrp = character:WaitForChild("HumanoidRootPart", 10) :: BasePart?
+	if hrp then
+		hrp.CFrame = spawn.CFrame + Vector3.new(0, SPAWN_Y_OFFSET, 0)
+		warn(`[LobbyService] {player.Name} placed on {spawn.Name} (TeamColor match for {team.Name}).`)
+	end
+end
+
 local function respawnPlayerAtLobby(player: Player)
+	if matchPhase == PHASE_IN_MATCH then
+		return
+	end
 	player.Team = nil
 	player.Neutral = true
 	player:LoadCharacter()
@@ -85,7 +140,7 @@ local function respawnPlayerAtLobby(player: Player)
 	if spawn and character then
 		local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
 		if hrp then
-			hrp.CFrame = spawn.CFrame + Vector3.new(0, 4, 0)
+			hrp.CFrame = spawn.CFrame + Vector3.new(0, SPAWN_Y_OFFSET, 0)
 		end
 	end
 end
@@ -182,7 +237,10 @@ local function startMatchFromLobby()
 			player.Neutral = false
 			player:SetAttribute("IsOut", false)
 			player:LoadCharacter()
-			warn(`[LobbyService] Spawn {player.Name} on team {player.Team.Name} (LoadCharacter → team SpawnLocation).`)
+			warn(`[LobbyService] Spawn {player.Name} on team {player.Team.Name} (LoadCharacter + TeamColor spawn).`)
+			task.spawn(function()
+				teleportCharacterToTeamSpawn(player)
+			end)
 		else
 			warn(`[LobbyService] {player.Name} has no team after AssignMatchTeams — skipping spawn.`)
 		end
@@ -288,6 +346,9 @@ local function onPlayerAdded(player: Player)
 			player:SetAttribute("IsOut", false)
 			if player.Team then
 				player:LoadCharacter()
+				task.spawn(function()
+					teleportCharacterToTeamSpawn(player)
+				end)
 			else
 				warn(`[LobbyService] {player.Name} joined mid-match but has no team after balance.`)
 			end

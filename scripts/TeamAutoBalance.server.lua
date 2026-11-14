@@ -136,6 +136,9 @@ local function assignBalancedTeam(player: Player, needsRespawn: boolean)
 end
 
 local function setLobbyNeutral(player: Player)
+	if matchIsLive() then
+		return
+	end
 	player.Neutral = true
 	player.Team = nil
 end
