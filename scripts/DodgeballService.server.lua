@@ -183,7 +183,6 @@ local function setPlayerOut(player: Player)
 			humanoid.Health = 0
 		end
 	end
-	player.CharacterAutoLoads = false
 	if playerEliminatedEvent then
 		playerEliminatedEvent:Fire(player)
 	end
@@ -495,7 +494,6 @@ end
 local function clearEveryPlayerOut()
 	for _, player in Players:GetPlayers() do
 		player:SetAttribute("IsOut", false)
-		player.CharacterAutoLoads = true
 		local character = player.Character
 		if character then
 			local humanoid = character:FindFirstChildOfClass("Humanoid")

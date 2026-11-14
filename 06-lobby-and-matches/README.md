@@ -195,7 +195,7 @@ Workspace
 | Problem | What to try |
 |---------|-------------|
 | Countdown never starts | Need **2** players; check Output for pause message |
-| Stuck in lobby after countdown | Team **SpawnLocations** must match **Red** / **Blue** colors (step 2) |
+| Stuck in lobby after countdown | Team **SpawnLocations** must match **Red** / **Blue** colors (step 2); re-paste **LobbyService** if Output says `CharacterAutoLoads is not a valid member of Player` |
 | Wrong lobby spot | Fix **Name** or **Tag** vs **DodgeballConfig** |
 | Rounds start immediately | Paste new **LobbyService** + **RoundService**; delete old duplicates |
 | Neutral name but Blue spawn | Re-paste **TeamAutoBalance** + **LobbyService** (lobby clears `Team`) |

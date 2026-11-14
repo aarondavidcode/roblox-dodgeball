@@ -93,7 +93,6 @@ end
 local function respawnAllAtLobby()
 	for _, player in Players:GetPlayers() do
 		player:SetAttribute("IsOut", false)
-		player.CharacterAutoLoads = true
 		respawnPlayerAtLobby(player)
 	end
 end
@@ -181,7 +180,6 @@ local function startMatchFromLobby()
 	for _, player in playerList do
 		if player.Team then
 			player.Neutral = false
-			player.CharacterAutoLoads = true
 			player:SetAttribute("IsOut", false)
 			player:LoadCharacter()
 			warn(`[LobbyService] Spawn {player.Name} on team {player.Team.Name} (LoadCharacter → team SpawnLocation).`)
@@ -288,7 +286,6 @@ local function onPlayerAdded(player: Player)
 		if invokeBridge("AssignMatchTeams") then
 			player.Neutral = false
 			player:SetAttribute("IsOut", false)
-			player.CharacterAutoLoads = true
 			if player.Team then
 				player:LoadCharacter()
 			else

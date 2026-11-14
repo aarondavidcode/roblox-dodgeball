@@ -177,7 +177,6 @@ end
 local function respawnAllPlayersAtArena()
 	for _, player in Players:GetPlayers() do
 		player.Neutral = false
-		player.CharacterAutoLoads = true
 		player:LoadCharacter()
 	end
 end
