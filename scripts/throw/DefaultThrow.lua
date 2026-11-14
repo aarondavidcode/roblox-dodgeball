@@ -33,7 +33,6 @@ function DefaultThrow.throw(_self: typeof(DefaultThrow), context: ThrowContext)
 	ball:SetAttribute("LastThrowerUserId", context.thrower.UserId)
 	ball:SetAttribute("LastThrowSpeed", estimatedSpeed)
 	ball:SetAttribute("InThrowWindow", true)
-	ball:SetAttribute("PeakThrowSpeed", estimatedSpeed)
 end
 
 -- Hook for future “special throws” (curve, mega throw, etc.)—return extra data the service can read.
