@@ -136,6 +136,9 @@ local function assignBalancedTeam(player: Player, needsRespawn: boolean)
 end
 
 local function setLobbyNeutral(player: Player)
+	if matchIsLive() then
+		return
+	end
 	player.Neutral = true
 	player.Team = nil
 end
@@ -159,6 +162,9 @@ local function trySpawnSafetyNet(player: Player)
 		return
 	end
 
+	if matchIsLive() then
+		return
+	end
 	if player.Team ~= nil or not player.Neutral then
 		if usedSpawnSafetyNet[player] then
 			return
