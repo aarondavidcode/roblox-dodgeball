@@ -75,7 +75,7 @@ local function isQualifyingNeutral(): boolean
 		return false
 	end
 	local matchPhase = roundStatus:GetAttribute("MatchPhase")
-	if matchPhase ~= "Lobby" then
+	if matchPhase ~= "Lobby" and matchPhase ~= "InMatch" then
 		return false
 	end
 	if localPlayer:GetAttribute("MatchParticipant") == true then
@@ -87,16 +87,31 @@ local function isQualifyingNeutral(): boolean
 	if not localPlayer.Neutral then
 		return false
 	end
+	if matchPhase == "InMatch" and localPlayer:GetAttribute("IsOut") == true then
+		return false
+	end
 	return true
 end
 
 local function refreshButtonVisual()
+	local inLiveMatch = false
+	if roundStatus then
+		inLiveMatch = roundStatus:GetAttribute("MatchPhase") == "InMatch"
+	end
 	if optedIn() then
 		toggleButton.BackgroundColor3 = Color3.fromRGB(40, 150, 85)
-		toggleButton.Text = "Joined next match — tap to spectate"
+		if inLiveMatch then
+			toggleButton.Text = "Next match after this one — tap to spectate"
+		else
+			toggleButton.Text = "Joined next match — tap to spectate"
+		end
 	else
 		toggleButton.BackgroundColor3 = Color3.fromRGB(45, 120, 200)
-		toggleButton.Text = "Play next match — tap to join!"
+		if inLiveMatch then
+			toggleButton.Text = "Join the match after this one — tap here"
+		else
+			toggleButton.Text = "Play next match — tap to join!"
+		end
 	end
 end
 
@@ -125,7 +140,10 @@ localPlayer:GetPropertyChangedSignal("Neutral"):Connect(refreshVisibility)
 localPlayer:GetAttributeChangedSignal("MatchParticipant"):Connect(refreshVisibility)
 
 if roundStatus then
-	roundStatus:GetAttributeChangedSignal("MatchPhase"):Connect(refreshVisibility)
+	roundStatus:GetAttributeChangedSignal("MatchPhase"):Connect(function()
+		refreshVisibility()
+		refreshButtonVisual()
+	end)
 end
 
 refreshVisibility()

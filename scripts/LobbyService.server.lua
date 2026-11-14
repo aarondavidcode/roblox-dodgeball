@@ -319,8 +319,8 @@ local function getSetJoinNextMatchRemote(): RemoteEvent
 	return newRemote
 end
 
-local function canSetJoinNextMatchInLobby(player: Player): boolean
-	if matchPhase ~= PHASE_LOBBY then
+local function canSetJoinNextMatch(player: Player): boolean
+	if matchPhase ~= PHASE_LOBBY and matchPhase ~= PHASE_IN_MATCH then
 		return false
 	end
 	if player:GetAttribute(ATTR_MATCH_PARTICIPANT) == true then
@@ -332,18 +332,43 @@ local function canSetJoinNextMatchInLobby(player: Player): boolean
 	if not player.Neutral then
 		return false
 	end
+	if matchPhase == PHASE_IN_MATCH and player:GetAttribute("IsOut") == true then
+		return false
+	end
 	return true
 end
 
+local function applyLobbyCountdownAfterOptInChange()
+	if matchPhase ~= PHASE_LOBBY then
+		return
+	end
+	if countOptedInPlayers() < 2 then
+		if not countdownPaused or lobbyCountdownEndsAt ~= nil then
+			if countPlayers() < 2 then
+				warn("[LobbyService] Only 1 player — lobby countdown paused and reset.")
+			else
+				warn("[LobbyService] Fewer than 2 opted in for next match — countdown paused and reset.")
+			end
+		end
+		resetLobbyCountdownFull()
+		return
+	end
+	ensureLobbyCountdownRunning()
+end
+
 local function setPlayerJoinNextMatch(player: Player, wantsIn: boolean)
-	if not canSetJoinNextMatchInLobby(player) then
-		warn(`[LobbyService] Ignored JoinNextMatch for {player.Name} — not a neutral lobby player.`)
+	if not canSetJoinNextMatch(player) then
+		warn(`[LobbyService] Ignored JoinNextMatch for {player.Name} — not a qualifying neutral spectator.`)
 		return
 	end
 	player:SetAttribute(ATTR_JOIN_NEXT_MATCH, if wantsIn then true else false)
-	warn(`[LobbyService] {player.Name} opt-{(if wantsIn then "IN" else "OUT")} for next match.`)
+	warn(
+		`[LobbyService] {player.Name} opt-{(if wantsIn then "IN" else "OUT")} for next match ({matchPhase}; no team change this phase).`
+	)
 	publishMatchStatus()
-	task.defer(ensureLobbyCountdownRunning)
+	if matchPhase == PHASE_LOBBY then
+		applyLobbyCountdownAfterOptInChange()
+	end
 end
 
 local function wireJoinNextMatchRemote()

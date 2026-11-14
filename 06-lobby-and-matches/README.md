@@ -133,16 +133,16 @@ At run time it creates a ScreenGui named **`JoinNextMatch`** with a button **`Op
 | **Lobby**, Neutral, no team | Visible — tap to opt **in** or **out** |
 | Already on Red/Blue in lobby (should not happen with fresh **TeamAutoBalance**) | Hidden |
 | **InMatch** and playing (`MatchParticipant` true) | Hidden |
-| **InMatch** spectator (joined mid-match or stayed out) | Hidden until back in **lobby** |
+| **InMatch** spectator (`MatchParticipant` false, Neutral, no team) | Visible — opts in for the **next** lobby countdown only (stays spectator this match) |
 
 **Server rules**
 
 - Player attribute **`JoinNextMatch`** (default **false** for new joins).
-- **RemoteEvent** **`SetJoinNextMatch`** under **`ReplicatedStorage/DodgeballRemotes`** (created by **LobbyService**).
+- **RemoteEvent** **`SetJoinNextMatch`** under **`ReplicatedStorage/DodgeballRemotes`** (created by **LobbyService**). Works in **lobby** and for **InMatch spectators** (no team change until the next lobby countdown).
 - Lobby countdown runs only when **at least 2** players have **`JoinNextMatch` true** — not merely 2 players in the server.
 - When the countdown ends, only opted-in players get **Red/Blue** teams and arena spawns; everyone else stays a lobby spectator for that match (`MatchParticipant` **false**).
 - **Opt-in persists** across countdown pauses and resets until the player toggles it or leaves. Players who **play** a match have **`JoinNextMatch` cleared** when that match starts so they must opt in again for the following lobby cycle.
-- Mid-match joiners are unchanged: they remain spectators until the match ends (see below).
+- Mid-match joiners can use the same button while the match runs; **`LobbyOptedInCount`** on **RoundStatus** still counts them so the next lobby countdown can start right away if enough players opted in early.
 
 Re-paste **LobbyService**, **TeamAutoBalance**, **DodgeballConfig**, and **RoundStatusClient** when you update.
 
@@ -156,7 +156,7 @@ When **`MatchPhase`** is **`InMatch`** and a new player joins:
 - They spawn and stay on the **lobby** pad — not Red/Blue arena spawns.
 - **Round resets** and **intermissions** do **not** move them; only players in the match (`MatchParticipant` **true**) respawn on team pads.
 - They cannot pick up or throw dodgeballs until the match ends.
-- When the match ends → **lobby** phase → they can **opt in** with **LobbyJoinNextMatchClient** like everyone else (still default **false** until they tap join).
+- When the match ends → **lobby** phase → prior **`JoinNextMatch`** choices still count toward **`LobbyOptedInCount`** (or they can toggle the button anytime while spectating).
 
 Re-paste **LobbyService**, **TeamAutoBalance**, **RoundService**, and **DodgeballService** after updating.
 
@@ -186,7 +186,7 @@ Re-paste **LobbyService**, **TeamAutoBalance**, **RoundService**, and **Dodgebal
 | `MatchScore_Blue` | Blue’s match points |
 | `MatchPointsToWin` | Usually **3** |
 | `LobbyCountdownEndsAt` | Server time when lobby countdown ends (nil if paused) |
-| `LobbyOptedInCount` | How many players opted in for the next match (lobby UI) |
+| `LobbyOptedInCount` | Players with **`JoinNextMatch` true** (updates during lobby and **InMatch**; used when the next lobby countdown starts) |
 | `RoundState` | `LobbyIdle`, `Playing`, `Intermission`, `Resetting` |
 | `RoundNumber` | Current arena round in the match |
 | `IntermissionEndsAt` | Between-round countdown (step 5) |
