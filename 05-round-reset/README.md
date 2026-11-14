@@ -47,6 +47,7 @@ Look at the bottom for **Round reset** settings:
 
 - When the game starts, each ball remembers **where it was standing** (`SpawnCFrame` attribute).
 - A hidden folder **DodgeballRoundBridge** appears under **ServerScriptService** at run time — **RoundService** talks to it. You do not paste anything there; it is automatic.
+- OUT hits during throws still use **spherecast sweeps** from step 4; round reset turns those off and puts balls back.
 
 ---
 

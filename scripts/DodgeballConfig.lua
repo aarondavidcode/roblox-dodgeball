@@ -37,6 +37,9 @@ local DodgeballConfig = {
 	-- After you throw, wait this long before you can pick up again (studs/s spam guard).
 	PICKUP_COOLDOWN_SECONDS = 0.15,
 
+	-- When true, warn in Output why a throw hit did not eliminate someone (for debugging).
+	DEBUG_ELIMINATION = false,
+
 	-- === Round reset (step 5) — change these to tune between-round pacing ===
 
 	-- Team names must match Explorer → Teams (same as TeamAutoBalance).

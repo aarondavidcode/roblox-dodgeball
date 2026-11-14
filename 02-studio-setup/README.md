@@ -133,7 +133,7 @@ Usually, creating **Team** objects is enough. If players never get a team color 
 1. Click **Home** → **Game Settings** (or **File → Game Settings**).
 2. Open the **Avatar** section and confirm nothing is blocking normal spawning (defaults are fine for most dodgeball places).
 3. Open the **World** section and check spawn/character options still allow respawning (defaults are usually OK).
-4. In **StarterPlayer** (in Explorer), you can set **CharacterAutoLoads** to **true** so characters appear when players join (default is often already true).
+4. In **StarterPlayer** (in Explorer), **CharacterAutoLoads** is usually **true** (character appears when you join). The **TeamAutoBalance** script in step 3 sets your team before spawn when it can; if you still see **Neutral** in solo test, see step 3 troubleshooting.
 
 Save settings with **Save** at the bottom of the Game Settings window.
 
@@ -158,3 +158,14 @@ Our first script will live in **ServerScriptService** (server = rules for everyo
 5. **Explorer**, **Properties**, and **View** tab are available when you need them.
 
 **Next:** **[03-add-your-first-script](../03-add-your-first-script/README.md)**.
+
+---
+
+## Troubleshooting
+
+| Problem | What to try |
+|---------|-------------|
+| Team **Name** typo (`red` vs `Red`) | Names must be exactly `Red` and `Blue`. The script will warn in **Output** if it cannot find them. |
+| **Neutral** shows in the player list | Teams not created yet, or script ran before teams existed—use the latest **TeamAutoBalance** from step 3. |
+| Spawns at the **center** baseplate pad | Default **SpawnLocation** often has **Neutral** **on** (anyone can use it). Use **RedSpawn** / **BlueSpawn** with **Neutral** **off** and matching **TeamColor**; remove or move the old middle pad. |
+| Wrong side but correct team color in list | Fix spawn **TeamColor** to match the team’s **TeamColor**, not just the pad’s visual **Color**. |
