@@ -128,6 +128,39 @@ local function teleportCharacterToTeamSpawn(player: Player)
 	end
 end
 
+-- Match start and between-round reset: LoadCharacter then force team pad (survivors often miss TeamColor spawns).
+local function spawnPlayerAtTeamArena(player: Player)
+	if matchPhase ~= PHASE_IN_MATCH then
+		warn(`[LobbyService] spawnPlayerAtTeamArena skipped for {player.Name} — MatchPhase is {matchPhase}, not InMatch.`)
+		return
+	end
+	if not player.Team then
+		warn(`[LobbyService] spawnPlayerAtTeamArena skipped for {player.Name} — no team.`)
+		return
+	end
+	player.Neutral = false
+	player:LoadCharacter()
+	teleportCharacterToTeamSpawn(player)
+end
+
+local function respawnAllPlayersAtTeamArena()
+	if matchPhase ~= PHASE_IN_MATCH then
+		warn("[LobbyService] respawnAllPlayersAtTeamArena skipped — not InMatch.")
+		return
+	end
+	local playerList = Players:GetPlayers()
+	table.sort(playerList, function(a, b)
+		return a.UserId < b.UserId
+	end)
+	for _, player in playerList do
+		if player.Team then
+			spawnPlayerAtTeamArena(player)
+		else
+			warn(`[LobbyService] Round reset: {player.Name} has no team — skipping arena spawn.`)
+		end
+	end
+end
+
 local function respawnPlayerAtLobby(player: Player)
 	if matchPhase == PHASE_IN_MATCH then
 		return
@@ -234,13 +267,8 @@ local function startMatchFromLobby()
 
 	for _, player in playerList do
 		if player.Team then
-			player.Neutral = false
 			player:SetAttribute("IsOut", false)
-			player:LoadCharacter()
-			warn(`[LobbyService] Spawn {player.Name} on team {player.Team.Name} (LoadCharacter + TeamColor spawn).`)
-			task.spawn(function()
-				teleportCharacterToTeamSpawn(player)
-			end)
+			spawnPlayerAtTeamArena(player)
 		else
 			warn(`[LobbyService] {player.Name} has no team after AssignMatchTeams — skipping spawn.`)
 		end
@@ -330,6 +358,21 @@ local function wireRoundBridge()
 		beginEv.Name = "BeginMatchRound"
 		beginEv.Parent = bridge
 	end
+
+	local respawnArenaFn = bridge:FindFirstChild("RespawnAllAtTeamArena")
+	if not respawnArenaFn then
+		respawnArenaFn = Instance.new("BindableFunction")
+		respawnArenaFn.Name = "RespawnAllAtTeamArena"
+		respawnArenaFn.Parent = bridge
+	end
+
+	(respawnArenaFn :: BindableFunction).OnInvoke = function(): boolean
+		if matchPhase ~= PHASE_IN_MATCH then
+			return false
+		end
+		respawnAllPlayersAtTeamArena()
+		return true
+	end
 end
 
 local function onPlayerAdded(player: Player)
@@ -342,13 +385,9 @@ local function onPlayerAdded(player: Player)
 		end)
 	elseif matchPhase == PHASE_IN_MATCH then
 		if invokeBridge("AssignMatchTeams") then
-			player.Neutral = false
 			player:SetAttribute("IsOut", false)
 			if player.Team then
-				player:LoadCharacter()
-				task.spawn(function()
-					teleportCharacterToTeamSpawn(player)
-				end)
+				spawnPlayerAtTeamArena(player)
 			else
 				warn(`[LobbyService] {player.Name} joined mid-match but has no team after balance.`)
 			end

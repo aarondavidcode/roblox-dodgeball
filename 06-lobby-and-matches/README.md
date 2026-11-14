@@ -202,6 +202,7 @@ Workspace
 | Solo player in arena / no lobby | Same — old TeamAutoBalance assigned Red/Blue on join |
 | OUT player walks around | Re-paste **DodgeballService** (OUT should kill, not freeze) |
 | Match score stuck | Watch **RoundStatus** attributes while a round ends |
+| Round winner at **LobbySpawn** next round | Re-paste **LobbyService** + **RoundService** — between-round respawn must call team pad teleport, not **LoadCharacter** alone |
 
 ---
 
