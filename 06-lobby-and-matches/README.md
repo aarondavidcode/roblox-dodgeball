@@ -99,7 +99,7 @@ New settings at the bottom:
 **What changed:**
 
 - In **lobby**, players stay **Neutral** with **no** Red/Blue team (fixes wrong arena spawn while waiting).
-- **Red/Blue** assignment happens when the lobby countdown ends and a match starts (and when someone joins mid-match).
+- **Red/Blue** assignment happens when the lobby countdown ends and a match starts only for players already in the lobby.
 
 ## Step 6 — Add LobbyService
 
@@ -108,6 +108,20 @@ New settings at the bottom:
 3. Paste from **[scripts/LobbyService.server.lua](../scripts/LobbyService.server.lua)**.
 
 You should have **four** game scripts: **TeamAutoBalance**, **DodgeballService**, **RoundService**, **LobbyService**.
+
+---
+
+## Joining during a match
+
+When **`MatchPhase`** is **`InMatch`** and a new player joins:
+
+- They stay **Neutral** with **no** team (attribute **`MatchParticipant`** is **false**).
+- They spawn and stay on the **lobby** pad — not Red/Blue arena spawns.
+- **Round resets** and **intermissions** do **not** move them; only players in the match (`MatchParticipant` **true**) respawn on team pads.
+- They cannot pick up or throw dodgeballs until the match ends.
+- When the match ends → **lobby** phase → they count toward the lobby countdown and can play the **next** match like everyone else.
+
+Re-paste **LobbyService**, **TeamAutoBalance**, **RoundService**, and **DodgeballService** after updating.
 
 ---
 
@@ -203,6 +217,7 @@ Workspace
 | OUT player walks around | Re-paste **DodgeballService** (OUT should kill, not freeze) |
 | Match score stuck | Watch **RoundStatus** attributes while a round ends |
 | Round winner at **LobbySpawn** next round | Re-paste **LobbyService** + **RoundService** — between-round respawn must call team pad teleport, not **LoadCharacter** alone |
+| New player pulled into mid-match arena | Re-paste **LobbyService** + **TeamAutoBalance** — mid-match joiners should stay on **lobby** pad until the match ends |
 
 ---
 

@@ -14,6 +14,8 @@ local Config = require(ServerScriptService:WaitForChild("DodgeballConfig"))
 local PHASE_LOBBY = "Lobby"
 local PHASE_IN_MATCH = "InMatch"
 
+local ATTR_MATCH_PARTICIPANT = "MatchParticipant"
+
 local matchPhase: string = PHASE_LOBBY
 local matchScores: { [string]: number } = {}
 local lobbyCountdownEndsAt: number? = nil
@@ -102,7 +104,20 @@ local function findTeamSpawnLocation(team: Team): SpawnLocation?
 	return nil
 end
 
+local function isMatchParticipant(player: Player): boolean
+	return player:GetAttribute(ATTR_MATCH_PARTICIPANT) == true
+end
+
+local function clearAllMatchParticipants()
+	for _, player in Players:GetPlayers() do
+		player:SetAttribute(ATTR_MATCH_PARTICIPANT, nil)
+	end
+end
+
 local function teleportCharacterToTeamSpawn(player: Player)
+	if not isMatchParticipant(player) then
+		return
+	end
 	local team = player.Team
 	if not team then
 		return
@@ -134,6 +149,9 @@ local function spawnPlayerAtTeamArena(player: Player)
 		warn(`[LobbyService] spawnPlayerAtTeamArena skipped for {player.Name} — MatchPhase is {matchPhase}, not InMatch.`)
 		return
 	end
+	if not isMatchParticipant(player) then
+		return
+	end
 	if not player.Team then
 		warn(`[LobbyService] spawnPlayerAtTeamArena skipped for {player.Name} — no team.`)
 		return
@@ -153,29 +171,44 @@ local function respawnAllPlayersAtTeamArena()
 		return a.UserId < b.UserId
 	end)
 	for _, player in playerList do
-		if player.Team then
+		if isMatchParticipant(player) and player.Team then
 			spawnPlayerAtTeamArena(player)
-		else
-			warn(`[LobbyService] Round reset: {player.Name} has no team — skipping arena spawn.`)
 		end
 	end
 end
 
-local function respawnPlayerAtLobby(player: Player)
-	if matchPhase == PHASE_IN_MATCH then
-		return
-	end
-	player.Team = nil
-	player.Neutral = true
-	player:LoadCharacter()
+local function teleportCharacterToLobbySpawn(player: Player)
 	local spawn = findLobbySpawnLocation()
 	local character = player.Character
-	if spawn and character then
+	if not character then
+		return
+	end
+	if spawn then
 		local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
 		if hrp then
 			hrp.CFrame = spawn.CFrame + Vector3.new(0, SPAWN_Y_OFFSET, 0)
 		end
 	end
+end
+
+local function respawnPlayerAtLobby(player: Player)
+	if matchPhase == PHASE_IN_MATCH and isMatchParticipant(player) then
+		return
+	end
+	player.Team = nil
+	player.Neutral = true
+	player:LoadCharacter()
+	teleportCharacterToLobbySpawn(player)
+end
+
+local function respawnSpectatorAtLobby(player: Player)
+	player:SetAttribute(ATTR_MATCH_PARTICIPANT, false)
+	player:SetAttribute("IsOut", false)
+	player.Team = nil
+	player.Neutral = true
+	player:LoadCharacter()
+	teleportCharacterToLobbySpawn(player)
+	warn(`[LobbyService] {player.Name} joined mid-match — staying at lobby as spectator until this match ends.`)
 end
 
 local function respawnAllAtLobby()
@@ -213,6 +246,7 @@ end
 
 local function enterLobbyPhase(reason: string)
 	matchPhase = PHASE_LOBBY
+	clearAllMatchParticipants()
 	initMatchScores()
 	resetLobbyCountdownFull()
 	publishMatchStatus()
@@ -267,6 +301,7 @@ local function startMatchFromLobby()
 
 	for _, player in playerList do
 		if player.Team then
+			player:SetAttribute(ATTR_MATCH_PARTICIPANT, true)
 			player:SetAttribute("IsOut", false)
 			spawnPlayerAtTeamArena(player)
 		else
@@ -384,14 +419,12 @@ local function onPlayerAdded(player: Player)
 			end
 		end)
 	elseif matchPhase == PHASE_IN_MATCH then
-		if invokeBridge("AssignMatchTeams") then
-			player:SetAttribute("IsOut", false)
-			if player.Team then
-				spawnPlayerAtTeamArena(player)
-			else
-				warn(`[LobbyService] {player.Name} joined mid-match but has no team after balance.`)
+		player:SetAttribute(ATTR_MATCH_PARTICIPANT, false)
+		task.defer(function()
+			if player.Parent and matchPhase == PHASE_IN_MATCH and player:GetAttribute(ATTR_MATCH_PARTICIPANT) == false then
+				respawnSpectatorAtLobby(player)
 			end
-		end
+		end)
 	end
 end
 
