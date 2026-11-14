@@ -123,8 +123,8 @@ end)
 1. **Slow touch = pickup** — If a ball bumps you gently (under **PICKUP_MAX_SPEED** in config), you **hold** it on your right hand.
 2. **One ball each** — You can only hold one ball at a time.
 3. **Throw** — Press **F** or **click**. The server releases the ball and adds speed (**DefaultThrow** module).
-4. **Fast hit = maybe OUT** — If a thrown ball hits an enemy **fast enough** (**HIT_MIN_SPEED**) and **soon enough** after the throw (**THROW_OUT_WINDOW_SECONDS**), that player is **OUT** (`IsOut` attribute, cannot move).
-5. **Old rolls don’t count** — A ball rolling on the ground after the time window is just a pickup, not an elimination.
+4. **Fast hit = maybe OUT** — If a thrown ball hits an enemy **fast enough** (**HIT_MIN_SPEED**) and **soon enough** after the throw (**THROW_OUT_WINDOW_SECONDS**), that player is **OUT** (`IsOut` attribute, cannot move). The server remembers **throw speed** at release because Roblox **Touched** can fire *after* the bounce, when the ball already looks “slow.”
+5. **Old rolls don’t count** — A ball rolling on the ground after the time window is just a pickup, not an elimination (only **instant** speed is used then).
 6. **Same team** — Friendly hits do not eliminate.
 
 Tweak numbers at the top of **DodgeballConfig** and test again.
@@ -175,8 +175,26 @@ ReplicatedStorage
 | Warning: no dodgeballs | Add Parts under **Workspace/Dodgeballs** or add tag **Dodgeball** |
 | Pickup never happens | Ball might be moving too fast; lower **PICKUP_MAX_SPEED** or let ball settle |
 | Throw does nothing | Check **DodgeballThrowInput** LocalScript and **Output** for errors |
-| Hits never eliminate | Raise **THROW_IMPULSE** or lower **HIT_MIN_SPEED** slightly for testing |
+| Hits never eliminate | See **“Ball hits but no OUT”** below |
 | Everyone on same team hits | Only **opposite** teams count; check Teams in Explorer |
+
+### Ball hits but no OUT
+
+Roblox runs **physics first**, then your **Touched** script. On a hard throw the ball can look almost **stopped** in code even though the hit was real. Old scripts treated that slow touch as **pickup** instead of elimination.
+
+**Fix:** Copy the latest three files from this repo into Studio again (replace what you have):
+
+1. **[DodgeballConfig.lua](../scripts/DodgeballConfig.lua)** → ModuleScript `DodgeballConfig`
+2. **[DodgeballService.server.lua](../scripts/DodgeballService.server.lua)** → Script `DodgeballService`
+3. **[throw/DefaultThrow.lua](../scripts/throw/DefaultThrow.lua)** → ModuleScript `DefaultThrow` under `throw`
+
+After that, throws store **LastThrowSpeed** / **PeakThrowSpeed** and stay in a short **throw window**. Hits on enemies during that window use that speed—not the flaky touch-time velocity.
+
+**Still stuck?**
+
+- Test with **Test → 2 Players**; players must be on **different teams** (TeamAutoBalance from step 3).
+- Check **HIT_MIN_SPEED** in config (default 25). **THROW_IMPULSE** (default 80) should stay above it.
+- Set **`DEBUG_ELIMINATION = true`** in `DodgeballConfig` and watch **Output** when a hit fails (same team, window expired, etc.).
 
 ---
 
