@@ -13,8 +13,34 @@ local DodgeballConfig = {
 	-- Out: only hits within this many seconds after a throw can eliminate someone.
 	THROW_OUT_WINDOW_SECONDS = 3,
 
-	-- Throw strength (impulse). Bigger = faster throws.
+	-- Throw strength (impulse) at 100% power. Bigger = faster throws.
+	-- DefaultThrow multiplies this by the aim power bar (0–1) from the client.
 	THROW_IMPULSE = 80,
+
+	-- === Aim + power charge (hold throw button while aiming) ===
+
+	-- Seconds to charge from 0% to 100% power while you hold aim.
+	AIM_POWER_CHARGE_SECONDS = 1.25,
+
+	-- Longest you can aim before the ball auto-throws at your crosshair + current power.
+	AIM_MAX_SECONDS = 4,
+
+	-- === Ball hold before you start aiming ===
+
+	-- After pickup, you must start aiming within this many seconds or the ball rolls away (not a throw).
+	BALL_MAX_HOLD_SECONDS = 5,
+
+	-- Penalty when max hold expires: cannot pick up balls for this long.
+	HOLD_PENALTY_PICKUP_COOLDOWN_SECONDS = 3,
+
+	-- Penalty walk/jump slow duration (server restores DEFAULT_WALK_SPEED after).
+	HOLD_PENALTY_SLOW_SECONDS = 3,
+
+	-- WalkSpeed while slowed (multiplier on DEFAULT_WALK_SPEED; 0.5 = half speed).
+	HOLD_PENALTY_WALK_SPEED_MULTIPLIER = 0.5,
+
+	-- Gentle roll speed when max hold forces a drop (cannot eliminate anyone).
+	HOLD_ROLL_IMPULSE = 12,
 
 	-- Where ball Parts live in Workspace (kids build this folder).
 	BALL_FOLDER_NAME = "Dodgeballs",

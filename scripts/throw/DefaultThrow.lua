@@ -11,6 +11,7 @@ export type ThrowContext = {
 	ball: BasePart,
 	thrower: Player,
 	direction: Vector3, -- unit vector, already checked on the server
+	powerMultiplier: number?, -- 0–1 from aim charge; defaults to 1
 }
 
 local DefaultThrow = {}
@@ -21,14 +22,20 @@ DefaultThrow.name = "Default"
 function DefaultThrow.throw(_self: typeof(DefaultThrow), context: ThrowContext)
 	local ball = context.ball
 	local direction = context.direction.Unit
+	local power = context.powerMultiplier
+	if typeof(power) ~= "number" then
+		power = 1
+	end
+	power = math.clamp(power, 0.05, 1)
+
 	local mass = ball.AssemblyMass
-	local impulse = direction * Config.THROW_IMPULSE * mass
+	local impulse = direction * Config.THROW_IMPULSE * mass * power
 
 	ball:ApplyImpulse(impulse)
 
 	local now = workspace:GetServerTimeNow()
-	-- Impulse = direction * THROW_IMPULSE * mass → speed magnitude ≈ THROW_IMPULSE (studs/s).
-	local estimatedSpeed = Config.THROW_IMPULSE
+	-- Impulse = direction * THROW_IMPULSE * mass * power → speed magnitude ≈ THROW_IMPULSE * power.
+	local estimatedSpeed = Config.THROW_IMPULSE * power
 	ball:SetAttribute("LastThrowTime", now)
 	ball:SetAttribute("LastThrowerUserId", context.thrower.UserId)
 	ball:SetAttribute("LastThrowSpeed", estimatedSpeed)
