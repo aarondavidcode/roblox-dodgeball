@@ -201,6 +201,6 @@ The service uses **server spherecast sweeps** while the ball is in the throw win
 
 ## What is next?
 
-Read **[WHATS-NEXT.md](../WHATS-NEXT.md)** for round reset, lobby flow, and polish. Your map can always grow—scripts add new rules one milestone at a time.
+Continue to **[05-round-reset](../05-round-reset/README.md)** for rounds and respawn, or read **[WHATS-NEXT.md](../WHATS-NEXT.md)** for the full roadmap.
 
 Back: **[README.md](../README.md)**.

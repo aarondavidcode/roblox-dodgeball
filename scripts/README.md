@@ -23,3 +23,15 @@ Walkthrough: **[03-add-your-first-script](../03-add-your-first-script/README.md)
 Walkthrough: **[04-balls-and-throwing](../04-balls-and-throwing/README.md)** (includes the **LocalScript** for throw input).
 
 Default throw lives in **`throw/`** so you can add more **ModuleScripts** later and switch **`ACTIVE_THROW_PROFILE`** in **DodgeballConfig**.
+
+---
+
+## Round reset (step 5)
+
+| Repo file | Studio object | Type |
+|-----------|---------------|------|
+| [DodgeballConfig.lua](DodgeballConfig.lua) | `DodgeballConfig` | ModuleScript (paste over step 4 copy) |
+| [DodgeballService.server.lua](DodgeballService.server.lua) | `DodgeballService` | Script (paste over step 4 copy) |
+| [RoundService.server.lua](RoundService.server.lua) | `RoundService` | Script (new) |
+
+Walkthrough: **[05-round-reset](../05-round-reset/README.md)** (optional **RoundStatus** UI LocalScript is in that guide only).
