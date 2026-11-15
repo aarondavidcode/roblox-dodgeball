@@ -47,10 +47,15 @@ end
 
 local roundStatus = getOrCreateRoundStatusFolder()
 
+local function playerJoinNextMatchOptedIn(player: Player): boolean
+	-- Default opted in: only explicit false opts out (nil counts as in).
+	return player:GetAttribute(ATTR_JOIN_NEXT_MATCH) ~= false
+end
+
 local function countOptedInPlayers(): number
 	local n = 0
 	for _, player in Players:GetPlayers() do
-		if player:GetAttribute(ATTR_JOIN_NEXT_MATCH) == true then
+		if playerJoinNextMatchOptedIn(player) then
 			n += 1
 		end
 	end
@@ -267,9 +272,6 @@ local function respawnPlayerAtLobby(player: Player)
 	end
 	player.Team = nil
 	player.Neutral = true
-	if player:GetAttribute(ATTR_JOIN_NEXT_MATCH) == nil then
-		player:SetAttribute(ATTR_JOIN_NEXT_MATCH, false)
-	end
 	player:LoadCharacter()
 	teleportCharacterToLobbySpawn(player)
 end
@@ -336,6 +338,27 @@ local function canSetJoinNextMatch(player: Player): boolean
 		return false
 	end
 	return true
+end
+
+local function applyDefaultJoinNextMatchForPlayer(player: Player, forceLobbyDefault: boolean)
+	if not canSetJoinNextMatch(player) then
+		return
+	end
+	if not forceLobbyDefault and player:GetAttribute(ATTR_JOIN_NEXT_MATCH) == false then
+		return
+	end
+	player:SetAttribute(ATTR_JOIN_NEXT_MATCH, true)
+end
+
+local function applyDefaultJoinNextMatchForAllPlayers(forceLobbyDefault: boolean)
+	for _, player in Players:GetPlayers() do
+		applyDefaultJoinNextMatchForPlayer(player, forceLobbyDefault)
+	end
+end
+
+local function afterLobbyPopulationChange()
+	publishMatchStatus()
+	applyLobbyCountdownAfterOptInChange()
 end
 
 local function applyLobbyCountdownAfterOptInChange()
@@ -410,8 +433,11 @@ local function enterLobbyPhase(reason: string)
 	resetLobbyCountdownFull()
 	publishMatchStatus()
 	warn(`[LobbyService] Lobby phase ({reason}). First to {Config.MATCH_POINTS_TO_WIN} round wins takes the match.`)
-	task.defer(respawnAllAtLobby)
-	task.defer(ensureLobbyCountdownRunning)
+	task.defer(function()
+		respawnAllAtLobby()
+		applyDefaultJoinNextMatchForAllPlayers(true)
+		afterLobbyPopulationChange()
+	end)
 end
 
 local function invokeBridge(functionName: string): boolean
@@ -467,7 +493,7 @@ local function startMatchFromLobby()
 			spawnPlayerAtTeamArena(player)
 		else
 			player:SetAttribute(ATTR_MATCH_PARTICIPANT, false)
-			if player:GetAttribute(ATTR_JOIN_NEXT_MATCH) == true then
+			if playerJoinNextMatchOptedIn(player) then
 				warn(`[LobbyService] {player.Name} opted in but has no team — staying lobby spectator.`)
 			end
 		end
@@ -597,7 +623,8 @@ local function onPlayerAdded(player: Player)
 		task.defer(function()
 			if player.Parent and matchPhase == PHASE_LOBBY then
 				respawnPlayerAtLobby(player)
-				ensureLobbyCountdownRunning()
+				applyDefaultJoinNextMatchForPlayer(player, false)
+				afterLobbyPopulationChange()
 			end
 		end)
 	elseif matchPhase == PHASE_IN_MATCH then
@@ -605,6 +632,8 @@ local function onPlayerAdded(player: Player)
 		task.defer(function()
 			if player.Parent and matchPhase == PHASE_IN_MATCH and player:GetAttribute(ATTR_MATCH_PARTICIPANT) == false then
 				respawnSpectatorAtLobby(player)
+				applyDefaultJoinNextMatchForPlayer(player, false)
+				publishMatchStatus()
 			end
 		end)
 	end
@@ -616,9 +645,8 @@ local function onPlayerRemoving(player: Player)
 			local remaining = countOptedInPlayers()
 			if remaining < 2 then
 				resetLobbyCountdownFull()
-			elseif player:GetAttribute(ATTR_JOIN_NEXT_MATCH) == true then
-				publishMatchStatus()
-				ensureLobbyCountdownRunning()
+			elseif playerJoinNextMatchOptedIn(player) then
+				afterLobbyPopulationChange()
 			end
 		end)
 	end

@@ -67,7 +67,8 @@ end
 local screenGui, toggleButton = ensureGui()
 
 local function optedIn(): boolean
-	return localPlayer:GetAttribute(ATTR_JOIN) == true
+	-- Server default is opted in; only explicit false opts out.
+	return localPlayer:GetAttribute(ATTR_JOIN) ~= false
 end
 
 local function isQualifyingNeutral(): boolean

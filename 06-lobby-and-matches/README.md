@@ -137,11 +137,11 @@ At run time it creates a ScreenGui named **`JoinNextMatch`** with a button **`Op
 
 **Server rules**
 
-- Player attribute **`JoinNextMatch`** (default **false** for new joins).
+- Player attribute **`JoinNextMatch`** (default **opted in**: server sets **`true`** for qualifying neutral players on join and when a **lobby phase** starts; only an explicit **`false`** opts out until the next lobby phase).
 - **RemoteEvent** **`SetJoinNextMatch`** under **`ReplicatedStorage/DodgeballRemotes`** (created by **LobbyService**). Works in **lobby** and for **InMatch spectators** (no team change until the next lobby countdown).
 - Lobby countdown runs only when **at least 2** players have **`JoinNextMatch` true** — not merely 2 players in the server.
 - When the countdown ends, only opted-in players get **Red/Blue** teams and arena spawns; everyone else stays a lobby spectator for that match (`MatchParticipant` **false**).
-- **Opt-in persists** across countdown pauses and resets until the player toggles it or leaves. Players who **play** a match have **`JoinNextMatch` cleared** when that match starts so they must opt in again for the following lobby cycle.
+- **Opt-out** during a lobby countdown **persists** until the player toggles back, leaves, or a new **lobby phase** begins (after a match ends everyone neutral is defaulted **in** again). Players who **play** a match have **`JoinNextMatch` cleared** when that match **starts**; when they return to the lobby they are defaulted **in** again automatically.
 - Mid-match joiners can use the same button while the match runs; **`LobbyOptedInCount`** on **RoundStatus** still counts them so the next lobby countdown can start right away if enough players opted in early.
 
 Re-paste **LobbyService**, **TeamAutoBalance**, **DodgeballConfig**, and **RoundStatusClient** when you update.
@@ -165,8 +165,8 @@ Re-paste **LobbyService**, **TeamAutoBalance**, **RoundService**, and **Dodgebal
 ## Step 7 — How it plays
 
 1. **Lobby** — Everyone spawns at your **lobby** pad. **Output** says `[LobbyService] Lobby phase`.
-2. **Opt in** — Neutral players tap **Play next match** (or use **SetJoinNextMatch** from your own UI later).
-3. **Countdown** — With **2 or more opted-in** players, a **30** second lobby timer runs (change in config).
+2. **Join next match** — New players are **opted in by default**. Tap the button only to **spectate** (opt out) for this lobby cycle.
+3. **Countdown** — With **2 or more opted-in** players (default counts), a **30** second lobby timer runs (change in config).
 4. **Not enough opted in** — Timer **pauses** and resets until **2+** have joined the next match (even if more players are standing in the lobby).
 5. **One player left in server** — Same pause/reset until someone else joins.
 6. **Match start** — Timer hits 0 → **`InMatch`** → **only opted-in** players load on **Red/Blue** spawns → **Round 1**; others stay lobby spectators for that match.
@@ -214,7 +214,7 @@ If you already pasted the old step 5 script, **replace** it with the latest **[s
 1. **Save** the place.
 2. **F5** (Play). **View → Output** — look for `[LobbyService]` and `[RoundService] Waiting for lobby match start`.
 3. **Test → 2 Players**.
-4. On **both** clients, tap **Play next match** so the countdown starts.
+4. Confirm the lobby countdown **starts on its own** with two players (both default opted in).
 5. When the match starts, play until one team wins **3 rounds** (you can lower `MATCH_POINTS_TO_WIN` in config for a quick test).
 6. Confirm OUT players **die** and stay out until the round resets.
 7. After match win, both players should return to **lobby** and scores reset.
@@ -222,7 +222,7 @@ If you already pasted the old step 5 script, **replace** it with the latest **[s
 ### Three players (opt-in + spectator)
 
 1. **Test → 3 Players**.
-2. **Player A** and **Player B**: opt **in**. **Player C**: leave opt **out** (default).
+2. **Player C**: tap **spectate** to opt **out**. **Players A & B** stay default opted in.
 3. Confirm countdown runs; when it hits **0**, **A** and **B** spawn on arena pads; **C** stays on **LobbySpawn** and cannot throw.
 4. Let the match finish → all return to lobby → **C** can opt in for the next cycle.
 

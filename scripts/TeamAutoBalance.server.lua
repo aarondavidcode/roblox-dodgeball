@@ -131,7 +131,7 @@ local function assignAllPlayersBalanced(needsRespawn: boolean): boolean
 			continue
 		end
 		if matchIsLive() and not isMatchParticipant(player) then
-			if player:GetAttribute(ATTR_JOIN_NEXT_MATCH) ~= true then
+			if player:GetAttribute(ATTR_JOIN_NEXT_MATCH) == false then
 				continue
 			end
 		end

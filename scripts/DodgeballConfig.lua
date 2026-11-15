@@ -102,7 +102,7 @@ local DodgeballConfig = {
 	-- Option B: tag a SpawnLocation with CollectionService (leave empty string to use name only).
 	LOBBY_SPAWN_TAG = "",
 
-	-- Lobby opt-in (neutral spectators choose whether they join the next match).
+	-- Lobby opt-in: default is joined; only explicit false opts out (see LobbyService).
 	JOIN_NEXT_MATCH_ATTR = "JoinNextMatch",
 	SET_JOIN_NEXT_MATCH_REMOTE_NAME = "SetJoinNextMatch",
 }
