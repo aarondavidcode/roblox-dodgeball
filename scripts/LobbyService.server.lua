@@ -340,20 +340,15 @@ local function canSetJoinNextMatch(player: Player): boolean
 	return true
 end
 
-local function applyDefaultJoinNextMatchForPlayer(player: Player, forceLobbyDefault: boolean)
+-- Default opt-in only on first join (attribute still nil). Never override explicit false.
+local function applyDefaultJoinNextMatchOnPlayerAdded(player: Player)
 	if not canSetJoinNextMatch(player) then
 		return
 	end
-	if not forceLobbyDefault and player:GetAttribute(ATTR_JOIN_NEXT_MATCH) == false then
+	if player:GetAttribute(ATTR_JOIN_NEXT_MATCH) ~= nil then
 		return
 	end
 	player:SetAttribute(ATTR_JOIN_NEXT_MATCH, true)
-end
-
-local function applyDefaultJoinNextMatchForAllPlayers(forceLobbyDefault: boolean)
-	for _, player in Players:GetPlayers() do
-		applyDefaultJoinNextMatchForPlayer(player, forceLobbyDefault)
-	end
 end
 
 local function afterLobbyPopulationChange()
@@ -435,7 +430,6 @@ local function enterLobbyPhase(reason: string)
 	warn(`[LobbyService] Lobby phase ({reason}). First to {Config.MATCH_POINTS_TO_WIN} round wins takes the match.`)
 	task.defer(function()
 		respawnAllAtLobby()
-		applyDefaultJoinNextMatchForAllPlayers(true)
 		afterLobbyPopulationChange()
 	end)
 end
@@ -488,7 +482,6 @@ local function startMatchFromLobby()
 	for _, player in playerList do
 		if player.Team then
 			player:SetAttribute(ATTR_MATCH_PARTICIPANT, true)
-			player:SetAttribute(ATTR_JOIN_NEXT_MATCH, false)
 			player:SetAttribute("IsOut", false)
 			spawnPlayerAtTeamArena(player)
 		else
@@ -623,7 +616,7 @@ local function onPlayerAdded(player: Player)
 		task.defer(function()
 			if player.Parent and matchPhase == PHASE_LOBBY then
 				respawnPlayerAtLobby(player)
-				applyDefaultJoinNextMatchForPlayer(player, false)
+				applyDefaultJoinNextMatchOnPlayerAdded(player)
 				afterLobbyPopulationChange()
 			end
 		end)
@@ -632,7 +625,7 @@ local function onPlayerAdded(player: Player)
 		task.defer(function()
 			if player.Parent and matchPhase == PHASE_IN_MATCH and player:GetAttribute(ATTR_MATCH_PARTICIPANT) == false then
 				respawnSpectatorAtLobby(player)
-				applyDefaultJoinNextMatchForPlayer(player, false)
+				applyDefaultJoinNextMatchOnPlayerAdded(player)
 				publishMatchStatus()
 			end
 		end)

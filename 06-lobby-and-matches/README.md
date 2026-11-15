@@ -137,11 +137,11 @@ At run time it creates a ScreenGui named **`JoinNextMatch`** with a button **`Op
 
 **Server rules**
 
-- Player attribute **`JoinNextMatch`** (default **opted in**: server sets **`true`** for qualifying neutral players on join and when a **lobby phase** starts; only an explicit **`false`** opts out until the next lobby phase).
+- Player attribute **`JoinNextMatch`** (default **opted in** on **first join** only — server sets **`true`** when the attribute is still unset). An explicit **`false`** stays until the player taps opt-in again or **leaves and re-joins** the server.
 - **RemoteEvent** **`SetJoinNextMatch`** under **`ReplicatedStorage/DodgeballRemotes`** (created by **LobbyService**). Works in **lobby** and for **InMatch spectators** (no team change until the next lobby countdown).
 - Lobby countdown runs only when **at least 2** players have **`JoinNextMatch` true** — not merely 2 players in the server.
 - When the countdown ends, only opted-in players get **Red/Blue** teams and arena spawns; everyone else stays a lobby spectator for that match (`MatchParticipant` **false**).
-- **Opt-out** during a lobby countdown **persists** until the player toggles back, leaves, or a new **lobby phase** begins (after a match ends everyone neutral is defaulted **in** again). Players who **play** a match have **`JoinNextMatch` cleared** when that match **starts**; when they return to the lobby they are defaulted **in** again automatically.
+- **Opt-out persists** across lobby countdowns, match start, and match end — the server never flips **`false`** back to **`true`** except on **PlayerAdded** when the attribute was unset (new session / first time) or when the player uses **`SetJoinNextMatch`** to opt in. **`MatchParticipant`** handles who plays the current match; **`JoinNextMatch`** is only for the **next** countdown.
 - Mid-match joiners can use the same button while the match runs; **`LobbyOptedInCount`** on **RoundStatus** still counts them so the next lobby countdown can start right away if enough players opted in early.
 
 Re-paste **LobbyService**, **TeamAutoBalance**, **DodgeballConfig**, and **RoundStatusClient** when you update.
@@ -224,7 +224,7 @@ If you already pasted the old step 5 script, **replace** it with the latest **[s
 1. **Test → 3 Players**.
 2. **Player C**: tap **spectate** to opt **out**. **Players A & B** stay default opted in.
 3. Confirm countdown runs; when it hits **0**, **A** and **B** spawn on arena pads; **C** stays on **LobbySpawn** and cannot throw.
-4. Let the match finish → all return to lobby → **C** can opt in for the next cycle.
+4. Let the match finish → all return to lobby → **C** is **still opted out** until they tap opt-in (no server reset).
 
 **Stop** when done.
 
