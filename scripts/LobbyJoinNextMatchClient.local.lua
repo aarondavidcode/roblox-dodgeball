@@ -14,7 +14,7 @@ local REMOTES_FOLDER = "DodgeballRemotes"
 local ROUND_STATUS_FOLDER = "RoundStatus"
 
 local HINT_VISIBLE_SECONDS = 30
-local HINT_FADE_SECONDS = 5
+local HINT_FADE_SECONDS = 2
 local BAR_HEIGHT = 44
 
 local localPlayer = Players.LocalPlayer
@@ -36,6 +36,8 @@ local roundStatus = ReplicatedStorage:WaitForChild(ROUND_STATUS_FOLDER, 30)
 
 local hintSessionEnded = false
 local hintTimerStarted = false
+local hintFadeInProgress = false
+local hintTimerGeneration = 0
 
 local function ensureGui(): (ScreenGui, TextButton, Frame)
 	local existing = playerGui:FindFirstChild("JoinNextMatch")
@@ -105,6 +107,7 @@ local function ensureGui(): (ScreenGui, TextButton, Frame)
 	queueHint.BackgroundTransparency = 0.15
 	queueHint.BorderSizePixel = 0
 	queueHint.Visible = false
+	queueHint.Active = true
 	queueHint.Parent = bottomBar
 
 	local hintCorner = Instance.new("UICorner")
@@ -133,6 +136,7 @@ local function ensureGui(): (ScreenGui, TextButton, Frame)
 	arrow.TextColor3 = Color3.fromRGB(255, 220, 120)
 	arrow.Text = "◀"
 	arrow.TextXAlignment = Enum.TextXAlignment.Right
+	arrow.Active = true
 	arrow.Parent = queueHint
 
 	local hintLabel = Instance.new("TextLabel")
@@ -146,6 +150,7 @@ local function ensureGui(): (ScreenGui, TextButton, Frame)
 	hintLabel.TextColor3 = Color3.new(1, 1, 1)
 	hintLabel.TextWrapped = false
 	hintLabel.Text = "Tap here to queue or spectate"
+	hintLabel.Active = true
 	hintLabel.Parent = queueHint
 
 	return screenGui, button, queueHint
@@ -190,13 +195,15 @@ local function refreshButtonVisual()
 	end
 end
 
-local function tweenHintFadeOut()
+local function finalizeHintSession()
+	hintSessionEnded = true
+	queueHint.Visible = false
+end
+
+local function playHintFadeOut()
 	local fadeInfo = TweenInfo.new(HINT_FADE_SECONDS, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	local tweens: { Tween } = {}
-	table.insert(
-		tweens,
-		TweenService:Create(queueHint, fadeInfo, { BackgroundTransparency = 1 })
-	)
+	table.insert(tweens, TweenService:Create(queueHint, fadeInfo, { BackgroundTransparency = 1 }))
 	for _, desc in queueHint:GetDescendants() do
 		if desc:IsA("TextLabel") then
 			table.insert(
@@ -207,6 +214,47 @@ local function tweenHintFadeOut()
 	end
 	for _, tween in tweens do
 		tween:Play()
+	end
+end
+
+local function startHintFadeOut()
+	if hintSessionEnded or hintFadeInProgress or not queueHint.Visible then
+		return
+	end
+	hintFadeInProgress = true
+	playHintFadeOut()
+	task.delay(HINT_FADE_SECONDS, function()
+		if not hintFadeInProgress then
+			return
+		end
+		hintFadeInProgress = false
+		finalizeHintSession()
+	end)
+end
+
+local function dismissHintFromTap()
+	if hintSessionEnded or hintFadeInProgress then
+		return
+	end
+	if not hintTimerStarted or not queueHint.Visible then
+		return
+	end
+	hintTimerGeneration += 1
+	startHintFadeOut()
+end
+
+local function wireHintDismissInput()
+	local function onHintPointer(input: InputObject)
+		if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then
+			return
+		end
+		dismissHintFromTap()
+	end
+	queueHint.InputBegan:Connect(onHintPointer)
+	for _, desc in queueHint:GetDescendants() do
+		if desc:IsA("GuiObject") then
+			desc.InputBegan:Connect(onHintPointer)
+		end
 	end
 end
 
@@ -224,18 +272,18 @@ local function maybeStartHintTimer()
 		end
 	end
 
+	hintTimerGeneration += 1
+	local generation = hintTimerGeneration
+
 	task.delay(HINT_VISIBLE_SECONDS - HINT_FADE_SECONDS, function()
-		if hintSessionEnded then
+		if hintSessionEnded or generation ~= hintTimerGeneration then
 			return
 		end
-		tweenHintFadeOut()
-	end)
-
-	task.delay(HINT_VISIBLE_SECONDS, function()
-		hintSessionEnded = true
-		queueHint.Visible = false
+		startHintFadeOut()
 	end)
 end
+
+wireHintDismissInput()
 
 local function refreshHintVisibility()
 	if hintSessionEnded then
@@ -260,6 +308,7 @@ local function refreshVisibility()
 end
 
 toggleButton.Activated:Connect(function()
+	dismissHintFromTap()
 	if not isQualifyingNeutral() then
 		return
 	end
