@@ -58,7 +58,8 @@ Match players in the arena use arena balls only; this script drops lobby balls i
 
 - No OUT, no damage, no elimination sweeps on lobby balls.
 - Hit on a **`MatchParticipant`** → ball recovers immediately and respawns in its area.
-- Ball leaves all spawn volumes or enters an exclude zone → recover + respawn.
+- Ball enters an exclude zone (`LobbyBallExcludeZone`) while slow or in flight → recover + respawn.
+- Thrown balls may leave spawn volumes freely (same flight as arena); they are **not** deleted just for being airborne outside the volume.
 - Thrown balls use a light server sweep only to detect match participants (not eliminations).
 
 ## Config knobs

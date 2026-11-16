@@ -197,36 +197,6 @@ local function pointInsidePart(part: BasePart, worldPoint: Vector3): boolean
 	return math.abs(localPoint.X) <= half.X and math.abs(localPoint.Y) <= half.Y and math.abs(localPoint.Z) <= half.Z
 end
 
-local function pointInsidePartWithMargin(part: BasePart, worldPoint: Vector3, margin: number): boolean
-	local localPoint = part.CFrame:PointToObjectSpace(worldPoint)
-	local half = part.Size * 0.5 + Vector3.new(margin, margin, margin)
-	return math.abs(localPoint.X) <= half.X and math.abs(localPoint.Y) <= half.Y and math.abs(localPoint.Z) <= half.Z
-end
-
-local function isInsideAnySpawnVolume(worldPoint: Vector3): boolean
-	for _, volume in gatherSpawnVolumes() do
-		for _, part in volumeWorldParts(volume) do
-			if pointInsidePart(part, worldPoint) then
-				return true
-			end
-		end
-	end
-	return false
-end
-
-local function isBallInAllowedLobbyArea(ball: BasePart): boolean
-	local margin = BallTemplate.halfHeight()
-	local position = ball.Position
-	for _, volume in gatherSpawnVolumes() do
-		for _, part in volumeWorldParts(volume) do
-			if pointInsidePartWithMargin(part, position, margin) then
-				return true
-			end
-		end
-	end
-	return false
-end
-
 local function isInsideExcludeZone(worldPoint: Vector3): boolean
 	for _, inst in CollectionService:GetTagged(Config.LOBBY_BALL_EXCLUDE_ZONE_TAG) do
 		if inst:IsA("BasePart") then
@@ -377,8 +347,8 @@ local function startRecoverSweep(ball: BasePart)
 		end
 
 		local currentPos = ball.Position
-		if isInsideExcludeZone(currentPos) or not isBallInAllowedLobbyArea(ball) then
-			recoverAndRespawnBall(ball, "out of lobby bounds")
+		if isInsideExcludeZone(currentPos) then
+			recoverAndRespawnBall(ball, "exclude zone")
 			return
 		end
 
@@ -608,6 +578,8 @@ local function throwLobbyBall(player: Player, lookDirection: Vector3, powerMulti
 		powerMultiplier = powerMultiplier,
 	})
 
+	released:SetAttribute("LobbyIdleSince", nil)
+
 	pcall(function()
 		released:SetNetworkOwner(nil)
 	end)
@@ -754,13 +726,20 @@ local function maintainIdleAndBounds()
 			continue
 		end
 
-		local pos = child.Position
-		if isInsideExcludeZone(pos) or not isBallInAllowedLobbyArea(child) then
-			recoverAndRespawnBall(child, "bounds")
+		local speed = child.AssemblyLinearVelocity.Magnitude
+		if isLiveLobbyThrow(child) or speed >= Config.PICKUP_MAX_SPEED then
+			child:SetAttribute("LobbyIdleSince", nil)
+			if isInsideExcludeZone(child.Position) then
+				recoverAndRespawnBall(child, "exclude zone")
+			end
 			continue
 		end
 
-		local speed = child.AssemblyLinearVelocity.Magnitude
+		if isInsideExcludeZone(child.Position) then
+			recoverAndRespawnBall(child, "exclude zone")
+			continue
+		end
+
 		local idleSince = child:GetAttribute("LobbyIdleSince")
 		if typeof(idleSince) ~= "number" then
 			if speed < Config.PICKUP_MAX_SPEED then
