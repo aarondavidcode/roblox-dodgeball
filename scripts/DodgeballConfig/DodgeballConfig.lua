@@ -49,6 +49,22 @@ local DodgeballConfig = {
 	-- CollectionService tag (add in Studio if you use tags).
 	DODGEBALL_TAG = "Dodgeball",
 
+	-- === Shared dodgeball Part (arena balls + lobby practice spawns) ===
+
+	-- Sphere diameter in studs (DodgeballBallTemplate applies to arena balls on load and spawns lobby balls).
+	BALL_DIAMETER = 2.5,
+
+	-- Default Part name when a script creates a ball (studio-placed balls can use any name).
+	BALL_PART_NAME = "Dodgeball",
+
+	BALL_COLOR = Color3.fromRGB(255, 220, 90),
+	BALL_MATERIAL = Enum.Material.Plastic,
+
+	-- Optional custom mass/feel (nil or omit → Roblox default). All three must be numbers to apply.
+	BALL_PHYSICAL_DENSITY = 0.7,
+	BALL_PHYSICAL_FRICTION = 0.4,
+	BALL_PHYSICAL_ELASTICITY = 0.75,
+
 	-- Which throw module to use from ServerScriptService/throw/ (more abilities later).
 	ACTIVE_THROW_PROFILE = "Default",
 
@@ -131,8 +147,8 @@ local DodgeballConfig = {
 	-- Server maintenance tick for idle/bounds/count checks. Minimum recommended: 5–10s (do not run every frame).
 	LOBBY_BALL_MAINTENANCE_INTERVAL_SECONDS = 8,
 
-	-- Diameter of spawned lobby ball Parts (studs).
-	LOBBY_BALL_SIZE = 2.5,
+	-- Player/ball attribute marking lobby practice (safety rules — not arena OUT logic).
+	LOBBY_PRACTICE_BALL_ATTR = "IsLobbyPracticeBall",
 }
 
 return DodgeballConfig

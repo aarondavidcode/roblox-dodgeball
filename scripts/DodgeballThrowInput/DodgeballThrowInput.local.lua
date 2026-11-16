@@ -24,6 +24,7 @@ local ROUND_STATUS_FOLDER = "RoundStatus"
 local aimPowerChargeSeconds = 1.25
 local aimMaxSeconds = 4
 local ballMaxHoldSeconds = 5
+local lobbyPracticeBallAttr = "IsLobbyPracticeBall"
 
 local remotes: Folder? = nil
 local throwRemote: RemoteEvent? = nil
@@ -55,9 +56,19 @@ local function hookTunableSignals()
 	remotes:GetAttributeChangedSignal("BALL_MAX_HOLD_SECONDS"):Connect(function()
 		ballMaxHoldSeconds = readTunable("BALL_MAX_HOLD_SECONDS", 5)
 	end)
+	remotes:GetAttributeChangedSignal("LOBBY_PRACTICE_BALL_ATTR"):Connect(function()
+		local value = remotes and remotes:GetAttribute("LOBBY_PRACTICE_BALL_ATTR")
+		if typeof(value) == "string" and value ~= "" then
+			lobbyPracticeBallAttr = value
+		end
+	end)
 	aimPowerChargeSeconds = readTunable("AIM_POWER_CHARGE_SECONDS", 1.25)
 	aimMaxSeconds = readTunable("AIM_MAX_SECONDS", 4)
 	ballMaxHoldSeconds = readTunable("BALL_MAX_HOLD_SECONDS", 5)
+	local practiceAttr = remotes:GetAttribute("LOBBY_PRACTICE_BALL_ATTR")
+	if typeof(practiceAttr) == "string" and practiceAttr ~= "" then
+		lobbyPracticeBallAttr = practiceAttr
+	end
 end
 
 local function attachRemotes(folder: Folder)
@@ -271,7 +282,7 @@ local function localPlayerHoldsLobbyPracticeBall(): boolean
 		return false
 	end
 	for _, desc in character:GetDescendants() do
-		if desc:IsA("BasePart") and desc:GetAttribute("IsLobbyPracticeBall") == true then
+		if desc:IsA("BasePart") and desc:GetAttribute(lobbyPracticeBallAttr) == true then
 			local holderId = desc:GetAttribute("HolderUserId")
 			if typeof(holderId) == "number" and holderId == player.UserId then
 				return true

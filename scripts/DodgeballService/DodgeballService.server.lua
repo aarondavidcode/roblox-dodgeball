@@ -17,6 +17,7 @@ local Teams = game:GetService("Teams")
 local Workspace = game:GetService("Workspace")
 
 local Config = require(ServerScriptService:WaitForChild("DodgeballConfig"))
+local BallTemplate = require(ServerScriptService:WaitForChild("DodgeballBallTemplate"))
 
 -- Roblox only documents Players.CharacterAutoLoads (global). When false, the engine does not
 -- auto-call LoadCharacter after death; RespawnTime (default 5s) applies only while global is true.
@@ -194,6 +195,10 @@ local function publishClientTunables()
 	folder:SetAttribute("AIM_POWER_CHARGE_SECONDS", Config.AIM_POWER_CHARGE_SECONDS)
 	folder:SetAttribute("AIM_MAX_SECONDS", Config.AIM_MAX_SECONDS)
 	folder:SetAttribute("BALL_MAX_HOLD_SECONDS", Config.BALL_MAX_HOLD_SECONDS)
+	local practiceAttr = Config.LOBBY_PRACTICE_BALL_ATTR
+	if typeof(practiceAttr) == "string" and practiceAttr ~= "" then
+		folder:SetAttribute("LOBBY_PRACTICE_BALL_ATTR", practiceAttr)
+	end
 end
 
 local throwRemote = getThrowRemote()
@@ -759,6 +764,7 @@ local function hookBall(ball: BasePart)
 	if not ball:IsA("BasePart") then
 		return
 	end
+	BallTemplate.applyAppearance(ball)
 	ball:SetAttribute("LastThrowTime", ball:GetAttribute("LastThrowTime") or 0)
 	ball:SetAttribute("LastThrowSpeed", ball:GetAttribute("LastThrowSpeed") or 0)
 	if ball:GetAttribute("InThrowWindow") == nil then

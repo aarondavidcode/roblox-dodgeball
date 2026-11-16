@@ -12,12 +12,20 @@ local ServerScriptService = game:GetService("ServerScriptService")
 local Workspace = game:GetService("Workspace")
 
 local Config = require(ServerScriptService:WaitForChild("DodgeballConfig"))
+local BallTemplate = require(ServerScriptService:WaitForChild("DodgeballBallTemplate"))
 
 local throwFolder = ServerScriptService:WaitForChild("throw")
 local DefaultThrow = require(throwFolder:WaitForChild("DefaultThrow"))
 
 local ATTR_LOBBY_AREA_ID = "LobbyBallAreaId"
-local ATTR_IS_LOBBY_PRACTICE = "IsLobbyPracticeBall"
+
+local function lobbyPracticeAttrName(): string
+	local name = Config.LOBBY_PRACTICE_BALL_ATTR
+	if typeof(name) == "string" and name ~= "" then
+		return name
+	end
+	return "IsLobbyPracticeBall"
+end
 local START_AIMING_REMOTE_NAME = "StartAiming"
 local ATTR_HOLD_PENALTY_PICKUP_UNTIL = "HoldPenaltyPickupUntil"
 
@@ -109,7 +117,7 @@ local function playerFromPart(part: BasePart): Player?
 end
 
 local function isLobbyPracticeBall(ball: BasePart): boolean
-	if ball:GetAttribute(ATTR_IS_LOBBY_PRACTICE) == true then
+	if ball:GetAttribute(lobbyPracticeAttrName()) == true then
 		return true
 	end
 	return CollectionService:HasTag(ball, Config.LOBBY_PRACTICE_BALL_TAG)
@@ -251,21 +259,10 @@ end
 
 local function createLobbyBallAt(areaId: string, position: Vector3): BasePart
 	local folder = ensureBallFolder()
-	local ball = Instance.new("Part")
+	local ball = BallTemplate.createPart()
 	ball.Name = "LobbyPracticeBall"
-	ball.Shape = Enum.PartType.Ball
-	local diameter = Config.LOBBY_BALL_SIZE
-	if typeof(diameter) ~= "number" or diameter <= 0 then
-		diameter = 2.5
-	end
-	ball.Size = Vector3.new(diameter, diameter, diameter)
-	ball.Material = Enum.Material.Neon
-	ball.Color = Color3.fromRGB(140, 220, 255)
-	ball.Anchored = false
-	ball.CanCollide = true
-	ball.CanTouch = true
 	ball.Position = position
-	ball:SetAttribute(ATTR_IS_LOBBY_PRACTICE, true)
+	ball:SetAttribute(lobbyPracticeAttrName(), true)
 	ball:SetAttribute(ATTR_LOBBY_AREA_ID, areaId)
 	ball:SetAttribute("LastThrowTime", 0)
 	ball:SetAttribute("LastThrowSpeed", 0)
@@ -320,7 +317,7 @@ recoverAndRespawnBall = function(ball: BasePart, _reason: string)
 		if volume.areaId == areaId then
 			local pos = randomPointInVolume(volume)
 			if pos then
-				local newBall = createLobbyBallAt(areaId, pos + Vector3.new(0, Config.LOBBY_BALL_SIZE * 0.5, 0))
+				local newBall = createLobbyBallAt(areaId, pos + Vector3.new(0, BallTemplate.halfHeight(), 0))
 				hookLobbyBall(newBall)
 			end
 			break
@@ -687,7 +684,7 @@ local function spawnMissingForArea(volume: SpawnVolume)
 			warn(`[LobbyPracticeBallService] Could not pick spawn point in {volume.instance:GetFullName()}`)
 			break
 		end
-		local ball = createLobbyBallAt(volume.areaId, pos + Vector3.new(0, Config.LOBBY_BALL_SIZE * 0.5, 0))
+		local ball = createLobbyBallAt(volume.areaId, pos + Vector3.new(0, BallTemplate.halfHeight(), 0))
 		hookLobbyBall(ball)
 		count += 1
 	end

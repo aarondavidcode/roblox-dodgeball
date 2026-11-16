@@ -8,6 +8,7 @@
 |--------|------|------|
 | `LobbyPracticeBallService` | `ServerScriptService/LobbyPracticeBallService` | **Script** |
 | `DodgeballConfig` | `ServerScriptService/DodgeballConfig` | **ModuleScript** (required) |
+| `DodgeballBallTemplate` | `ServerScriptService/DodgeballBallTemplate` | **ModuleScript** (required) |
 | `DefaultThrow` | `ServerScriptService/throw/DefaultThrow` | **ModuleScript** (required) |
 
 Paste from [LobbyPracticeBallService.server.lua](./LobbyPracticeBallService.server.lua).
@@ -33,7 +34,7 @@ You do **not** place lobby ball Parts by hand. The script creates them under `Wo
 |--------------------|-----|------|
 | `LobbyBallSpawnVolume` | Lobby region Part(s) | Spawn bounds; multiple areas supported |
 | `LobbyBallExcludeZone` | Arena / off-limits Part(s) | Ball touching inside → instant recover + respawn |
-| `LobbyPracticeBall` | *(script adds to balls)* | Identifies practice balls — do not tag match dodgeballs |
+| `LobbyPracticeBall` | *(script adds to balls)* | CollectionService tag; arena dodgeballs use `DODGEBALL_TAG` instead |
 
 ## What scripts create (do not duplicate)
 
@@ -62,7 +63,9 @@ Match players in the arena use arena balls only; this script drops lobby balls i
 
 ## Config knobs
 
-See [DodgeballConfig.md](../DodgeballConfig/DodgeballConfig.md) keys under lobby practice balls: min/max per area, idle timeout, maintenance interval, folder/tag names, ball size.
+**Shared ball look/throw:** `BALL_*` plus pickup/throw keys in [DodgeballConfig.md](../DodgeballConfig/DodgeballConfig.md) — applied via [DodgeballBallTemplate.md](../DodgeballBallTemplate/DodgeballBallTemplate.md) (same as arena balls).
+
+**Lobby-only:** `LOBBY_BALL_*` spawn folder, volume/exclude tags, min/max per area, idle timeout, maintenance interval, `LOBBY_PRACTICE_BALL_ATTR`.
 
 **Idle timeout:** when a ball is not held and stays slower than pickup speed for `LOBBY_BALL_IDLE_TIMEOUT_SECONDS`, it respawns.
 

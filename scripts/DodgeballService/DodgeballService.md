@@ -8,6 +8,7 @@
 |--------|------|------|
 | `DodgeballService` | `ServerScriptService/DodgeballService` | **Script** |
 | `DodgeballConfig` | `ServerScriptService/DodgeballConfig` | **ModuleScript** (required) |
+| `DodgeballBallTemplate` | `ServerScriptService/DodgeballBallTemplate` | **ModuleScript** (required) |
 | `throw` | `ServerScriptService/throw` | **Folder** |
 | `DefaultThrow` | `ServerScriptService/throw/DefaultThrow` | **ModuleScript** (required) |
 
@@ -20,7 +21,7 @@ Paste from [DodgeballService.server.lua](./DodgeballService.server.lua).
 | Item | Details |
 |------|---------|
 | `Dodgeballs` folder | Under **Workspace**, name must match `BALL_FOLDER_NAME` in config (default `Dodgeballs`). |
-| Ball Parts | Inside the folder: **Ball** parts, **Anchored** off, **CanCollide** on, **CanTouch** on. Any Part name is fine. |
+| Ball Parts | Inside the folder: **Ball** parts, **Anchored** off, **CanCollide** on, **CanTouch** on. Any Part name is fine. On load, **DodgeballBallTemplate** applies `BALL_*` from config so they match lobby practice balls. |
 | Tag (recommended) | Add tag `Dodgeball` (or value of `DODGEBALL_TAG`) in Tag Editor. |
 | Teams / spawns | Same as [TeamAutoBalance.md](../TeamAutoBalance/TeamAutoBalance.md) — friendly fire does not eliminate. |
 
