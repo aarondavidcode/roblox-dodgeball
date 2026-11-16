@@ -48,7 +48,9 @@ local function ensureGui(): (ScreenGui, TextButton)
 	button.Name = "OptInToggle"
 	button.AnchorPoint = Vector2.new(0.5, 1)
 	button.Position = UDim2.fromScale(0.5, 0.92)
-	button.Size = UDim2.fromOffset(280, 44)
+	button.Size = UDim2.fromOffset(0, 44)
+	button.AutomaticSize = Enum.AutomaticSize.X
+	button.TextWrapped = false
 	button.BackgroundColor3 = Color3.fromRGB(45, 120, 200)
 	button.BorderSizePixel = 0
 	button.Font = Enum.Font.GothamBold
@@ -56,6 +58,11 @@ local function ensureGui(): (ScreenGui, TextButton)
 	button.TextColor3 = Color3.new(1, 1, 1)
 	button.Text = "Play next match — tap to join!"
 	button.Parent = screenGui
+
+	local padding = Instance.new("UIPadding")
+	padding.PaddingLeft = UDim.new(0, 16)
+	padding.PaddingRight = UDim.new(0, 16)
+	padding.Parent = button
 
 	local corner = Instance.new("UICorner")
 	corner.CornerRadius = UDim.new(0, 10)
