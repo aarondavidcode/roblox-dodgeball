@@ -62,5 +62,6 @@ Optional UI works for step 5 and step 6.
 | [DodgeballService.server.lua](DodgeballService.server.lua) | `DodgeballService` | Script (paste over step 5 copy) |
 | [RoundService.server.lua](RoundService.server.lua) | `RoundService` | Script (paste over step 5 copy) |
 | [LobbyService.server.lua](LobbyService.server.lua) | `LobbyService` | Script (**new**) |
+| [LobbyJoinNextMatchClient.local.lua](LobbyJoinNextMatchClient.local.lua) | `LobbyJoinNextMatchClient` under **StarterPlayerScripts** | **LocalScript** |
 
-Walkthrough: **[06-lobby-and-matches](../06-lobby-and-matches/README.md)** (lobby **SpawnLocation** + refresh **RoundStatusClient** if you added UI in step 5).
+Walkthrough: **[06-lobby-and-matches](../06-lobby-and-matches/README.md)** (lobby **SpawnLocation** + refresh **RoundStatusClient** if you added UI in step 5 + optional **LobbyJoinNextMatchClient** opt-in button).

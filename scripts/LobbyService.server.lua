@@ -16,6 +16,7 @@ local PHASE_LOBBY = "Lobby"
 local PHASE_IN_MATCH = "InMatch"
 
 local ATTR_MATCH_PARTICIPANT = "MatchParticipant"
+local ATTR_JOIN_NEXT_MATCH = Config.JOIN_NEXT_MATCH_ATTR
 
 local matchPhase: string = PHASE_LOBBY
 local matchScores: { [string]: number } = {}
@@ -46,6 +47,21 @@ end
 
 local roundStatus = getOrCreateRoundStatusFolder()
 
+local function playerJoinNextMatchOptedIn(player: Player): boolean
+	-- Default opted in: only explicit false opts out (nil counts as in).
+	return player:GetAttribute(ATTR_JOIN_NEXT_MATCH) ~= false
+end
+
+local function countOptedInPlayers(): number
+	local n = 0
+	for _, player in Players:GetPlayers() do
+		if playerJoinNextMatchOptedIn(player) then
+			n += 1
+		end
+	end
+	return n
+end
+
 local function publishMatchStatus()
 	roundStatus:SetAttribute("MatchPhase", matchPhase)
 	for teamName, score in matchScores do
@@ -57,6 +73,7 @@ local function publishMatchStatus()
 	else
 		roundStatus:SetAttribute("LobbyCountdownEndsAt", nil)
 	end
+	roundStatus:SetAttribute("LobbyOptedInCount", countOptedInPlayers())
 end
 
 local SPAWN_Y_OFFSET = 4
@@ -280,6 +297,108 @@ local function countPlayers(): number
 	return #Players:GetPlayers()
 end
 
+local function ensureRemotesFolder(): Folder
+	local existing = ReplicatedStorage:FindFirstChild(Config.REMOTES_FOLDER_NAME)
+	if existing and existing:IsA("Folder") then
+		return existing
+	end
+	local folder = Instance.new("Folder")
+	folder.Name = Config.REMOTES_FOLDER_NAME
+	folder.Parent = ReplicatedStorage
+	return folder
+end
+
+local function getSetJoinNextMatchRemote(): RemoteEvent
+	local folder = ensureRemotesFolder()
+	local name = Config.SET_JOIN_NEXT_MATCH_REMOTE_NAME
+	local remote = folder:FindFirstChild(name)
+	if remote and remote:IsA("RemoteEvent") then
+		return remote
+	end
+	local newRemote = Instance.new("RemoteEvent")
+	newRemote.Name = name
+	newRemote.Parent = folder
+	return newRemote
+end
+
+local function canSetJoinNextMatch(player: Player): boolean
+	if matchPhase ~= PHASE_LOBBY and matchPhase ~= PHASE_IN_MATCH then
+		return false
+	end
+	if player:GetAttribute(ATTR_MATCH_PARTICIPANT) == true then
+		return false
+	end
+	if player.Team ~= nil then
+		return false
+	end
+	if not player.Neutral then
+		return false
+	end
+	if matchPhase == PHASE_IN_MATCH and player:GetAttribute("IsOut") == true then
+		return false
+	end
+	return true
+end
+
+-- Default opt-in only on first join (attribute still nil). Never override explicit false.
+local function applyDefaultJoinNextMatchOnPlayerAdded(player: Player)
+	if not canSetJoinNextMatch(player) then
+		return
+	end
+	if player:GetAttribute(ATTR_JOIN_NEXT_MATCH) ~= nil then
+		return
+	end
+	player:SetAttribute(ATTR_JOIN_NEXT_MATCH, true)
+end
+
+local function afterLobbyPopulationChange()
+	publishMatchStatus()
+	applyLobbyCountdownAfterOptInChange()
+end
+
+local function applyLobbyCountdownAfterOptInChange()
+	if matchPhase ~= PHASE_LOBBY then
+		return
+	end
+	if countOptedInPlayers() < 2 then
+		if not countdownPaused or lobbyCountdownEndsAt ~= nil then
+			if countPlayers() < 2 then
+				warn("[LobbyService] Only 1 player — lobby countdown paused and reset.")
+			else
+				warn("[LobbyService] Fewer than 2 opted in for next match — countdown paused and reset.")
+			end
+		end
+		resetLobbyCountdownFull()
+		return
+	end
+	ensureLobbyCountdownRunning()
+end
+
+local function setPlayerJoinNextMatch(player: Player, wantsIn: boolean)
+	if not canSetJoinNextMatch(player) then
+		warn(`[LobbyService] Ignored JoinNextMatch for {player.Name} — not a qualifying neutral spectator.`)
+		return
+	end
+	player:SetAttribute(ATTR_JOIN_NEXT_MATCH, if wantsIn then true else false)
+	warn(
+		`[LobbyService] {player.Name} opt-{(if wantsIn then "IN" else "OUT")} for next match ({matchPhase}; no team change this phase).`
+	)
+	publishMatchStatus()
+	if matchPhase == PHASE_LOBBY then
+		applyLobbyCountdownAfterOptInChange()
+	end
+end
+
+local function wireJoinNextMatchRemote()
+	local remote = getSetJoinNextMatchRemote()
+	remote.OnServerEvent:Connect(function(player: Player, wantsIn: unknown)
+		if typeof(wantsIn) ~= "boolean" then
+			return
+		end
+		setPlayerJoinNextMatch(player, wantsIn)
+	end)
+end
+
 local function resetLobbyCountdownFull()
 	lobbyCountdownEndsAt = nil
 	countdownPaused = true
@@ -290,7 +409,7 @@ local function ensureLobbyCountdownRunning()
 	if matchPhase ~= PHASE_LOBBY then
 		return
 	end
-	if countPlayers() < 2 then
+	if countOptedInPlayers() < 2 then
 		resetLobbyCountdownFull()
 		return
 	end
@@ -309,8 +428,10 @@ local function enterLobbyPhase(reason: string)
 	resetLobbyCountdownFull()
 	publishMatchStatus()
 	warn(`[LobbyService] Lobby phase ({reason}). First to {Config.MATCH_POINTS_TO_WIN} round wins takes the match.`)
-	task.defer(respawnAllAtLobby)
-	task.defer(ensureLobbyCountdownRunning)
+	task.defer(function()
+		respawnAllAtLobby()
+		afterLobbyPopulationChange()
+	end)
 end
 
 local function invokeBridge(functionName: string): boolean
@@ -334,8 +455,9 @@ local function invokeBridge(functionName: string): boolean
 end
 
 local function startMatchFromLobby()
-	if countPlayers() < 2 then
+	if countOptedInPlayers() < 2 then
 		resetLobbyCountdownFull()
+		warn("[LobbyService] Match start blocked — need 2+ players opted in for next match.")
 		return
 	end
 	matchPhase = PHASE_IN_MATCH
@@ -363,7 +485,10 @@ local function startMatchFromLobby()
 			player:SetAttribute("IsOut", false)
 			spawnPlayerAtTeamArena(player)
 		else
-			warn(`[LobbyService] {player.Name} has no team after AssignMatchTeams — skipping spawn.`)
+			player:SetAttribute(ATTR_MATCH_PARTICIPANT, false)
+			if playerJoinNextMatchOptedIn(player) then
+				warn(`[LobbyService] {player.Name} opted in but has no team — staying lobby spectator.`)
+			end
 		end
 	end
 
@@ -381,10 +506,14 @@ local function onLobbyTick()
 		return
 	end
 
-	local n = countPlayers()
-	if n < 2 then
+	local optedIn = countOptedInPlayers()
+	if optedIn < 2 then
 		if not countdownPaused or lobbyCountdownEndsAt ~= nil then
-			warn("[LobbyService] Only 1 player — lobby countdown paused and reset.")
+			if countPlayers() < 2 then
+				warn("[LobbyService] Only 1 player — lobby countdown paused and reset.")
+			else
+				warn("[LobbyService] Fewer than 2 opted in for next match — countdown paused and reset.")
+			end
 			resetLobbyCountdownFull()
 		end
 		return
@@ -487,7 +616,8 @@ local function onPlayerAdded(player: Player)
 		task.defer(function()
 			if player.Parent and matchPhase == PHASE_LOBBY then
 				respawnPlayerAtLobby(player)
-				ensureLobbyCountdownRunning()
+				applyDefaultJoinNextMatchOnPlayerAdded(player)
+				afterLobbyPopulationChange()
 			end
 		end)
 	elseif matchPhase == PHASE_IN_MATCH then
@@ -495,14 +625,23 @@ local function onPlayerAdded(player: Player)
 		task.defer(function()
 			if player.Parent and matchPhase == PHASE_IN_MATCH and player:GetAttribute(ATTR_MATCH_PARTICIPANT) == false then
 				respawnSpectatorAtLobby(player)
+				applyDefaultJoinNextMatchOnPlayerAdded(player)
+				publishMatchStatus()
 			end
 		end)
 	end
 end
 
-local function onPlayerRemoving()
-	if matchPhase == PHASE_LOBBY and countPlayers() - 1 < 2 then
-		task.defer(resetLobbyCountdownFull)
+local function onPlayerRemoving(player: Player)
+	if matchPhase == PHASE_LOBBY then
+		task.defer(function()
+			local remaining = countOptedInPlayers()
+			if remaining < 2 then
+				resetLobbyCountdownFull()
+			elseif playerJoinNextMatchOptedIn(player) then
+				afterLobbyPopulationChange()
+			end
+		end)
 	end
 end
 
@@ -516,6 +655,7 @@ for _, player in Players:GetPlayers() do
 end
 
 wireRoundBridge()
+wireJoinNextMatchRemote()
 publishMatchStatus()
 enterLobbyPhase("server start")
 

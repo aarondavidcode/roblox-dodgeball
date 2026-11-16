@@ -16,6 +16,7 @@ local Config = require(ServerScriptService:WaitForChild("DodgeballConfig"))
 
 local MATCH_PHASE_IN_MATCH = "InMatch"
 local ATTR_MATCH_PARTICIPANT = "MatchParticipant"
+local ATTR_JOIN_NEXT_MATCH = Config.JOIN_NEXT_MATCH_ATTR
 
 local TEAM_NAMES = Config.TEAM_NAMES
 
@@ -128,6 +129,11 @@ local function assignAllPlayersBalanced(needsRespawn: boolean): boolean
 	for _, player in sortedPlayers() do
 		if matchIsLive() and player:GetAttribute(ATTR_MATCH_PARTICIPANT) == false then
 			continue
+		end
+		if matchIsLive() and not isMatchParticipant(player) then
+			if player:GetAttribute(ATTR_JOIN_NEXT_MATCH) == false then
+				continue
+			end
 		end
 		local chosenTeam: Team
 		if redCount <= blueCount then

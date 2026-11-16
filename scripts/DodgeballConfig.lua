@@ -101,6 +101,10 @@ local DodgeballConfig = {
 	LOBBY_SPAWN_NAME = "LobbySpawn",
 	-- Option B: tag a SpawnLocation with CollectionService (leave empty string to use name only).
 	LOBBY_SPAWN_TAG = "",
+
+	-- Lobby opt-in: default true on first join only; explicit false persists until toggle or re-join.
+	JOIN_NEXT_MATCH_ATTR = "JoinNextMatch",
+	SET_JOIN_NEXT_MATCH_REMOTE_NAME = "SetJoinNextMatch",
 }
 
 return DodgeballConfig
