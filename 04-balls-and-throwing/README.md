@@ -100,7 +100,7 @@ The server needs an **aim direction** and a **power number (0–1)**. This Local
 2. Insert **LocalScript**, rename **`DodgeballThrowInput`**.
 3. Paste from **[scripts/DodgeballThrowInput.local.lua](../scripts/DodgeballThrowInput.local.lua)**.
 
-**Important:** Keep **exactly one** `DodgeballThrowInput` LocalScript, and only under **StarterPlayerScripts** (not **StarterGui**). Delete any older throw LocalScripts you pasted in step 4 before PR #15.
+**Important:** Keep **exactly one** `DodgeballThrowInput` LocalScript, and only under **StarterPlayerScripts** (not **StarterGui**). Delete any older throw LocalScripts with a different name or location.
 
 **Controls in test:**
 
@@ -127,7 +127,9 @@ The server needs an **aim direction** and a **power number (0–1)**. This Local
 7. **Max aim time** — At **AIM_MAX_SECONDS**, the ball **auto-throws** at your crosshair and current power.
 8. **Fast hit = maybe OUT** — During a throw, the server **sweeps** the ball path each frame. Enemy hits must be **fast enough** (**HIT_MIN_SPEED**) and **soon enough** (**THROW_OUT_WINDOW_SECONDS**).
 9. **Same team** — Friendly hits do not eliminate.
-10. **Lobby spectators** — In **Lobby**, or if **MatchParticipant** is **false** (mid-match joiner), or if you’re **OUT**, the aim UI stays hidden. During **InMatch**, anyone with **MatchParticipant** true (or while that attribute is still replicating) can use the bars and crosshair when holding a ball.
+10. **OUT** — If you’re out, the aim UI stays hidden until the round resets.
+
+**After [step 6](../06-lobby-and-matches/README.md):** In **Lobby** or while spectating (**`MatchParticipant`** **false**), throws and aim UI stay off until a match starts and you’re playing.
 
 Tweak numbers at the top of **DodgeballConfig** and test again.
 
@@ -137,7 +139,7 @@ Tweak numbers at the top of **DodgeballConfig** and test again.
 
 1. Save the place.
 2. Press **F5** (Play).
-3. Start or join a match (**step 6** lobby) so **MatchPhase** is **InMatch** and you’re on a team — or test step 4 alone without lobby (pickup rules still need you **not OUT**).
+3. Without the lobby from step 6, you can still test pickup and throw here (you must **not** be OUT).
 4. Walk to a ball and **touch** it — it should stick near your hand; **yellow hold bar** appears at the bottom.
 5. **Hold F** or **hold left-click** — **yellow crosshair** center screen + **blue power bar**; **release** to throw.
 6. Let the **hold bar** run out **without** aiming — ball should roll away and you should be slowed briefly.
@@ -179,9 +181,9 @@ ReplicatedStorage
 | Problem | What to try |
 |---------|-------------|
 | Warning: no dodgeballs | Add Parts under **Workspace/Dodgeballs** or add tag **Dodgeball** |
-| Pickup never happens | Ball moving too fast; lower **PICKUP_MAX_SPEED**; check **hold penalty** cooldown; in lobby/match you must be **MatchParticipant** |
+| Pickup never happens | Ball moving too fast; lower **PICKUP_MAX_SPEED**; check **hold penalty** cooldown; after step 6, spectators cannot pick up |
 | No hold bar at all | See **“No aim UI (bars / crosshair)”** below |
-| Throw does nothing | **DodgeballThrowInput** running? **Output** `[DodgeballThrowInput]` warnings? **InMatch** with a team? |
+| Throw does nothing | **DodgeballThrowInput** running? **Output** `[DodgeballThrowInput]` warnings? After step 6: must be **InMatch** with **MatchParticipant** true |
 | No crosshair | You must **hold** F or left-click, not tap once |
 | Hits never eliminate | See **“Ball hits but no OUT”** below |
 | Weak throws | Hold aim longer for more power; check **THROW_IMPULSE** |
@@ -193,7 +195,7 @@ Use this **Studio checklist** when the ball sticks to your hand but you see no y
 1. **One LocalScript only** — `DodgeballThrowInput` under **StarterPlayer → StarterPlayerScripts**. Remove duplicates from **StarterGui**, **StarterCharacterScripts**, or an old step 4 script with a different name.
 2. **Latest files pasted** — Replace **DodgeballService** (creates **DodgeballRemotes** with **RequestThrow** and **StartAiming**) and **DodgeballThrowInput** from this repo.
 3. **Output warnings** — After **F5**, if you see `[DodgeballThrowInput] DodgeballRemotes folder missing`, **DodgeballService** is not running or errored on load. If you see **StartAiming remote missing**, your **DodgeballService** copy is older than this repo — paste again.
-4. **In a real match** — With **LobbyService** (step 6), wait until **MatchPhase** is **InMatch** and you spawned on a team pad (**MatchParticipant** true). Lobby spectators (**MatchParticipant** false) never get aim UI.
+4. **After step 6** — Wait until **MatchPhase** is **InMatch** and you spawned on a team pad. See **[06-lobby-and-matches](../06-lobby-and-matches/README.md)** if the button says you’re spectating.
 5. **F5 verification** — Pick up a ball: bottom **HoldBarBackground** should show. **Hold** throw: center **Crosshair** + **PowerBarBackground**. If **DodgeballAimGui** is missing under **PlayerGui**, the LocalScript did not run — check placement and Output errors.
 
 ### Ball hits but no OUT
