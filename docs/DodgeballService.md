@@ -34,6 +34,8 @@ On first run the service can create an **empty** `Dodgeballs` folder and warn in
 
 **LobbyService** adds `SetJoinNextMatch` under the same remotes folder — do not create remotes by hand.
 
+**LobbyPracticeBallService** also listens on `RequestThrow` / `StartAiming` for players holding lobby practice balls (see [LobbyPracticeBallService.md](LobbyPracticeBallService.md)). Arena ball logic in this script is unchanged.
+
 ## Config knobs (most used)
 
 | Key | Role |

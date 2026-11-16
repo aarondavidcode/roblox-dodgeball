@@ -18,6 +18,7 @@ Paste from [scripts/DodgeballConfig.lua](../scripts/DodgeballConfig.lua).
 | Lobby spawn name or tag | **Yes** | `LOBBY_SPAWN_NAME` (default `LobbySpawn`) or `LOBBY_SPAWN_TAG` |
 | Ball folder | **Yes** | `BALL_FOLDER_NAME` (default `Dodgeballs`) under **Workspace** |
 | Optional ball tag | **Yes** | `DODGEBALL_TAG` (default `Dodgeball`) via Tag Editor |
+| Lobby practice spawn volumes | **Yes** | Tag `LobbyBallSpawnVolume`; optional `LobbyBallExcludeZone` — see [LobbyPracticeBallService.md](LobbyPracticeBallService.md) |
 | Player attribute `JoinNextMatch` | **No** | Name in config; **LobbyService** / clients set values at run time |
 
 ## What scripts create (do not duplicate)
@@ -46,7 +47,8 @@ Paste from [scripts/DodgeballConfig.lua](../scripts/DodgeballConfig.lua).
 | `LOBBY_SPAWN_NAME`, `LOBBY_SPAWN_TAG` | How **LobbyService** finds the lobby pad |
 | `JOIN_NEXT_MATCH_ATTR`, `SET_JOIN_NEXT_MATCH_REMOTE_NAME` | Opt-in queue |
 | `DEBUG_ELIMINATION` | Extra **Output** when hits do not eliminate |
+| `LOBBY_BALL_*` | Lobby practice spawn folder, CollectionService tags, min/max per area, idle timeout, maintenance interval, ball size — see [LobbyPracticeBallService.md](LobbyPracticeBallService.md) |
 
 ## Related scripts
 
-Requires nothing at load time. Required by **TeamAutoBalance**, **DodgeballService**, **RoundService**, **LobbyService**, **DefaultThrow**, and indirectly by client scripts (names must stay in sync).
+Requires nothing at load time. Required by **TeamAutoBalance**, **DodgeballService**, **LobbyPracticeBallService**, **RoundService**, **LobbyService**, **DefaultThrow**, and indirectly by client scripts (names must stay in sync).

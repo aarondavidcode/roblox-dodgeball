@@ -77,7 +77,9 @@ local function attachRemotes(folder: Folder)
 	else
 		if not warnedMissingStartAiming then
 			warnedMissingStartAiming = true
-			warn(`{SCRIPT_TAG} StartAiming RemoteEvent missing — re-paste DodgeballService from the repo (needed for hold rules).`)
+			warn(
+				`{SCRIPT_TAG} StartAiming RemoteEvent missing — re-paste DodgeballService from the repo (needed for hold rules).`
+			)
 		end
 	end
 	hookTunableSignals()
@@ -91,7 +93,9 @@ task.spawn(function()
 	end
 	if not warnedMissingRemotesFolder then
 		warnedMissingRemotesFolder = true
-		warn(`{SCRIPT_TAG} DodgeballRemotes folder missing after 60s — is DodgeballService running under ServerScriptService?`)
+		warn(
+			`{SCRIPT_TAG} DodgeballRemotes folder missing after 60s — is DodgeballService running under ServerScriptService?`
+		)
 	end
 	ReplicatedStorage.ChildAdded:Connect(function(child)
 		if child.Name == "DodgeballRemotes" and child:IsA("Folder") then
@@ -241,25 +245,80 @@ local function getMatchPhase(): string?
 	return nil
 end
 
--- During InMatch: block only explicit spectators (MatchParticipant == false) and OUT players.
--- Missing RoundStatus (step 4 only): allow when not OUT.
--- Lobby phase: block (no active match).
-local function isSpectatorOrOut(): boolean
+local function canUseLobbyPractice(): boolean
+	if player:GetAttribute("IsOut") == true then
+		return false
+	end
+	if player:GetAttribute("MatchParticipant") == true then
+		return false
+	end
+	if player.Team ~= nil then
+		return false
+	end
+	if not player.Neutral then
+		return false
+	end
+	local phase = getMatchPhase()
+	if phase ~= "Lobby" and phase ~= "InMatch" then
+		return false
+	end
+	return true
+end
+
+local function localPlayerHoldsLobbyPracticeBall(): boolean
+	local character = player.Character
+	if not character then
+		return false
+	end
+	for _, desc in character:GetDescendants() do
+		if desc:IsA("BasePart") and desc:GetAttribute("IsLobbyPracticeBall") == true then
+			local holderId = desc:GetAttribute("HolderUserId")
+			if typeof(holderId) == "number" and holderId == player.UserId then
+				return true
+			end
+			if desc:FindFirstChild("DodgeballHoldWeld") then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+local function canThrowHeldBall(): boolean
+	if player:GetAttribute("IsOut") == true then
+		return false
+	end
+	if not localPlayerHoldsBall() then
+		return false
+	end
+	local phase = getMatchPhase()
+	if localPlayerHoldsLobbyPracticeBall() then
+		return canUseLobbyPractice()
+	end
+	if phase == "InMatch" then
+		return player:GetAttribute("MatchParticipant") == true
+	end
+	if phase == "Lobby" then
+		return false
+	end
+	return player:GetAttribute("MatchParticipant") ~= false
+end
+
+-- Block aim UI unless the held ball is throwable (arena dodgeball or lobby practice).
+local function cannotUseThrowInput(): boolean
 	if player:GetAttribute("IsOut") == true then
 		return true
 	end
+	if localPlayerHoldsBall() then
+		return not canThrowHeldBall()
+	end
 	local phase = getMatchPhase()
 	if phase == "InMatch" then
-		local participant = player:GetAttribute("MatchParticipant")
-		if participant == false then
-			return true
-		end
-		return false
+		return player:GetAttribute("MatchParticipant") ~= true
 	end
 	if phase == "Lobby" then
 		return true
 	end
-	-- No lobby system / step 4 sandbox: not a spectator unless OUT (handled above).
 	return false
 end
 
@@ -393,12 +452,14 @@ local function fireStartAiming()
 		startAimingRemote:FireServer()
 	elseif not warnedMissingStartAiming then
 		warnedMissingStartAiming = true
-		warn(`{SCRIPT_TAG} StartAiming remote missing — server may force roll on hold timeout. Re-paste DodgeballService.`)
+		warn(
+			`{SCRIPT_TAG} StartAiming remote missing — server may force roll on hold timeout. Re-paste DodgeballService.`
+		)
 	end
 end
 
 local function beginAim()
-	if aiming or isSpectatorOrOut() or not localPlayerHoldsBall() then
+	if aiming or cannotUseThrowInput() or not localPlayerHoldsBall() or not canThrowHeldBall() then
 		return
 	end
 	aiming = true
@@ -468,7 +529,7 @@ end
 bindThrowAction()
 
 RunService.RenderStepped:Connect(function()
-	if aiming or isSpectatorOrOut() then
+	if aiming or cannotUseThrowInput() then
 		if not aiming and holdBarBack.Visible then
 			holdBarBack.Visible = false
 			holdBallSince = nil
@@ -476,7 +537,7 @@ RunService.RenderStepped:Connect(function()
 		return
 	end
 
-	local holds = localPlayerHoldsBall()
+	local holds = localPlayerHoldsBall() and canThrowHeldBall()
 	if holds then
 		if not holdBallSince then
 			holdBallSince = os.clock()
@@ -498,7 +559,7 @@ player.CharacterAdded:Connect(function()
 end)
 
 player:GetAttributeChangedSignal("IsOut"):Connect(function()
-	if isSpectatorOrOut() then
+	if cannotUseThrowInput() then
 		endAimUi()
 		holdBallSince = nil
 		holdBarBack.Visible = false
@@ -506,7 +567,7 @@ player:GetAttributeChangedSignal("IsOut"):Connect(function()
 end)
 
 player:GetAttributeChangedSignal("MatchParticipant"):Connect(function()
-	if isSpectatorOrOut() then
+	if cannotUseThrowInput() then
 		endAimUi()
 		holdBallSince = nil
 		holdBarBack.Visible = false
@@ -516,7 +577,7 @@ end)
 local roundStatus = ReplicatedStorage:WaitForChild(ROUND_STATUS_FOLDER, 5)
 if roundStatus and roundStatus:IsA("Folder") then
 	roundStatus:GetAttributeChangedSignal("MatchPhase"):Connect(function()
-		if isSpectatorOrOut() then
+		if cannotUseThrowInput() then
 			endAimUi()
 			holdBallSince = nil
 			holdBarBack.Visible = false

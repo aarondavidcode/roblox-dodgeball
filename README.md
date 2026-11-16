@@ -9,7 +9,7 @@ The playable game is always your **Roblox place** (arena, teams, spawns). GitHub
 | System | Server scripts | Client scripts | Shared config |
 |--------|----------------|----------------|---------------|
 | Teams | `TeamAutoBalance`, `LobbyService` | — | `DodgeballConfig` |
-| Lobby and matches | `LobbyService` | `LobbyJoinNextMatchClient` | `DodgeballConfig` |
+| Lobby and matches | `LobbyService`, `LobbyPracticeBallService` | `LobbyJoinNextMatchClient` | `DodgeballConfig` |
 | Dodgeballs | `DodgeballService` | `DodgeballThrowInput` | `DodgeballConfig`, `throw/DefaultThrow` |
 | Rounds | `RoundService` | `RoundStatusClient` (optional UI) | `DodgeballConfig` |
 
@@ -31,9 +31,10 @@ Copy from [scripts/](scripts/) on GitHub (**Raw** or select all). Object **names
 | [RoundService.server.lua](scripts/RoundService.server.lua) | `ServerScriptService/RoundService` | Script | [docs/RoundService.md](docs/RoundService.md) |
 | [RoundStatusClient.local.lua](scripts/RoundStatusClient.local.lua) | `StarterGui/RoundStatus/RoundStatusClient` | LocalScript | [docs/RoundStatusClient.md](docs/RoundStatusClient.md) |
 | [LobbyService.server.lua](scripts/LobbyService.server.lua) | `ServerScriptService/LobbyService` | Script | [docs/LobbyService.md](docs/LobbyService.md) |
+| [LobbyPracticeBallService.server.lua](scripts/LobbyPracticeBallService.server.lua) | `ServerScriptService/LobbyPracticeBallService` | Script | [docs/LobbyPracticeBallService.md](docs/LobbyPracticeBallService.md) |
 | [LobbyJoinNextMatchClient.local.lua](scripts/LobbyJoinNextMatchClient.local.lua) | `StarterPlayer/StarterPlayerScripts/LobbyJoinNextMatchClient` | LocalScript | [docs/LobbyJoinNextMatchClient.md](docs/LobbyJoinNextMatchClient.md) |
 
-**Place setup you build (not in repo):** arena in `Workspace`, **Teams** named `Red` and `Blue`, team **SpawnLocations** with matching **TeamColor** and **Neutral** off, lobby **SpawnLocation** (**Neutral** on), folder `Workspace/Dodgeballs` with ball Parts. Details live in the script docs above.
+**Place setup you build (not in repo):** arena in `Workspace`, **Teams** named `Red` and `Blue`, team **SpawnLocations** with matching **TeamColor** and **Neutral** off, lobby **SpawnLocation** (**Neutral** on), folder `Workspace/Dodgeballs` with ball Parts, lobby practice **spawn volumes** tagged `LobbyBallSpawnVolume` (optional exclude zones). Details live in the script docs above.
 
 ## Paste or update one script
 

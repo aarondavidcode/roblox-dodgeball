@@ -14,4 +14,5 @@ Luau sources to paste into **Roblox Studio**. Each file has a matching doc under
 | [RoundService.server.lua](RoundService.server.lua) | [docs/RoundService.md](../docs/RoundService.md) |
 | [RoundStatusClient.local.lua](RoundStatusClient.local.lua) | [docs/RoundStatusClient.md](../docs/RoundStatusClient.md) |
 | [LobbyService.server.lua](LobbyService.server.lua) | [docs/LobbyService.md](../docs/LobbyService.md) |
+| [LobbyPracticeBallService.server.lua](LobbyPracticeBallService.server.lua) | [docs/LobbyPracticeBallService.md](../docs/LobbyPracticeBallService.md) |
 | [LobbyJoinNextMatchClient.local.lua](LobbyJoinNextMatchClient.local.lua) | [docs/LobbyJoinNextMatchClient.md](../docs/LobbyJoinNextMatchClient.md) |

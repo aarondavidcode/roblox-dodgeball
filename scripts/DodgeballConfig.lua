@@ -106,6 +106,33 @@ local DodgeballConfig = {
 	-- Lobby opt-in: default true on first join only; explicit false persists until toggle or re-join.
 	JOIN_NEXT_MATCH_ATTR = "JoinNextMatch",
 	SET_JOIN_NEXT_MATCH_REMOTE_NAME = "SetJoinNextMatch",
+
+	-- === Lobby practice balls (waiting area — no OUT / damage) ===
+
+	-- Workspace folder for script-spawned lobby balls (created if missing).
+	LOBBY_BALL_FOLDER_NAME = "LobbyPracticeBalls",
+
+	-- CollectionService tag on each lobby practice ball Part.
+	LOBBY_PRACTICE_BALL_TAG = "LobbyPracticeBall",
+
+	-- Tag spawn volume Parts/Models (multiple). Random spawn point inside each volume’s bounds.
+	LOBBY_BALL_SPAWN_VOLUME_TAG = "LobbyBallSpawnVolume",
+
+	-- Optional: tag Parts/Models that are off-limits (arena / match zone). Ball entering → instant recover + respawn in lobby.
+	LOBBY_BALL_EXCLUDE_ZONE_TAG = "LobbyBallExcludeZone",
+
+	-- Default min/max per spawn volume (override with attributes LobbyBallMin / LobbyBallMax on a volume).
+	LOBBY_BALL_MIN_PER_AREA = 2,
+	LOBBY_BALL_MAX_PER_AREA = 5,
+
+	-- Seconds a lobby ball may sit idle (not held, roughly still) before delete + respawn in its area.
+	LOBBY_BALL_IDLE_TIMEOUT_SECONDS = 45,
+
+	-- Server maintenance tick for idle/bounds/count checks. Minimum recommended: 5–10s (do not run every frame).
+	LOBBY_BALL_MAINTENANCE_INTERVAL_SECONDS = 8,
+
+	-- Diameter of spawned lobby ball Parts (studs).
+	LOBBY_BALL_SIZE = 2.5,
 }
 
 return DodgeballConfig

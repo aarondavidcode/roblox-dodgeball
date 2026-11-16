@@ -33,7 +33,9 @@ Paste from [scripts/DodgeballThrowInput.local.lua](../scripts/DodgeballThrowInpu
 | `ReplicatedStorage/RoundStatus` → `MatchPhase` | **LobbyService** |
 | Player `IsOut`, `MatchParticipant` | Server scripts |
 
-Throw and aim are blocked in **Lobby**, when **OUT**, or when `MatchParticipant` is false during **InMatch**.
+Throw and aim for **arena** balls are blocked in **Lobby**, when **OUT**, or when `MatchParticipant` is false during **InMatch**.
+
+**Lobby practice balls** (from **LobbyPracticeBallService**): neutral spectators and lobby waiters can aim/throw while holding a ball tagged / attributed as lobby practice — same controls as match throws.
 
 ## Config knobs
 
