@@ -38,16 +38,18 @@ local hintSessionEnded = false
 local hintTimerStarted = false
 local hintFadeInProgress = false
 local hintTimerGeneration = 0
+local activeHintFadeTween: Tween? = nil
 
-local function ensureGui(): (ScreenGui, TextButton, Frame)
+local function ensureGui(): (ScreenGui, TextButton, TextButton, CanvasGroup)
 	local existing = playerGui:FindFirstChild("JoinNextMatch")
 	if existing and existing:IsA("ScreenGui") then
 		local bar = existing:FindFirstChild("BottomBar")
 		if bar and bar:IsA("Frame") then
 			local btn = bar:FindFirstChild("OptInToggle")
 			local hint = bar:FindFirstChild("QueueHint")
-			if btn and btn:IsA("TextButton") and hint and hint:IsA("Frame") then
-				return existing, btn, hint
+			local canvas = if hint then hint:FindFirstChild("HintCanvas") else nil
+			if btn and btn:IsA("TextButton") and hint and hint:IsA("TextButton") and canvas and canvas:IsA("CanvasGroup") then
+				return existing, btn, hint, canvas
 			end
 		end
 		existing:Destroy()
@@ -98,7 +100,7 @@ local function ensureGui(): (ScreenGui, TextButton, Frame)
 	buttonCorner.CornerRadius = UDim.new(0, 10)
 	buttonCorner.Parent = button
 
-	local queueHint = Instance.new("Frame")
+	local queueHint = Instance.new("TextButton")
 	queueHint.Name = "QueueHint"
 	queueHint.LayoutOrder = 2
 	queueHint.Size = UDim2.fromOffset(0, BAR_HEIGHT)
@@ -106,25 +108,34 @@ local function ensureGui(): (ScreenGui, TextButton, Frame)
 	queueHint.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
 	queueHint.BackgroundTransparency = 0.15
 	queueHint.BorderSizePixel = 0
+	queueHint.AutoButtonColor = false
+	queueHint.Text = ""
 	queueHint.Visible = false
-	queueHint.Active = true
 	queueHint.Parent = bottomBar
 
 	local hintCorner = Instance.new("UICorner")
 	hintCorner.CornerRadius = UDim.new(0, 10)
 	hintCorner.Parent = queueHint
 
+	local hintCanvas = Instance.new("CanvasGroup")
+	hintCanvas.Name = "HintCanvas"
+	hintCanvas.Size = UDim2.fromOffset(0, BAR_HEIGHT)
+	hintCanvas.AutomaticSize = Enum.AutomaticSize.X
+	hintCanvas.BackgroundTransparency = 1
+	hintCanvas.GroupTransparency = 0
+	hintCanvas.Parent = queueHint
+
 	local hintLayout = Instance.new("UIListLayout")
 	hintLayout.FillDirection = Enum.FillDirection.Horizontal
 	hintLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 	hintLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	hintLayout.Padding = UDim.new(0, 4)
-	hintLayout.Parent = queueHint
+	hintLayout.Parent = hintCanvas
 
 	local hintPadding = Instance.new("UIPadding")
 	hintPadding.PaddingLeft = UDim.new(0, 10)
 	hintPadding.PaddingRight = UDim.new(0, 14)
-	hintPadding.Parent = queueHint
+	hintPadding.Parent = hintCanvas
 
 	local arrow = Instance.new("TextLabel")
 	arrow.Name = "Arrow"
@@ -136,8 +147,8 @@ local function ensureGui(): (ScreenGui, TextButton, Frame)
 	arrow.TextColor3 = Color3.fromRGB(255, 220, 120)
 	arrow.Text = "◀"
 	arrow.TextXAlignment = Enum.TextXAlignment.Right
-	arrow.Active = true
-	arrow.Parent = queueHint
+	arrow.Active = false
+	arrow.Parent = hintCanvas
 
 	local hintLabel = Instance.new("TextLabel")
 	hintLabel.Name = "HintText"
@@ -150,13 +161,13 @@ local function ensureGui(): (ScreenGui, TextButton, Frame)
 	hintLabel.TextColor3 = Color3.new(1, 1, 1)
 	hintLabel.TextWrapped = false
 	hintLabel.Text = "Tap here to queue or spectate"
-	hintLabel.Active = true
-	hintLabel.Parent = queueHint
+	hintLabel.Active = false
+	hintLabel.Parent = hintCanvas
 
-	return screenGui, button, queueHint
+	return screenGui, button, queueHint, hintCanvas
 end
 
-local screenGui, toggleButton, queueHint = ensureGui()
+local screenGui, toggleButton, queueHint, hintCanvas = ensureGui()
 
 local function optedIn(): boolean
 	return localPlayer:GetAttribute(ATTR_JOIN) ~= false
@@ -195,26 +206,29 @@ local function refreshButtonVisual()
 	end
 end
 
+local function resetHintVisual()
+	hintCanvas.GroupTransparency = 0
+	queueHint.BackgroundTransparency = 0.15
+end
+
 local function finalizeHintSession()
 	hintSessionEnded = true
 	queueHint.Visible = false
 end
 
 local function playHintFadeOut()
+	if activeHintFadeTween then
+		return
+	end
 	local fadeInfo = TweenInfo.new(HINT_FADE_SECONDS, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	local tweens: { Tween } = {}
-	table.insert(tweens, TweenService:Create(queueHint, fadeInfo, { BackgroundTransparency = 1 }))
-	for _, desc in queueHint:GetDescendants() do
-		if desc:IsA("TextLabel") then
-			table.insert(
-				tweens,
-				TweenService:Create(desc, fadeInfo, { TextTransparency = 1, BackgroundTransparency = 1 })
-			)
-		end
-	end
-	for _, tween in tweens do
-		tween:Play()
-	end
+	local tween = TweenService:Create(hintCanvas, fadeInfo, { GroupTransparency = 1 })
+	local bgTween = TweenService:Create(queueHint, fadeInfo, { BackgroundTransparency = 1 })
+	activeHintFadeTween = tween
+	tween:Play()
+	bgTween:Play()
+	tween.Completed:Once(function()
+		activeHintFadeTween = nil
+	end)
 end
 
 local function startHintFadeOut()
@@ -236,7 +250,7 @@ local function dismissHintFromTap()
 	if hintSessionEnded or hintFadeInProgress then
 		return
 	end
-	if not hintTimerStarted or not queueHint.Visible then
+	if not queueHint.Visible then
 		return
 	end
 	hintTimerGeneration += 1
@@ -244,18 +258,9 @@ local function dismissHintFromTap()
 end
 
 local function wireHintDismissInput()
-	local function onHintPointer(input: InputObject)
-		if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then
-			return
-		end
+	queueHint.Activated:Connect(function()
 		dismissHintFromTap()
-	end
-	queueHint.InputBegan:Connect(onHintPointer)
-	for _, desc in queueHint:GetDescendants() do
-		if desc:IsA("GuiObject") then
-			desc.InputBegan:Connect(onHintPointer)
-		end
-	end
+	end)
 end
 
 local function maybeStartHintTimer()
@@ -264,13 +269,7 @@ local function maybeStartHintTimer()
 	end
 	hintTimerStarted = true
 	queueHint.Visible = true
-	queueHint.BackgroundTransparency = 0.15
-	for _, desc in queueHint:GetDescendants() do
-		if desc:IsA("TextLabel") then
-			desc.TextTransparency = 0
-			desc.BackgroundTransparency = 1
-		end
-	end
+	resetHintVisual()
 
 	hintTimerGeneration += 1
 	local generation = hintTimerGeneration
