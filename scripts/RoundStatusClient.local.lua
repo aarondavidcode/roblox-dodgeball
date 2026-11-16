@@ -1,3 +1,4 @@
+-- Studio setup: docs/RoundStatusClient.md
 -- Paste as LocalScript named RoundStatusClient inside StarterGui/RoundStatus
 -- Parent ScreenGui must be named RoundStatus; label must be CountdownLabel (Text = empty).
 

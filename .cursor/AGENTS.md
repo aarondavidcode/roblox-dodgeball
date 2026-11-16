@@ -1,39 +1,45 @@
 # Cursor Cloud agents — roblox-dodgeball
 
-This repo is **guides + copy-paste Luau**, not a runnable game. Roblox Studio on a family PC is where the place is built and tested.
+This repo is **Luau sources + per-script Studio docs**, not a runnable game. Play testing happens in **Roblox Studio** on a developer machine.
 
 ## Where to work
 
 | Area | Purpose |
 |------|---------|
 | `scripts/*.lua` | Source of truth for Studio scripts (server, local, modules under `scripts/throw/`) |
-| `01-build-your-map` … `06-lobby-and-matches` | Kid-friendly step guides — keep the same clear, encouraging tone as existing READMEs |
-| `scripts/README.md` | Maps repo files → Studio object names and locations |
+| `docs/*.md` | One markdown file per script: Explorer path, human-built objects, config knobs, auto-created instances |
+| `README.md` | System map, scripts table, how to paste one file |
 
-No **Rojo** sync in this repo: kids paste from GitHub into Studio.
+No **Rojo** sync: scripts are copied from GitHub into Studio.
+
+## Editing rules
+
+- When gameplay or Studio **human** setup changes, update the **matching** `docs/<ScriptName>.md` (and `docs/DefaultThrow.md` for throw modules). Do not add numbered step guides.
+- Prefer docs in `docs/` over long comments in `.lua`. A one-line pointer at the top of a script to its doc is fine.
+- Keep language plain and short — not a children’s lesson, not “step 01–06”.
+- Do not change Lua behavior unless the task requires it.
 
 ## Game flow (for code changes)
 
-- **Lobby + matches:** `LobbyService.server.lua` drives lobby countdown, match state, and first-to-3 round wins; `LobbyJoinNextMatchClient.local.lua` is the **Join next match** / spectate UI.
-- **Rounds:** `RoundService.server.lua` with `DodgeballService.server.lua` and shared `DodgeballConfig.lua`.
-- **Teams:** `TeamAutoBalance.server.lua` (lobby-aware in step 6).
+- **Lobby + matches:** `LobbyService.server.lua`, `LobbyJoinNextMatchClient.local.lua`, **RoundStatus** attributes.
+- **Rounds:** `RoundService.server.lua` with `DodgeballService.server.lua` and `DodgeballConfig.lua`.
+- **Teams:** `TeamAutoBalance.server.lua` (lobby-aware; reads `MatchPhase`).
+- **Throws:** `DodgeballThrowInput.local.lua` + `DodgeballService` + `throw/DefaultThrow.lua`.
 
-When editing guides, say what to paste and where in Studio — match `scripts/README.md`.
+Cross-check human setup against the script’s doc, not legacy folders.
 
 ## Cloud environment
 
-- **Install:** `.cursor/install-tools.sh` (Selene linter, StyLua formatter under `~/.local/bin`).
-- **Network:** No `egressAllowlist` in `.cursor/environment.json`—rely on account **Allow all network access** (Cloud Agents → Security).
-- **No dev server** — nothing to keep running in `terminals`; Play testing is in Studio (F5).
-- **PRs:** Lua + markdown only; do not add npm/node unless the project explicitly needs it.
+- **Install:** `.cursor/install-tools.sh` (Selene, StyLua under `~/.local/bin`).
+- **Network:** No repo egress allowlist — use account **Allow all network access** where needed.
+- **No dev server** — nothing to run in cloud terminals for play mode.
+- **PRs:** Lua + markdown; avoid new npm/node unless explicitly required.
 
-## Suggested checks before opening a PR
+## Checks before a PR
 
-From repo root (PATH should include `~/.local/bin` after install):
+From repo root:
 
 ```bash
 stylua scripts/
 selene scripts/ 2>/dev/null || true
 ```
-
-Selene may need a project `selene.toml` later; formatting with StyLua is the main automated check today.

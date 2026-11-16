@@ -1,42 +1,53 @@
-# Roblox dodgeball — START HERE
+# Roblox dodgeball
 
-**The game lives in Roblox.** Your arena, teams, and scripts all live inside **Roblox Studio** on your family’s place.
+Red vs Blue dodgeball for **Roblox Studio**. This repo holds Luau you paste into a place plus markdown that says where each script lives in Explorer and what you must build by hand in the 3D world.
 
-**The instructions live here.** This repo is a kid-friendly guide plus copy-paste scripts. Nothing in GitHub *is* the game until you build and publish it in Studio.
+The playable game is always your **Roblox place** (arena, teams, spawns). GitHub is the script source and setup reference.
 
-## 30-second overview
+## Game systems (short map)
 
-You are making a **Red vs Blue dodgeball** map:
+| System | Server scripts | Client scripts | Shared config |
+|--------|----------------|----------------|---------------|
+| Teams | `TeamAutoBalance`, `LobbyService` | — | `DodgeballConfig` |
+| Lobby and matches | `LobbyService` | `LobbyJoinNextMatchClient` | `DodgeballConfig` |
+| Dodgeballs | `DodgeballService` | `DodgeballThrowInput` | `DodgeballConfig`, `throw/DefaultThrow` |
+| Rounds | `RoundService` | `RoundStatusClient` (optional UI) | `DodgeballConfig` |
 
-1. **Build** your arena in Studio (walls, sides, fun decorations).
-2. **Set up** teams, spawn pads, and the main windows.
-3. **Add** the **TeamAutoBalance** server script so new players join the smaller team.
-4. **Add dodgeballs** — pickup, throw, and OUT rules (**DodgeballService**).
-5. **Round reset** — when a team wins, countdown and respawn (**RoundService**).
-6. **Lobby + matches** — lobby countdown, **Join next match** button, first team to **3** round wins (**LobbyService**).
-7. **Test** with **F5**, then **2 Players**, then publish with a parent when you are ready.
+**Typical flow:** Players wait on a **lobby spawn** → opt in to the next match → countdown → Red/Blue on arena pads → rounds until one team is all OUT → first to **3** round wins wins the match → back to lobby.
 
-## Start with step 1
+**Test in Studio:** **F5** for one player, **Test → 2 Players** (or more) for teams and lobby logic. Watch **View → Output** for `[TeamAutoBalance]`, `[LobbyService]`, `[DodgeballService]`, `[RoundService]`.
 
-Go to **[01-build-your-map](01-build-your-map/README.md)** and follow the folders in order (`01` → `02` → `03`).
+## Scripts → Studio location → doc
 
-| Folder | What you do |
-|--------|-------------|
-| [01-build-your-map](01-build-your-map/README.md) | Design the arena and spawn zones |
-| [02-studio-setup](02-studio-setup/README.md) | Teams, spawns, Studio panels |
-| [03-add-your-first-script](03-add-your-first-script/README.md) | Paste **TeamAutoBalance** from [scripts/](scripts/) |
-| [04-balls-and-throwing](04-balls-and-throwing/README.md) | Balls in **Workspace**, **DodgeballService**, throw with **F** or click |
-| [05-round-reset](05-round-reset/README.md) | **RoundService**, win detection, ball respawn, optional countdown UI |
-| [06-lobby-and-matches](06-lobby-and-matches/README.md) | **LobbyService**, lobby spawn, opt-in UI, first-to-3 matches |
+Copy from [scripts/](scripts/) on GitHub (**Raw** or select all). Object **names** in Explorer must match the table.
 
-Parents: read **[FOR-PARENTS.md](FOR-PARENTS.md)**. Roadmap: **[WHATS-NEXT.md](WHATS-NEXT.md)**.
+| Repo file | Explorer path | Instance type | Doc |
+|-----------|---------------|---------------|-----|
+| [DodgeballConfig.lua](scripts/DodgeballConfig.lua) | `ServerScriptService/DodgeballConfig` | ModuleScript | [docs/DodgeballConfig.md](docs/DodgeballConfig.md) |
+| [TeamAutoBalance.server.lua](scripts/TeamAutoBalance.server.lua) | `ServerScriptService/TeamAutoBalance` | Script | [docs/TeamAutoBalance.md](docs/TeamAutoBalance.md) |
+| [DodgeballService.server.lua](scripts/DodgeballService.server.lua) | `ServerScriptService/DodgeballService` | Script | [docs/DodgeballService.md](docs/DodgeballService.md) |
+| [throw/DefaultThrow.lua](scripts/throw/DefaultThrow.lua) | `ServerScriptService/throw/DefaultThrow` | ModuleScript | [docs/DefaultThrow.md](docs/DefaultThrow.md) |
+| [DodgeballThrowInput.local.lua](scripts/DodgeballThrowInput.local.lua) | `StarterPlayer/StarterPlayerScripts/DodgeballThrowInput` | LocalScript | [docs/DodgeballThrowInput.md](docs/DodgeballThrowInput.md) |
+| [RoundService.server.lua](scripts/RoundService.server.lua) | `ServerScriptService/RoundService` | Script | [docs/RoundService.md](docs/RoundService.md) |
+| [RoundStatusClient.local.lua](scripts/RoundStatusClient.local.lua) | `StarterGui/RoundStatus/RoundStatusClient` | LocalScript | [docs/RoundStatusClient.md](docs/RoundStatusClient.md) |
+| [LobbyService.server.lua](scripts/LobbyService.server.lua) | `ServerScriptService/LobbyService` | Script | [docs/LobbyService.md](docs/LobbyService.md) |
+| [LobbyJoinNextMatchClient.local.lua](scripts/LobbyJoinNextMatchClient.local.lua) | `StarterPlayer/StarterPlayerScripts/LobbyJoinNextMatchClient` | LocalScript | [docs/LobbyJoinNextMatchClient.md](docs/LobbyJoinNextMatchClient.md) |
 
-## Publish reminder (with a grown-up)
+**Place setup you build (not in repo):** arena in `Workspace`, **Teams** named `Red` and `Blue`, team **SpawnLocations** with matching **TeamColor** and **Neutral** off, lobby **SpawnLocation** (**Neutral** on), folder `Workspace/Dodgeballs` with ball Parts. Details live in the script docs above.
 
-When your place works in Studio, a parent can use **File → Publish to Roblox**. Keep the experience **Private** until your family is ready to invite friends. Publishing does **not** happen from this GitHub repo—it only happens inside Studio.
+## Paste or update one script
 
-Have fun building—the code catches up with your creativity.
+1. Open the **.lua** file in this repo and copy the full source.
+2. In Studio **Explorer**, select the matching object (or create it with the right type and name — see that script’s doc).
+3. Open the script editor, replace all code, **Save** the place.
+4. If Studio human setup changed (new spawn name, new UI child), update **only** that script’s markdown in `docs/`.
 
-## For developers (Cloud agents)
+Do not paste duplicates of **ModuleScripts** or server **Scripts** with different names. Do not hand-create `ReplicatedStorage/DodgeballRemotes`, `RoundStatus`, or `ServerScriptService/DodgeballRoundBridge` — scripts create those at run time.
 
-If you use **Cursor Cloud Agents** on this repo, create or attach a saved **Environment** in the [Cloud Agents dashboard](https://cursor.com/dashboard?tab=cloud-agents) and point it at this repository. The machine setup for builds lives in [`.cursor/environment.json`](.cursor/environment.json) (`name` + install script only—no repo-level egress allowlist). Use **Allow all network access** at **Cloud Agents → Security** so installs can reach GitHub release CDNs and other hosts. Agent-facing notes are in [`.cursor/AGENTS.md`](.cursor/AGENTS.md).
+## Publish
+
+**File → Publish to Roblox** happens in Studio, not from GitHub. Set the experience visibility in [create.roblox.com](https://create.roblox.com) before inviting players.
+
+## Cloud agents
+
+Saved environment: [`.cursor/environment.json`](.cursor/environment.json). Agent notes: [`.cursor/AGENTS.md`](.cursor/AGENTS.md). [Cloud Agents dashboard](https://cursor.com/dashboard?tab=cloud-agents).

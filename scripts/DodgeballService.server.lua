@@ -1,3 +1,4 @@
+-- Studio setup: docs/DodgeballService.md
 -- Paste as Script named DodgeballService under ServerScriptService.
 -- Needs DodgeballConfig (ModuleScript), throw/DefaultThrow (ModuleScript), and Workspace/Dodgeballs.
 --
@@ -916,7 +917,7 @@ local function watchBallFolder()
 		folder = Instance.new("Folder")
 		folder.Name = Config.BALL_FOLDER_NAME
 		folder.Parent = Workspace
-		warn(`[DodgeballService] Created empty Workspace/{Config.BALL_FOLDER_NAME} — add ball Parts for kids to play.`)
+		warn(`[DodgeballService] Created empty Workspace/{Config.BALL_FOLDER_NAME} — add ball Parts to play.`)
 	end
 	folder.ChildAdded:Connect(function(child)
 		if child:IsA("BasePart") then

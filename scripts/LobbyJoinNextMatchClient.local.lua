@@ -1,3 +1,4 @@
+-- Studio setup: docs/LobbyJoinNextMatchClient.md
 -- Paste as LocalScript named LobbyJoinNextMatchClient under StarterPlayerScripts.
 -- Builds ScreenGui "JoinNextMatch" (BottomBar: OptInToggle + one-time QueueHint) at run time.
 
