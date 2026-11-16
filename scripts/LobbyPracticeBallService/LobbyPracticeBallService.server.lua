@@ -182,13 +182,13 @@ local function randomPointInVolume(volume: SpawnVolume): Vector3?
 		return nil
 	end
 	local part = parts[math.random(1, #parts)]
+	local halfHeight = BallTemplate.halfHeight()
 	local size = part.Size
-	local offset = Vector3.new(
-		(math.random() - 0.5) * size.X * 0.9,
-		(math.random() - 0.5) * size.Y * 0.9,
-		(math.random() - 0.5) * size.Z * 0.9
-	)
-	return part.CFrame:PointToWorldSpace(offset)
+	local offsetX = (math.random() - 0.5) * size.X * 0.9
+	local offsetZ = (math.random() - 0.5) * size.Z * 0.9
+	local topLocal = Vector3.new(offsetX, size.Y * 0.5, offsetZ)
+	local surfaceWorld = part.CFrame:PointToWorldSpace(topLocal)
+	return surfaceWorld + Vector3.new(0, halfHeight, 0)
 end
 
 local function pointInsidePart(part: BasePart, worldPoint: Vector3): boolean
@@ -197,10 +197,29 @@ local function pointInsidePart(part: BasePart, worldPoint: Vector3): boolean
 	return math.abs(localPoint.X) <= half.X and math.abs(localPoint.Y) <= half.Y and math.abs(localPoint.Z) <= half.Z
 end
 
+local function pointInsidePartWithMargin(part: BasePart, worldPoint: Vector3, margin: number): boolean
+	local localPoint = part.CFrame:PointToObjectSpace(worldPoint)
+	local half = part.Size * 0.5 + Vector3.new(margin, margin, margin)
+	return math.abs(localPoint.X) <= half.X and math.abs(localPoint.Y) <= half.Y and math.abs(localPoint.Z) <= half.Z
+end
+
 local function isInsideAnySpawnVolume(worldPoint: Vector3): boolean
 	for _, volume in gatherSpawnVolumes() do
 		for _, part in volumeWorldParts(volume) do
 			if pointInsidePart(part, worldPoint) then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+local function isBallInAllowedLobbyArea(ball: BasePart): boolean
+	local margin = BallTemplate.halfHeight()
+	local position = ball.Position
+	for _, volume in gatherSpawnVolumes() do
+		for _, part in volumeWorldParts(volume) do
+			if pointInsidePartWithMargin(part, position, margin) then
 				return true
 			end
 		end
@@ -287,6 +306,7 @@ end
 
 local recoverAndRespawnBall: (BasePart, string) -> ()
 local hookLobbyBall: (BasePart) -> ()
+local maintainBallCounts: () -> ()
 
 local function detachBallFromAnyPlayer(ball: BasePart)
 	for player, held in heldByPlayer do
@@ -317,12 +337,13 @@ recoverAndRespawnBall = function(ball: BasePart, _reason: string)
 		if volume.areaId == areaId then
 			local pos = randomPointInVolume(volume)
 			if pos then
-				local newBall = createLobbyBallAt(areaId, pos + Vector3.new(0, BallTemplate.halfHeight(), 0))
+				local newBall = createLobbyBallAt(areaId, pos)
 				hookLobbyBall(newBall)
 			end
 			break
 		end
 	end
+	task.defer(maintainBallCounts)
 end
 
 local function ballCastRadius(ball: BasePart): number
@@ -358,7 +379,7 @@ local function startRecoverSweep(ball: BasePart)
 		end
 
 		local currentPos = ball.Position
-		if isInsideExcludeZone(currentPos) or not isInsideAnySpawnVolume(currentPos) then
+		if isInsideExcludeZone(currentPos) or not isBallInAllowedLobbyArea(ball) then
 			recoverAndRespawnBall(ball, "out of lobby bounds")
 			return
 		end
@@ -684,7 +705,7 @@ local function spawnMissingForArea(volume: SpawnVolume)
 			warn(`[LobbyPracticeBallService] Could not pick spawn point in {volume.instance:GetFullName()}`)
 			break
 		end
-		local ball = createLobbyBallAt(volume.areaId, pos + Vector3.new(0, BallTemplate.halfHeight(), 0))
+		local ball = createLobbyBallAt(volume.areaId, pos)
 		hookLobbyBall(ball)
 		count += 1
 	end
@@ -736,7 +757,7 @@ local function maintainIdleAndBounds()
 		end
 
 		local pos = child.Position
-		if isInsideExcludeZone(pos) or not isInsideAnySpawnVolume(pos) then
+		if isInsideExcludeZone(pos) or not isBallInAllowedLobbyArea(child) then
 			recoverAndRespawnBall(child, "bounds")
 			continue
 		end
@@ -761,6 +782,7 @@ local function maintainIdleAndBounds()
 			recoverAndRespawnBall(child, "idle timeout")
 		end
 	end
+	maintainBallCounts()
 end
 
 local remotesWired = false
