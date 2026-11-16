@@ -124,7 +124,7 @@ You should have **four** game scripts: **TeamAutoBalance**, **DodgeballService**
 3. Rename it **`LobbyJoinNextMatchClient`**.
 4. Paste from **[scripts/LobbyJoinNextMatchClient.local.lua](../scripts/LobbyJoinNextMatchClient.local.lua)**.
 
-At run time it creates a ScreenGui named **`JoinNextMatch`** with a button **`OptInToggle`** (you do not need to build the GUI by hand).
+At run time it creates a ScreenGui named **`JoinNextMatch`** with a centered **`BottomBar`** (`OptInToggle` + a one-time **`QueueHint`** to the right; button width grows with text). Toggle labels: **Joining next match** / **Spectating**.
 
 **Who sees the button**
 
