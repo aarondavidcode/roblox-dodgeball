@@ -23,6 +23,7 @@ When editing guides, say what to paste and where in Studio — match `scripts/RE
 ## Cloud environment
 
 - **Install:** `.cursor/install-tools.sh` (Selene linter, StyLua formatter under `~/.local/bin`).
+- **Network:** No `egressAllowlist` in `.cursor/environment.json`—rely on account **Allow all network access** (Cloud Agents → Security).
 - **No dev server** — nothing to keep running in `terminals`; Play testing is in Studio (F5).
 - **PRs:** Lua + markdown only; do not add npm/node unless the project explicitly needs it.
 
