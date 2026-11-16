@@ -1,45 +1,69 @@
 # Cursor Cloud agents — roblox-dodgeball
 
-This repo is **Luau sources + per-script Studio docs**, not a runnable game. Play testing happens in **Roblox Studio** on a developer machine.
+Luau sources + per-script Studio docs. The game runs in **Roblox Studio**, not in this repo. No **Rojo** — humans paste from `scripts/` into Explorer.
 
-## Where to work
+## Agent playbook
 
-| Area | Purpose |
-|------|---------|
-| `scripts/*.lua` | Source of truth for Studio scripts (server, local, modules under `scripts/throw/`) |
-| `docs/*.md` | One markdown file per script: Explorer path, human-built objects, config knobs, auto-created instances |
-| `README.md` | System map, scripts table, how to paste one file |
+### Source of truth
 
-No **Rojo** sync: scripts are copied from GitHub into Studio.
+| Area | Use |
+|------|-----|
+| `scripts/*.lua` | Luau to paste (server, local, `scripts/throw/` modules) |
+| `docs/<Script>.md` | Explorer path, human-built objects, config knobs, auto-created instances |
+| `README.md` | System map and **Script / LocalScript / ModuleScript** paste targets |
 
-## Editing rules
+**New human Studio objects** (spawn names, UI children, teams, folders) → update **only** that script’s `docs/<Script>.md`. No numbered step guides.
 
-- When gameplay or Studio **human** setup changes, update the **matching** `docs/<ScriptName>.md` (and `docs/DefaultThrow.md` for throw modules). Do not add numbered step guides.
-- Prefer docs in `docs/` over long comments in `.lua`. A one-line pointer at the top of a script to its doc is fine.
-- Keep language plain and short — not a children’s lesson, not “step 01–06”.
-- Do not change Lua behavior unless the task requires it.
+**Gameplay-only change** with **no** new Explorer setup → doc edit not required.
 
-## Game flow (for code changes)
+**One feature → one PR.** Lua + markdown; do not add npm/node unless the task requires it.
 
-- **Lobby + matches:** `LobbyService.server.lua`, `LobbyJoinNextMatchClient.local.lua`, **RoundStatus** attributes.
-- **Rounds:** `RoundService.server.lua` with `DodgeballService.server.lua` and `DodgeballConfig.lua`.
-- **Teams:** `TeamAutoBalance.server.lua` (lobby-aware; reads `MatchPhase`).
-- **Throws:** `DodgeballThrowInput.local.lua` + `DodgeballService` + `throw/DefaultThrow.lua`.
+### Paste targets
 
-Cross-check human setup against the script’s doc, not legacy folders.
+Follow the scripts table in `README.md` (e.g. `ServerScriptService/DodgeballService` = **Script**, `StarterPlayerScripts/DodgeballThrowInput` = **LocalScript**, `ServerScriptService/throw/DefaultThrow` = **ModuleScript**). Object **names** must match the repo.
 
-## Cloud environment
+### Do not hand-build (scripts create these)
 
-- **Install:** `.cursor/install-tools.sh` (Selene, StyLua under `~/.local/bin`).
-- **Network:** No repo egress allowlist — use account **Allow all network access** where needed.
-- **No dev server** — nothing to run in cloud terminals for play mode.
-- **PRs:** Lua + markdown; avoid new npm/node unless explicitly required.
+- `ReplicatedStorage/DodgeballRemotes` and its RemoteEvents  
+- `ReplicatedStorage/RoundStatus` (attributes for UI and match state)  
+- `ServerScriptService/DodgeballRoundBridge`  
 
-## Checks before a PR
+Duplicating them in docs or Studio instructions is wrong.
 
-From repo root:
+### Architecture
+
+Extend existing systems — **no parallel game framework:**
+
+- **LobbyService**, **DodgeballService**, **RoundService**, **TeamAutoBalance**, shared **DodgeballConfig**, client LocalScripts under **StarterPlayerScripts** or **StarterGui** as documented.
+
+**Semantics (do not confuse):**
+
+- **`MatchParticipant`** — playing **this** match (arena). Spectators / mid-match lobby joiners: not a participant until the next match flow allows it.
+- **`JoinNextMatch`** — queued for **next** lobby countdown. Default opt-in on first join; **`false` is explicit** and persists until the player toggles or rejoins.
+
+**Spawns (human-built):**
+
+- **Lobby pad:** **Neutral** on; find by `LOBBY_SPAWN_NAME` / `LOBBY_SPAWN_TAG` in **DodgeballConfig**.
+- **Team pads:** **Neutral** off; **TeamColor** must match **Teams** (not just visual **Color**). Pad names are optional; matching is by **TeamColor**.
+
+### Writing style
+
+Beginner-friendly: plain words, short sentences. No kid/parent/lesson framing, no PR number or changelog voice in user-facing docs.
+
+Prefer `docs/` over long Lua comments; a one-line `Studio setup: docs/...` header is fine.
+
+### Verify (optional in cloud)
+
+If tools are missing: `bash .cursor/install-tools.sh`, then from repo root:
 
 ```bash
 stylua scripts/
 selene scripts/ 2>/dev/null || true
 ```
+
+Play test remains **F5** / multi-client in Studio — not in the cloud VM.
+
+### Cloud environment
+
+- Install script: `.cursor/install-tools.sh`. Network: account **Allow all network access** if installs fail.  
+- No dev server to run in terminals for this project.
