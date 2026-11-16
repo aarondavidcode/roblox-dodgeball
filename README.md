@@ -36,3 +36,7 @@ Parents: read **[FOR-PARENTS.md](FOR-PARENTS.md)**. Roadmap: **[WHATS-NEXT.md](W
 When your place works in Studio, a parent can use **File → Publish to Roblox**. Keep the experience **Private** until your family is ready to invite friends. Publishing does **not** happen from this GitHub repo—it only happens inside Studio.
 
 Have fun building—the code catches up with your creativity.
+
+## For developers (Cloud agents)
+
+If you use **Cursor Cloud Agents** on this repo, create or attach a saved **Environment** in the [Cloud Agents dashboard](https://cursor.com/dashboard?tab=cloud-agents) and point it at this repository. The machine setup for builds lives in [`.cursor/environment.json`](.cursor/environment.json) (Luau tools install, no Studio on the VM). Agent-facing notes are in [`.cursor/AGENTS.md`](.cursor/AGENTS.md).
