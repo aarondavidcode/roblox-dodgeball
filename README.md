@@ -39,4 +39,4 @@ Have fun building—the code catches up with your creativity.
 
 ## For developers (Cloud agents)
 
-If you use **Cursor Cloud Agents** on this repo, create or attach a saved **Environment** in the [Cloud Agents dashboard](https://cursor.com/dashboard?tab=cloud-agents) and point it at this repository. The machine setup for builds lives in [`.cursor/environment.json`](.cursor/environment.json) (Luau tools install, no Studio on the VM). Agent-facing notes are in [`.cursor/AGENTS.md`](.cursor/AGENTS.md).
+If you use **Cursor Cloud Agents** on this repo, create or attach a saved **Environment** in the [Cloud Agents dashboard](https://cursor.com/dashboard?tab=cloud-agents) and point it at this repository. The machine setup for builds lives in [`.cursor/environment.json`](.cursor/environment.json) (`name` + install script only—no repo-level egress allowlist). Use **Allow all network access** at **Cloud Agents → Security** so installs can reach GitHub release CDNs and other hosts. Agent-facing notes are in [`.cursor/AGENTS.md`](.cursor/AGENTS.md).

@@ -1,15 +1,4 @@
 {
   "name": "roblox-game-dev",
-  "install": "bash .cursor/install-tools.sh",
-  "egressAllowlist": [
-    "github.com",
-    "api.github.com",
-    "codeload.github.com",
-    "objects.githubusercontent.com",
-    "raw.githubusercontent.com",
-    "create.roblox.com",
-    "roblox.com",
-    "www.roblox.com",
-    "cursor.com"
-  ]
+  "install": "bash .cursor/install-tools.sh"
 }
