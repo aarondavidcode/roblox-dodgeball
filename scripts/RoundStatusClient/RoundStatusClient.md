@@ -10,7 +10,9 @@
 | `CountdownLabel` | `StarterGui/RoundStatus/CountdownLabel` | **TextLabel** |
 | `RoundStatusClient` | `StarterGui/RoundStatus/RoundStatusClient` | **LocalScript** |
 
-Paste script from [scripts/RoundStatusClient.local.lua](../scripts/RoundStatusClient.local.lua).
+Paste from [RoundStatusClient.local.lua](./RoundStatusClient.local.lua).
+
+**Repo:** GitHub folder `scripts/<Name>/` is for organization only. Paste by **Explorer path** in the table (instance **name** must match). ModuleScripts use `require()` by instance name — not repo paths.
 
 ## What you build in Studio
 
@@ -50,4 +52,4 @@ Uses team names `Red` and `Blue` in display logic — keep aligned with `TEAM_NA
 
 ## What not to build
 
-Do not rename the ScreenGui or label without updating the LocalScript. Do not expect lobby join UI here — use [LobbyJoinNextMatchClient.md](LobbyJoinNextMatchClient.md).
+Do not rename the ScreenGui or label without updating the LocalScript. Do not expect lobby join UI here — use [LobbyJoinNextMatchClient.md](../LobbyJoinNextMatchClient/LobbyJoinNextMatchClient.md).

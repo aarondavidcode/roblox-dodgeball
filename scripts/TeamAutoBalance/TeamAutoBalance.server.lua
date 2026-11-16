@@ -1,4 +1,4 @@
--- Studio setup: docs/TeamAutoBalance.md
+-- Studio setup: TeamAutoBalance.md
 -- Paste this as a Script named TeamAutoBalance under ServerScriptService.
 -- Teams in your place must be named exactly Red and Blue (see TEAM_NAMES below).
 -- During lobby (MatchPhase "Lobby" on RoundStatus), players stay Neutral with no team.

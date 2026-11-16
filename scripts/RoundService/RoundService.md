@@ -8,7 +8,9 @@
 |--------|------|------|
 | `RoundService` | `ServerScriptService/RoundService` | **Script** |
 
-Paste from [scripts/RoundService.server.lua](../scripts/RoundService.server.lua).
+Paste from [RoundService.server.lua](./RoundService.server.lua).
+
+**Repo:** GitHub folder `scripts/<Name>/` is for organization only. Paste by **Explorer path** in the table (instance **name** must match). ModuleScripts use `require()` by instance name — not repo paths.
 
 **Depends on:** `DodgeballConfig`, **DodgeballService** (bridge), **LobbyService** (`MatchPhase` on `RoundStatus`). Run with **TeamAutoBalance** and **DodgeballService**.
 
@@ -16,7 +18,7 @@ Paste from [scripts/RoundService.server.lua](../scripts/RoundService.server.lua)
 
 | Item | Details |
 |------|---------|
-| Teams | `Red` and `Blue` per [TeamAutoBalance.md](TeamAutoBalance.md) |
+| Teams | `Red` and `Blue` per [TeamAutoBalance.md](../TeamAutoBalance/TeamAutoBalance.md) |
 | Team spawns | **SpawnLocation** pads with **Neutral** off and **TeamColor** matching each team — used on reset |
 
 No extra objects for round logic.

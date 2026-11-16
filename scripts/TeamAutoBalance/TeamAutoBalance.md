@@ -8,7 +8,9 @@
 |--------|------|------|
 | `TeamAutoBalance` | `ServerScriptService/TeamAutoBalance` | **Script** (not LocalScript) |
 
-Paste from [scripts/TeamAutoBalance.server.lua](../scripts/TeamAutoBalance.server.lua).
+Paste from [TeamAutoBalance.server.lua](./TeamAutoBalance.server.lua).
+
+**Repo:** GitHub folder `scripts/<Name>/` is for organization only. Paste by **Explorer path** in the table (instance **name** must match). ModuleScripts use `require()` by instance name — not repo paths.
 
 **Depends on:** `DodgeballConfig` ModuleScript in the same parent. Works with **LobbyService** / **RoundStatus** `MatchPhase`.
 
@@ -22,7 +24,7 @@ Paste from [scripts/TeamAutoBalance.server.lua](../scripts/TeamAutoBalance.serve
 | Team spawns | In **Workspace**, **SpawnLocation**(s) per side: **Neutral** = off, **TeamColor** must **match** the team’s **TeamColor** (not just visual **Color**). Names like `RedSpawn` / `BlueSpawn` are fine — matching is by **TeamColor**, not name. |
 | Default center spawn | Remove or fix the baseplate **SpawnLocation** if it has **Neutral** on and steals spawns. |
 
-**Lobby pad:** **Neutral** on, lobby **TeamColor** — see [LobbyService.md](LobbyService.md). Team pads must **not** use the lobby spawn name/tag from config.
+**Lobby pad:** **Neutral** on, lobby **TeamColor** — see [LobbyService.md](../LobbyService/LobbyService.md). Team pads must **not** use the lobby spawn name/tag from config.
 
 ## What scripts create (do not duplicate)
 

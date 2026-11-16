@@ -1,4 +1,4 @@
--- Studio setup: docs/LobbyService.md
+-- Studio setup: LobbyService.md
 -- Paste as Script named LobbyService under ServerScriptService (with RoundService + DodgeballService).
 -- Phases: Lobby (countdown, neutral spawn) → InMatch (arena rounds, first to MATCH_POINTS_TO_WIN).
 
@@ -199,7 +199,9 @@ end
 -- Match start and between-round reset: LoadCharacter then force team pad (survivors often miss TeamColor spawns).
 local function spawnPlayerAtTeamArena(player: Player)
 	if matchPhase ~= PHASE_IN_MATCH then
-		warn(`[LobbyService] spawnPlayerAtTeamArena skipped for {player.Name} — MatchPhase is {matchPhase}, not InMatch.`)
+		warn(
+			`[LobbyService] spawnPlayerAtTeamArena skipped for {player.Name} — MatchPhase is {matchPhase}, not InMatch.`
+		)
 		return
 	end
 	if not isMatchParticipant(player) then
@@ -624,7 +626,11 @@ local function onPlayerAdded(player: Player)
 	elseif matchPhase == PHASE_IN_MATCH then
 		player:SetAttribute(ATTR_MATCH_PARTICIPANT, false)
 		task.defer(function()
-			if player.Parent and matchPhase == PHASE_IN_MATCH and player:GetAttribute(ATTR_MATCH_PARTICIPANT) == false then
+			if
+				player.Parent
+				and matchPhase == PHASE_IN_MATCH
+				and player:GetAttribute(ATTR_MATCH_PARTICIPANT) == false
+			then
 				respawnSpectatorAtLobby(player)
 				applyDefaultJoinNextMatchOnPlayerAdded(player)
 				publishMatchStatus()

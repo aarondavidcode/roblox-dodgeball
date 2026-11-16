@@ -1,4 +1,4 @@
--- Studio setup: docs/DodgeballService.md
+-- Studio setup: DodgeballService.md
 -- Paste as Script named DodgeballService under ServerScriptService.
 -- Needs DodgeballConfig (ModuleScript), throw/DefaultThrow (ModuleScript), and Workspace/Dodgeballs.
 --
@@ -17,6 +17,7 @@ local Teams = game:GetService("Teams")
 local Workspace = game:GetService("Workspace")
 
 local Config = require(ServerScriptService:WaitForChild("DodgeballConfig"))
+local BallTemplate = require(ServerScriptService:WaitForChild("DodgeballBallTemplate"))
 
 -- Roblox only documents Players.CharacterAutoLoads (global). When false, the engine does not
 -- auto-call LoadCharacter after death; RespawnTime (default 5s) applies only while global is true.
@@ -194,6 +195,14 @@ local function publishClientTunables()
 	folder:SetAttribute("AIM_POWER_CHARGE_SECONDS", Config.AIM_POWER_CHARGE_SECONDS)
 	folder:SetAttribute("AIM_MAX_SECONDS", Config.AIM_MAX_SECONDS)
 	folder:SetAttribute("BALL_MAX_HOLD_SECONDS", Config.BALL_MAX_HOLD_SECONDS)
+	local practiceAttr = Config.LOBBY_PRACTICE_BALL_ATTR
+	if typeof(practiceAttr) == "string" and practiceAttr ~= "" then
+		folder:SetAttribute("LOBBY_PRACTICE_BALL_ATTR", practiceAttr)
+	end
+	local practiceTag = Config.LOBBY_PRACTICE_BALL_TAG
+	if typeof(practiceTag) == "string" and practiceTag ~= "" then
+		folder:SetAttribute("LOBBY_PRACTICE_BALL_TAG", practiceTag)
+	end
 end
 
 local throwRemote = getThrowRemote()
@@ -278,10 +287,7 @@ end
 
 local function applyHoldPenalty(player: Player)
 	local now = workspace:GetServerTimeNow()
-	player:SetAttribute(
-		ATTR_HOLD_PENALTY_PICKUP_UNTIL,
-		now + Config.HOLD_PENALTY_PICKUP_COOLDOWN_SECONDS
-	)
+	player:SetAttribute(ATTR_HOLD_PENALTY_PICKUP_UNTIL, now + Config.HOLD_PENALTY_PICKUP_COOLDOWN_SECONDS)
 
 	holdPenaltySlowToken[player] = (holdPenaltySlowToken[player] or 0) + 1
 	local slowToken = holdPenaltySlowToken[player]
@@ -762,6 +768,7 @@ local function hookBall(ball: BasePart)
 	if not ball:IsA("BasePart") then
 		return
 	end
+	BallTemplate.applyAppearance(ball)
 	ball:SetAttribute("LastThrowTime", ball:GetAttribute("LastThrowTime") or 0)
 	ball:SetAttribute("LastThrowSpeed", ball:GetAttribute("LastThrowSpeed") or 0)
 	if ball:GetAttribute("InThrowWindow") == nil then

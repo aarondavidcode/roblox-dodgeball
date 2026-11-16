@@ -8,7 +8,9 @@
 |--------|------|------|
 | `DodgeballThrowInput` | `StarterPlayer/StarterPlayerScripts/DodgeballThrowInput` | **LocalScript** |
 
-Paste from [scripts/DodgeballThrowInput.local.lua](../scripts/DodgeballThrowInput.local.lua).
+Paste from [DodgeballThrowInput.local.lua](./DodgeballThrowInput.local.lua).
+
+**Repo:** This folder on GitHub is not the Studio hierarchy — paste by **Explorer path** in the table below. `require()` uses instance names (`that module name and Explorer path), not repo folders.
 
 ## What you build in Studio
 
@@ -33,7 +35,9 @@ Paste from [scripts/DodgeballThrowInput.local.lua](../scripts/DodgeballThrowInpu
 | `ReplicatedStorage/RoundStatus` → `MatchPhase` | **LobbyService** |
 | Player `IsOut`, `MatchParticipant` | Server scripts |
 
-Throw and aim are blocked in **Lobby**, when **OUT**, or when `MatchParticipant` is false during **InMatch**.
+Throw and aim for **arena** balls are blocked in **Lobby**, when **OUT**, or when `MatchParticipant` is false during **InMatch**.
+
+**Lobby practice balls** (from **LobbyPracticeBallService**): neutral spectators and lobby waiters can aim/throw while holding a ball tagged / attributed as lobby practice — same controls as match throws. No yellow **hold ball — aim soon** bar for practice balls (arena hold timer still applies to match dodgeballs).
 
 ## Config knobs
 
