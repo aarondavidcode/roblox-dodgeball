@@ -5,6 +5,7 @@
 
 --!strict
 
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -25,6 +26,7 @@ local aimPowerChargeSeconds = 1.25
 local aimMaxSeconds = 4
 local ballMaxHoldSeconds = 5
 local lobbyPracticeBallAttr = "IsLobbyPracticeBall"
+local lobbyPracticeBallTag = "LobbyPracticeBall"
 
 local remotes: Folder? = nil
 local throwRemote: RemoteEvent? = nil
@@ -62,12 +64,22 @@ local function hookTunableSignals()
 			lobbyPracticeBallAttr = value
 		end
 	end)
+	remotes:GetAttributeChangedSignal("LOBBY_PRACTICE_BALL_TAG"):Connect(function()
+		local value = remotes and remotes:GetAttribute("LOBBY_PRACTICE_BALL_TAG")
+		if typeof(value) == "string" and value ~= "" then
+			lobbyPracticeBallTag = value
+		end
+	end)
 	aimPowerChargeSeconds = readTunable("AIM_POWER_CHARGE_SECONDS", 1.25)
 	aimMaxSeconds = readTunable("AIM_MAX_SECONDS", 4)
 	ballMaxHoldSeconds = readTunable("BALL_MAX_HOLD_SECONDS", 5)
 	local practiceAttr = remotes:GetAttribute("LOBBY_PRACTICE_BALL_ATTR")
 	if typeof(practiceAttr) == "string" and practiceAttr ~= "" then
 		lobbyPracticeBallAttr = practiceAttr
+	end
+	local practiceTag = remotes:GetAttribute("LOBBY_PRACTICE_BALL_TAG")
+	if typeof(practiceTag) == "string" and practiceTag ~= "" then
+		lobbyPracticeBallTag = practiceTag
 	end
 end
 
@@ -295,20 +307,37 @@ local function canUseLobbyPractice(): boolean
 	return true
 end
 
+local function heldBallPartLooksLikePractice(part: BasePart): boolean
+	if part:GetAttribute(lobbyPracticeBallAttr) == true then
+		return true
+	end
+	if part:GetAttribute("IsLobbyPracticeBall") == true then
+		return true
+	end
+	if lobbyPracticeBallTag ~= "" and CollectionService:HasTag(part, lobbyPracticeBallTag) then
+		return true
+	end
+	return false
+end
+
 local function localPlayerHoldsLobbyPracticeBall(): boolean
 	local character = player.Character
 	if not character then
 		return false
 	end
 	for _, desc in character:GetDescendants() do
-		if desc:IsA("BasePart") and desc:GetAttribute(lobbyPracticeBallAttr) == true then
-			local holderId = desc:GetAttribute("HolderUserId")
-			if typeof(holderId) == "number" and holderId == player.UserId then
-				return true
-			end
-			if desc:FindFirstChild("DodgeballHoldWeld") then
-				return true
-			end
+		if not desc:IsA("BasePart") then
+			continue
+		end
+		if not heldBallPartLooksLikePractice(desc) then
+			continue
+		end
+		local holderId = desc:GetAttribute("HolderUserId")
+		if typeof(holderId) == "number" and holderId == player.UserId then
+			return true
+		end
+		if desc:FindFirstChild("DodgeballHoldWeld") then
+			return true
 		end
 	end
 	return false
@@ -322,14 +351,15 @@ local function canThrowHeldBall(): boolean
 		return false
 	end
 	local phase = getMatchPhase()
+	-- Lobby: only practice balls exist for neutrals; do not require attr/tag race on client.
+	if phase == "Lobby" then
+		return canUseLobbyPractice()
+	end
 	if localPlayerHoldsLobbyPracticeBall() then
 		return canUseLobbyPractice()
 	end
 	if phase == "InMatch" then
 		return player:GetAttribute("MatchParticipant") == true
-	end
-	if phase == "Lobby" then
-		return false
 	end
 	return player:GetAttribute("MatchParticipant") ~= false
 end
@@ -459,6 +489,9 @@ local function fireThrow(powerRatio: number)
 end
 
 local function fireStartAiming()
+	if localPlayerHoldsLobbyPracticeBall() then
+		return
+	end
 	if startAimingRemote then
 		startAimingRemote:FireServer()
 	elseif not warnedMissingStartAiming then
@@ -515,11 +548,24 @@ local throwActionBound = false
 local function onThrowAction(_actionName: string, inputState: Enum.UserInputState, _inputObject: InputObject)
 	if inputState == Enum.UserInputState.Begin then
 		beginAim()
-	elseif inputState == Enum.UserInputState.End then
+	elseif inputState == Enum.UserInputState.End or inputState == Enum.UserInputState.Cancel then
 		endAimAndThrow()
 	end
 	return Enum.ContextActionResult.Sink
 end
+
+local function inputIsThrowRelease(input: InputObject): boolean
+	return input.KeyCode == Enum.KeyCode.F
+		or input.KeyCode == Enum.KeyCode.ButtonR2
+		or input.UserInputType == Enum.UserInputType.MouseButton1
+end
+
+UserInputService.InputEnded:Connect(function(input, gameProcessed)
+	if gameProcessed or not aiming or not inputIsThrowRelease(input) then
+		return
+	end
+	endAimAndThrow()
+end)
 
 local function bindThrowAction()
 	if throwActionBound then
@@ -540,6 +586,10 @@ end
 bindThrowAction()
 
 RunService.RenderStepped:Connect(function()
+	if localPlayerHoldsLobbyPracticeBall() then
+		holdBallSince = nil
+		holdBarBack.Visible = false
+	end
 	if aiming or cannotUseThrowInput() then
 		if not aiming and holdBarBack.Visible then
 			holdBarBack.Visible = false
@@ -548,7 +598,7 @@ RunService.RenderStepped:Connect(function()
 		return
 	end
 
-	local holds = localPlayerHoldsBall() and canThrowHeldBall()
+	local holds = localPlayerHoldsBall() and canThrowHeldBall() and not localPlayerHoldsLobbyPracticeBall()
 	if holds then
 		if not holdBallSince then
 			holdBallSince = os.clock()
@@ -569,29 +619,20 @@ player.CharacterAdded:Connect(function()
 	holdBarBack.Visible = false
 end)
 
-player:GetAttributeChangedSignal("IsOut"):Connect(function()
-	if cannotUseThrowInput() then
+local function endAimIfNoLongerAllowed()
+	if aiming and not canThrowHeldBall() then
 		endAimUi()
+	end
+	if cannotUseThrowInput() then
 		holdBallSince = nil
 		holdBarBack.Visible = false
 	end
-end)
+end
 
-player:GetAttributeChangedSignal("MatchParticipant"):Connect(function()
-	if cannotUseThrowInput() then
-		endAimUi()
-		holdBallSince = nil
-		holdBarBack.Visible = false
-	end
-end)
+player:GetAttributeChangedSignal("IsOut"):Connect(endAimIfNoLongerAllowed)
+player:GetAttributeChangedSignal("MatchParticipant"):Connect(endAimIfNoLongerAllowed)
 
 local roundStatus = ReplicatedStorage:WaitForChild(ROUND_STATUS_FOLDER, 5)
 if roundStatus and roundStatus:IsA("Folder") then
-	roundStatus:GetAttributeChangedSignal("MatchPhase"):Connect(function()
-		if cannotUseThrowInput() then
-			endAimUi()
-			holdBallSince = nil
-			holdBarBack.Visible = false
-		end
-	end)
+	roundStatus:GetAttributeChangedSignal("MatchPhase"):Connect(endAimIfNoLongerAllowed)
 end

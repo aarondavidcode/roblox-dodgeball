@@ -329,18 +329,16 @@ recoverAndRespawnBall = function(ball: BasePart, _reason: string)
 	end
 	ball:Destroy()
 
-	if areaId == "" then
-		return
-	end
-
-	for _, volume in gatherSpawnVolumes() do
-		if volume.areaId == areaId then
-			local pos = randomPointInVolume(volume)
-			if pos then
-				local newBall = createLobbyBallAt(areaId, pos)
-				hookLobbyBall(newBall)
+	if areaId ~= "" then
+		for _, volume in gatherSpawnVolumes() do
+			if volume.areaId == areaId then
+				local pos = randomPointInVolume(volume)
+				if pos then
+					local newBall = createLobbyBallAt(areaId, pos)
+					hookLobbyBall(newBall)
+				end
+				break
 			end
-			break
 		end
 	end
 	task.defer(maintainBallCounts)
@@ -468,7 +466,7 @@ local function attachBallToPlayer(player: Player, ball: BasePart)
 	heldByPlayer[player] = ball
 	ball:SetAttribute("HolderUserId", player.UserId)
 	ball:SetAttribute("LobbyIdleSince", nil)
-	startHoldWatch(player)
+	-- Lobby practice: no match hold timer / roll-away penalty.
 end
 
 local function releaseBallForThrow(player: Player): BasePart?
@@ -726,7 +724,7 @@ local function trimExcessForAreaFixed(volume: SpawnVolume)
 	end
 end
 
-local function maintainBallCounts()
+maintainBallCounts = function()
 	local volumes = gatherSpawnVolumes()
 	if #volumes == 0 then
 		return

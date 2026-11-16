@@ -37,7 +37,7 @@ Paste from [DodgeballThrowInput.local.lua](./DodgeballThrowInput.local.lua).
 
 Throw and aim for **arena** balls are blocked in **Lobby**, when **OUT**, or when `MatchParticipant` is false during **InMatch**.
 
-**Lobby practice balls** (from **LobbyPracticeBallService**): neutral spectators and lobby waiters can aim/throw while holding a ball tagged / attributed as lobby practice — same controls as match throws.
+**Lobby practice balls** (from **LobbyPracticeBallService**): neutral spectators and lobby waiters can aim/throw while holding a ball tagged / attributed as lobby practice — same controls as match throws. No yellow **hold ball — aim soon** bar for practice balls (arena hold timer still applies to match dodgeballs).
 
 ## Config knobs
 

@@ -199,6 +199,10 @@ local function publishClientTunables()
 	if typeof(practiceAttr) == "string" and practiceAttr ~= "" then
 		folder:SetAttribute("LOBBY_PRACTICE_BALL_ATTR", practiceAttr)
 	end
+	local practiceTag = Config.LOBBY_PRACTICE_BALL_TAG
+	if typeof(practiceTag) == "string" and practiceTag ~= "" then
+		folder:SetAttribute("LOBBY_PRACTICE_BALL_TAG", practiceTag)
+	end
 end
 
 local throwRemote = getThrowRemote()

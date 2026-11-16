@@ -65,7 +65,7 @@ Match players in the arena use arena balls only; this script drops lobby balls i
 
 **Shared ball look/throw:** `BALL_*` plus pickup/throw keys in [DodgeballConfig.md](../DodgeballConfig/DodgeballConfig.md) — applied via [DodgeballBallTemplate.md](../DodgeballBallTemplate/DodgeballBallTemplate.md) (same as arena balls).
 
-**Lobby-only:** `LOBBY_BALL_*` spawn folder, volume/exclude tags, min/max per area, idle timeout, maintenance interval, `LOBBY_PRACTICE_BALL_ATTR`.
+**Lobby-only:** `LOBBY_BALL_*` spawn folder, volume/exclude tags, min/max per area, idle timeout, maintenance interval, `LOBBY_PRACTICE_BALL_ATTR`. No **match** hold timer or hold-penalty roll while carrying a practice ball.
 
 **Idle timeout:** when a ball is not held and stays slower than pickup speed for `LOBBY_BALL_IDLE_TIMEOUT_SECONDS`, it respawns.
 
