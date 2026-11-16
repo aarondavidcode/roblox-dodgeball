@@ -1,39 +1,69 @@
 # Cursor Cloud agents — roblox-dodgeball
 
-This repo is **guides + copy-paste Luau**, not a runnable game. Roblox Studio on a family PC is where the place is built and tested.
+Luau sources + per-script Studio docs. The game runs in **Roblox Studio**, not in this repo. No **Rojo** — humans paste from `scripts/` into Explorer.
 
-## Where to work
+## Agent playbook
 
-| Area | Purpose |
-|------|---------|
-| `scripts/*.lua` | Source of truth for Studio scripts (server, local, modules under `scripts/throw/`) |
-| `01-build-your-map` … `06-lobby-and-matches` | Kid-friendly step guides — keep the same clear, encouraging tone as existing READMEs |
-| `scripts/README.md` | Maps repo files → Studio object names and locations |
+### Source of truth
 
-No **Rojo** sync in this repo: kids paste from GitHub into Studio.
+| Area | Use |
+|------|-----|
+| `scripts/*.lua` | Luau to paste (server, local, `scripts/throw/` modules) |
+| `docs/<Script>.md` | Explorer path, human-built objects, config knobs, auto-created instances |
+| `README.md` | System map and **Script / LocalScript / ModuleScript** paste targets |
 
-## Game flow (for code changes)
+**New human Studio objects** (spawn names, UI children, teams, folders) → update **only** that script’s `docs/<Script>.md`. No numbered step guides.
 
-- **Lobby + matches:** `LobbyService.server.lua` drives lobby countdown, match state, and first-to-3 round wins; `LobbyJoinNextMatchClient.local.lua` is the **Join next match** / spectate UI.
-- **Rounds:** `RoundService.server.lua` with `DodgeballService.server.lua` and shared `DodgeballConfig.lua`.
-- **Teams:** `TeamAutoBalance.server.lua` (lobby-aware in step 6).
+**Gameplay-only change** with **no** new Explorer setup → doc edit not required.
 
-When editing guides, say what to paste and where in Studio — match `scripts/README.md`.
+**One feature → one PR.** Lua + markdown; do not add npm/node unless the task requires it.
 
-## Cloud environment
+### Paste targets
 
-- **Install:** `.cursor/install-tools.sh` (Selene linter, StyLua formatter under `~/.local/bin`).
-- **Network:** No `egressAllowlist` in `.cursor/environment.json`—rely on account **Allow all network access** (Cloud Agents → Security).
-- **No dev server** — nothing to keep running in `terminals`; Play testing is in Studio (F5).
-- **PRs:** Lua + markdown only; do not add npm/node unless the project explicitly needs it.
+Follow the scripts table in `README.md` (e.g. `ServerScriptService/DodgeballService` = **Script**, `StarterPlayerScripts/DodgeballThrowInput` = **LocalScript**, `ServerScriptService/throw/DefaultThrow` = **ModuleScript**). Object **names** must match the repo.
 
-## Suggested checks before opening a PR
+### Do not hand-build (scripts create these)
 
-From repo root (PATH should include `~/.local/bin` after install):
+- `ReplicatedStorage/DodgeballRemotes` and its RemoteEvents  
+- `ReplicatedStorage/RoundStatus` (attributes for UI and match state)  
+- `ServerScriptService/DodgeballRoundBridge`  
+
+Duplicating them in docs or Studio instructions is wrong.
+
+### Architecture
+
+Extend existing systems — **no parallel game framework:**
+
+- **LobbyService**, **DodgeballService**, **RoundService**, **TeamAutoBalance**, shared **DodgeballConfig**, client LocalScripts under **StarterPlayerScripts** or **StarterGui** as documented.
+
+**Semantics (do not confuse):**
+
+- **`MatchParticipant`** — playing **this** match (arena). Spectators / mid-match lobby joiners: not a participant until the next match flow allows it.
+- **`JoinNextMatch`** — queued for **next** lobby countdown. Default opt-in on first join; **`false` is explicit** and persists until the player toggles or rejoins.
+
+**Spawns (human-built):**
+
+- **Lobby pad:** **Neutral** on; find by `LOBBY_SPAWN_NAME` / `LOBBY_SPAWN_TAG` in **DodgeballConfig**.
+- **Team pads:** **Neutral** off; **TeamColor** must match **Teams** (not just visual **Color**). Pad names are optional; matching is by **TeamColor**.
+
+### Writing style
+
+Beginner-friendly: plain words, short sentences. No kid/parent/lesson framing, no PR number or changelog voice in user-facing docs.
+
+Prefer `docs/` over long Lua comments; a one-line `Studio setup: docs/...` header is fine.
+
+### Verify (optional in cloud)
+
+If tools are missing: `bash .cursor/install-tools.sh`, then from repo root:
 
 ```bash
 stylua scripts/
 selene scripts/ 2>/dev/null || true
 ```
 
-Selene may need a project `selene.toml` later; formatting with StyLua is the main automated check today.
+Play test remains **F5** / multi-client in Studio — not in the cloud VM.
+
+### Cloud environment
+
+- Install script: `.cursor/install-tools.sh`. Network: account **Allow all network access** if installs fail.  
+- No dev server to run in terminals for this project.

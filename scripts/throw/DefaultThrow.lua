@@ -1,3 +1,4 @@
+-- Studio setup: docs/DefaultThrow.md
 -- Paste as ModuleScript DefaultThrow under ServerScriptService → throw (folder).
 -- This is the normal throw. Swap ACTIVE_THROW_PROFILE in DodgeballConfig for other modules later.
 

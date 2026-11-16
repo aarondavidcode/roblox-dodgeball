@@ -1,3 +1,4 @@
+-- Studio setup: docs/DodgeballThrowInput.md
 -- LocalScript: DodgeballThrowInput under StarterPlayer → StarterPlayerScripts
 -- Hold F or left-click / gamepad A to aim; release to throw with power charge.
 -- Creates ScreenGui "DodgeballAimGui" (crosshair + hold bar + power bar).

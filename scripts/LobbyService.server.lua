@@ -1,3 +1,4 @@
+-- Studio setup: docs/LobbyService.md
 -- Paste as Script named LobbyService under ServerScriptService (with RoundService + DodgeballService).
 -- Phases: Lobby (countdown, neutral spawn) → InMatch (arena rounds, first to MATCH_POINTS_TO_WIN).
 

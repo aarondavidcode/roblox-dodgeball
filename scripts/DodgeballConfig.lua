@@ -1,5 +1,6 @@
+-- Studio setup: docs/DodgeballConfig.md
 -- Paste this as a ModuleScript named DodgeballConfig under ServerScriptService.
--- Kids: change the numbers below to tune how dodgeball feels.
+-- Change the numbers below to tune how dodgeball feels.
 
 --!strict
 
@@ -42,7 +43,7 @@ local DodgeballConfig = {
 	-- Gentle roll speed when max hold forces a drop (cannot eliminate anyone).
 	HOLD_ROLL_IMPULSE = 12,
 
-	-- Where ball Parts live in Workspace (kids build this folder).
+	-- Where ball Parts live in Workspace (you build this folder).
 	BALL_FOLDER_NAME = "Dodgeballs",
 
 	-- CollectionService tag (add in Studio if you use tags).
@@ -66,7 +67,7 @@ local DodgeballConfig = {
 	-- When true, warn in Output why a throw hit did not eliminate someone (for debugging).
 	DEBUG_ELIMINATION = false,
 
-	-- === Round reset (step 5) — change these to tune between-round pacing ===
+	-- === Round reset — change these to tune between-round pacing ===
 
 	-- Team names must match Explorer → Teams (same as TeamAutoBalance).
 	TEAM_NAMES = { "Red", "Blue" },
@@ -88,7 +89,7 @@ local DodgeballConfig = {
 	-- "lobby" teleports to LobbySpawn as sideline spectator (still IsOut, no throw) until round reset.
 	OUT_STRAY_RESPAWN_FALLBACK = "destroy",
 
-	-- === Lobby + match format (step 6) ===
+	-- === Lobby + match format ===
 
 	-- Seconds to wait in lobby when 2+ players before a match starts (paused / reset if only 1 player).
 	LOBBY_COUNTDOWN_SECONDS = 30,
@@ -96,7 +97,7 @@ local DodgeballConfig = {
 	-- Round wins needed to win the whole match (then back to lobby).
 	MATCH_POINTS_TO_WIN = 3,
 
-	-- Lobby spawn wiring (kids place this SpawnLocation — not where to build):
+	-- Lobby spawn wiring (you place this SpawnLocation — not where to build):
 	-- Option A: rename a SpawnLocation to this exact name and set TeamColor Neutral / AllowTeamChangeOnTouch off.
 	LOBBY_SPAWN_NAME = "LobbySpawn",
 	-- Option B: tag a SpawnLocation with CollectionService (leave empty string to use name only).
