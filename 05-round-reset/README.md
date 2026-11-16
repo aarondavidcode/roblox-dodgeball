@@ -43,7 +43,7 @@ Look at the bottom for **Round reset** settings:
 1. Select **DodgeballService** in **ServerScriptService**.
 2. Replace all code with **[scripts/DodgeballService.server.lua](../scripts/DodgeballService.server.lua)**.
 
-**What is new (kid words):**
+**What it adds (kid words):**
 
 - When the game starts, each ball remembers **where it was standing** (`SpawnCFrame` attribute).
 - A hidden folder **DodgeballRoundBridge** appears under **ServerScriptService** at run time — **RoundService** talks to it. You do not paste anything there; it is automatic.
@@ -66,8 +66,10 @@ You should now have **three** server scripts: **TeamAutoBalance**, **DodgeballSe
 1. **Win** — If **every** player on **Red** is OUT and at least one **Blue** player is still in (not OUT), **Blue wins**. Same the other way around.
 2. **Tie** — If **everyone** in the server is OUT, wait a moment (**ROUND_TIE_RESET_DELAY_SECONDS**), then reset anyway.
 3. **Intermission** — Optional countdown; status is stored on **ReplicatedStorage/RoundStatus** (`RoundState`, `RoundNumber`, `IntermissionEndsAt`).
-4. **Reset** — Drop held balls → clear OUT → move balls back to spawn → **LoadCharacter** so you land on your team’s spawn pad (from step 2).
+4. **Reset** — Drop held balls → clear OUT → move balls back to spawn → respawn players on their team pads (from step 2).
 5. **New round** — **RoundNumber** goes up by 1.
+
+**Important:** **RoundService** waits until a match is live (`MatchPhase` **InMatch**, set in **[step 6](../06-lobby-and-matches/README.md)**). Until then, Output says it is waiting—OUT rules from step 4 still work, but win/reset cycles do not run yet.
 
 Watch **Output** for lines like `[RoundService] Round 1 over — Blue wins!`
 
@@ -75,7 +77,7 @@ Watch **Output** for lines like `[RoundService] Round 1 over — Blue wins!`
 
 ## Step 5 — Optional RoundStatus UI (countdown text)
 
-This is only on **your** screen — copy-paste friendly. Use this **one** UI for step 5 and step 6 (lobby + matches).
+This is only on **your** screen — copy-paste friendly. You build the ScreenGui once here; **[step 6](../06-lobby-and-matches/README.md)** tells you when to paste the newer **RoundStatusClient** for lobby text and match scores.
 
 ### Hierarchy (exact names)
 
@@ -86,17 +88,17 @@ StarterGui
     RoundStatusClient  ← LocalScript (must be **LocalScript**, not Script)
 ```
 
-### What each phase shows
+### What you see during an arena round (step 6 match running)
 
-| Server state | On-screen text |
-|--------------|----------------|
-| **Lobby**, fewer than 2 players | `Lobby — waiting for another player…` |
-| **Lobby**, countdown running | `Lobby — match starts in Ns` |
-| **InMatch** + **Playing** | Match score + `Round N — PLAY!` |
-| **InMatch** + **Intermission** | Match score + time until next round |
+| Server state | On-screen text (examples) |
+|--------------|---------------------------|
+| **InMatch** + **Playing** | `Red 0 · Blue 0 (first 3) · Round 1 — PLAY!` |
+| **InMatch** + **Intermission** | Match score + seconds until next round |
 | **InMatch** + **Resetting** | Match score + `Resetting arena…` |
 
-Data comes from **`ReplicatedStorage/RoundStatus`** attributes (`MatchPhase`, `LobbyCountdownEndsAt`, `RoundState`, scores).
+Lobby countdown and opt-in counts are configured in **[step 6](../06-lobby-and-matches/README.md)** (same **CountdownLabel**, newer client script).
+
+Data comes from **`ReplicatedStorage/RoundStatus`** attributes (`RoundState`, `RoundNumber`, scores, and later `MatchPhase`).
 
 ### Build it in Studio
 
@@ -115,14 +117,13 @@ If the label still says **"Label"**, you renamed the wrong object or the script 
 
 ---
 
-## Step 6 — Test with F5 and 2 Players
+## Step 6 — Test with F5
 
 1. Save the place.
 2. Press **F5** (Play).
-3. Open **View → Output** — you should see `[RoundService] Watching for round wins`.
-4. Use **Test → 2 Players** (different teams from **TeamAutoBalance**).
-5. Throw until one team is all OUT.
-6. Watch the countdown (if you added UI), then both players respawn and balls return to start spots.
+3. Open **View → Output** — you should see `[RoundService] Waiting for lobby match start` (round wins start after **[step 6](../06-lobby-and-matches/README.md)**).
+4. Use **Test → 2 Players** and confirm **DodgeballService** still marks players OUT when hit.
+5. Finish **step 6**, then repeat with a live match: throw until one team is all OUT, watch intermission, then respawn and ball reset.
 
 **Stop** when done.
 
@@ -166,6 +167,6 @@ StarterGui (optional)
 
 ## What is next?
 
-See **[WHATS-NEXT.md](../WHATS-NEXT.md)** for lobby flow, special throws, and spectator zones.
+**Next:** **[06-lobby-and-matches](../06-lobby-and-matches/README.md)** — lobby, opt-in button, and full round cycles.
 
 Back: **[README.md](../README.md)**.

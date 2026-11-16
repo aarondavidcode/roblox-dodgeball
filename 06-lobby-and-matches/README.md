@@ -1,6 +1,6 @@
 # Step 6 — Lobby, countdown, and first-to-3 matches
 
-You already have dodgeballs, OUT rules, and **round** wins. This step adds a **lobby** (waiting room), a **countdown** when 2+ players are ready, and a **match**: the first team to win **3 rounds** wins the whole match—then everyone goes back to the lobby.
+You already have dodgeballs, OUT rules, and **round** wins. This step adds a **lobby** (waiting room), a **Join next match** button so players choose who plays, a **countdown** when **2 or more** players are joining the next match, and **matches**: the first team to win **3 rounds** wins the whole match—then everyone goes back to the lobby.
 
 **Before you start:** Finish **[05-round-reset](../05-round-reset/README.md)**.
 
@@ -10,13 +10,13 @@ You already have dodgeballs, OUT rules, and **round** wins. This step adds a **l
 
 | Thing in Studio | Exact name | Where it lives |
 |-----------------|------------|----------------|
-| Updated numbers | `DodgeballConfig` | **ServerScriptService** (paste fresh copy) |
-| Updated OUT = death | `DodgeballService` | **ServerScriptService** (paste fresh copy) |
-| Updated rounds | `RoundService` | **ServerScriptService** (paste fresh copy) |
+| Fresh numbers | `DodgeballConfig` | **ServerScriptService** (paste full file) |
+| OUT + lobby rules | `DodgeballService` | **ServerScriptService** (paste full file) |
+| Match-aware rounds | `RoundService` | **ServerScriptService** (paste full file) |
 | Lobby + match flow | `LobbyService` | **ServerScriptService** (Script, **new**) |
 | **Your** lobby pad | `LobbySpawn` (or your name from config) | **Workspace** — **you** choose where |
-| Optional UI | `RoundStatus` | **StarterGui** (same UI as step 5 — paste updated **RoundStatusClient**) |
-| Next-match opt-in UI | `LobbyJoinNextMatchClient` | **StarterPlayerScripts** (**LocalScript**, **new**) — builds **JoinNextMatch** ScreenGui at run time |
+| Countdown text (optional) | `RoundStatus` | **StarterGui** (from step 5 — paste fresh **RoundStatusClient**) |
+| Join / spectate button | `LobbyJoinNextMatchClient` | **StarterPlayerScripts** (**LocalScript**) — builds **JoinNextMatch** ScreenGui at run time |
 
 Repo files to copy:
 
@@ -66,6 +66,8 @@ New settings at the bottom:
 | `MATCH_POINTS_TO_WIN` | Round wins needed to win the **match** (default **3**) |
 | `LOBBY_SPAWN_NAME` | Name of your lobby **SpawnLocation** |
 | `LOBBY_SPAWN_TAG` | Optional tag instead of name (empty = use name only) |
+| `JOIN_NEXT_MATCH_ATTR` | Player flag for joining (default name **`JoinNextMatch`**) |
+| `SET_JOIN_NEXT_MATCH_REMOTE_NAME` | Remote for the button (default **`SetJoinNextMatch`**) |
 
 ---
 
@@ -73,13 +75,12 @@ New settings at the bottom:
 
 1. Replace **DodgeballService** with the new repo file.
 
-**What changed:**
+**What it does with the lobby:**
 
-- Getting hit **kills** your character for that round (`Humanoid.Health = 0`).
-- You **do not** respawn until **RoundService** starts the next round (or a new match) — no lobby pad, no team pad, no new character while `IsOut` is true.
+- Getting hit **kills** your character for that round.
+- You **do not** respawn until **RoundService** starts the next round (or a new match).
 - `IsOut` stays **true** so the round still ends correctly.
-- Match and arena respawns face the **other team’s** spawn pad when pads are wired in step 2.
-- No more **WalkSpeed = 0** freeze.
+- Arena spawns face the other team when team pads match **[step 2](../02-studio-setup/README.md)**.
 
 ---
 
@@ -87,12 +88,12 @@ New settings at the bottom:
 
 1. Replace **RoundService** with the new repo file.
 
-**What changed:**
+**What it does with the lobby:**
 
-- Rounds run only when **`MatchPhase`** is **`InMatch`** (set by **LobbyService**).
-- A round win can award a **match point** (see **LobbyService**).
-- If the match is not over, players respawn on **team** spawns like step 5.
-- If the match **is** over (3 points), **LobbyService** sends everyone to the lobby (no extra arena respawn).
+- Rounds run only when **`MatchPhase`** is **`InMatch`** (**LobbyService** sets that).
+- A round win gives that team **+1 match point**.
+- Between rounds, players respawn on **team** spawns (same idea as step 5).
+- When a team hits **3** match points, **LobbyService** sends everyone to the lobby.
 
 ---
 
@@ -100,10 +101,10 @@ New settings at the bottom:
 
 1. Replace **TeamAutoBalance** with **[scripts/TeamAutoBalance.server.lua](../scripts/TeamAutoBalance.server.lua)**.
 
-**What changed:**
+**What it does with the lobby:**
 
-- In **lobby**, players stay **Neutral** with **no** Red/Blue team (fixes wrong arena spawn while waiting).
-- **Red/Blue** assignment happens when the lobby countdown ends and a match starts only for players already in the lobby.
+- In **lobby**, players stay **Neutral** with **no** Red/Blue team.
+- **Red/Blue** assignment happens when the lobby countdown ends—only for players on **Joining next match**.
 
 ## Step 6 — Add LobbyService
 
@@ -115,67 +116,64 @@ You should have **four** game scripts: **TeamAutoBalance**, **DodgeballService**
 
 ---
 
-## Step 6b — Lobby opt-in for the next match (optional UI)
+## Step 7 — Add the join / spectate button (LobbyJoinNextMatchClient)
 
-**Neutral** players in the **lobby** choose whether they join the upcoming match. Spectators who stay out of the countdown still hang out on the lobby pad and **cannot** throw until they opt in (or the match ends).
+In the lobby, each player picks whether they want the **next** match. Everyone starts as **Joining next match**. Tap the button to switch to **Spectating** if you want to watch instead.
 
 1. Under **StarterPlayer**, open **StarterPlayerScripts**.
 2. Insert a **LocalScript**.
 3. Rename it **`LobbyJoinNextMatchClient`**.
 4. Paste from **[scripts/LobbyJoinNextMatchClient.local.lua](../scripts/LobbyJoinNextMatchClient.local.lua)**.
 
-At run time it creates a ScreenGui named **`JoinNextMatch`** with a centered **`BottomBar`** (`OptInToggle` + a one-time **`QueueHint`** to the right; button width grows with text). Toggle labels: **Joining next match** / **Spectating**.
+While you play (**F5**), the script builds **PlayerGui → JoinNextMatch → BottomBar**:
 
-**Who sees the button**
+| UI piece | What it does |
+|----------|----------------|
+| **`OptInToggle`** | Green **Joining next match** or blue **Spectating** — tap to switch |
+| **`QueueHint`** | One-time tip: *Tap here to queue or spectate* (fades away) |
 
-| Situation | Button |
-|-----------|--------|
-| **Lobby**, Neutral, no team | Visible — tap to opt **in** or **out** |
-| Already on Red/Blue in lobby (should not happen with fresh **TeamAutoBalance**) | Hidden |
-| **InMatch** and playing (`MatchParticipant` true) | Hidden |
-| **InMatch** spectator (`MatchParticipant` false, Neutral, no team) | Visible — opts in for the **next** lobby countdown only (stays spectator this match) |
+**Who sees the bar**
 
-**Server rules**
+| Situation | Bar visible? |
+|-----------|----------------|
+| **Lobby**, Neutral, no team | Yes |
+| **InMatch** and you’re playing | No |
+| **InMatch** spectator on the lobby pad | Yes — chooses the **next** match, not this one |
 
-- Player attribute **`JoinNextMatch`** (default **opted in** on **first join** only — server sets **`true`** when the attribute is still unset). An explicit **`false`** stays until the player taps opt-in again or **leaves and re-joins** the server.
-- **RemoteEvent** **`SetJoinNextMatch`** under **`ReplicatedStorage/DodgeballRemotes`** (created by **LobbyService**). Works in **lobby** and for **InMatch spectators** (no team change until the next lobby countdown).
-- Lobby countdown runs only when **at least 2** players have **`JoinNextMatch` true** — not merely 2 players in the server.
-- When the countdown ends, only opted-in players get **Red/Blue** teams and arena spawns; everyone else stays a lobby spectator for that match (`MatchParticipant` **false**).
-- **Opt-out persists** across lobby countdowns, match start, and match end — the server never flips **`false`** back to **`true`** except on **PlayerAdded** when the attribute was unset (new session / first time) or when the player uses **`SetJoinNextMatch`** to opt in. **`MatchParticipant`** handles who plays the current match; **`JoinNextMatch`** is only for the **next** countdown.
-- Mid-match joiners can use the same button while the match runs; **`LobbyOptedInCount`** on **RoundStatus** still counts them so the next lobby countdown can start right away if enough players opted in early.
+**Kid-simple server rules**
 
-Re-paste **LobbyService**, **TeamAutoBalance**, **DodgeballConfig**, and **RoundStatusClient** when you update.
+- The first time you join the server, you count as **joining** unless you tap **Spectating**.
+- The lobby timer starts when **at least 2** players are **joining**—not when 2 people are merely standing in the lobby.
+- When the timer ends, only **joining** players get Red/Blue and go to the arena. **Spectating** players stay on **LobbySpawn** and cannot throw until they join a later match.
+- If you chose **Spectating**, that choice sticks until you tap **Joining next match** again (or leave and come back).
 
----
-
-## Joining during a match
-
-When **`MatchPhase`** is **`InMatch`** and a new player joins:
-
-- They stay **Neutral** with **no** team (attribute **`MatchParticipant`** is **false**).
-- They spawn and stay on the **lobby** pad — not Red/Blue arena spawns.
-- **Round resets** and **intermissions** do **not** move them; only players in the match (`MatchParticipant` **true**) respawn on team pads.
-- They cannot pick up or throw dodgeballs until the match ends.
-- When the match ends → **lobby** phase → prior **`JoinNextMatch`** choices still count toward **`LobbyOptedInCount`** (or they can toggle the button anytime while spectating).
-
-Re-paste **LobbyService**, **TeamAutoBalance**, **RoundService**, and **DodgeballService** after updating.
+**LobbyService** creates the **`SetJoinNextMatch`** remote under **`ReplicatedStorage/DodgeballRemotes`** when you paste the latest **LobbyService** script.
 
 ---
 
-## Step 7 — How it plays
+## Joining during a match (late joiners)
+
+If someone joins while a match is already running:
+
+- They land on the **lobby** pad as **Neutral** (`MatchParticipant` **false**).
+- They cannot throw or join mid-round.
+- They can use the **Joining next match** button to queue for the **next** lobby countdown.
+
+---
+
+## Step 8 — How it plays
 
 1. **Lobby** — Everyone spawns at your **lobby** pad. **Output** says `[LobbyService] Lobby phase`.
-2. **Join next match** — New players are **opted in by default**. Tap the button only to **spectate** (opt out) for this lobby cycle.
-3. **Countdown** — With **2 or more opted-in** players (default counts), a **30** second lobby timer runs (change in config).
-4. **Not enough opted in** — Timer **pauses** and resets until **2+** have joined the next match (even if more players are standing in the lobby).
-5. **One player left in server** — Same pause/reset until someone else joins.
-6. **Match start** — Timer hits 0 → **`InMatch`** → **only opted-in** players load on **Red/Blue** spawns → **Round 1**; others stay lobby spectators for that match.
-7. **Round win** — Same as step 5 (one team all OUT) → **+1 match point** for that team.
-8. **Match win** — First team to **3** match points → back to **lobby**, scores **0**, everyone neutral; opt in again for the next countdown.
+2. **Join or spectate** — Tap the bottom button if you want **Spectating**; otherwise stay on **Joining next match** (default).
+3. **Countdown** — When **2+** players are joining, a **30** s timer runs (change in **DodgeballConfig**).
+4. **Not enough joiners** — Timer pauses until **2+** tap **Joining next match**.
+5. **Match start** — Timer hits 0 → **InMatch** → joiners go to Red/Blue spawns → **Round 1**; spectators stay on the lobby pad.
+6. **Round win** — Same as **[step 5](../05-round-reset/README.md)** (one team all OUT) → **+1 match point**.
+7. **Match win** — First team to **3** points → everyone back to lobby, scores reset, new countdown.
 
 ---
 
-## Step 8 — Status for UI (ReplicatedStorage)
+## Step 9 — Status for UI (ReplicatedStorage)
 
 **LobbyService** and **RoundService** write to **`ReplicatedStorage/RoundStatus`** (same folder as step 5):
 
@@ -193,21 +191,24 @@ Re-paste **LobbyService**, **TeamAutoBalance**, **RoundService**, and **Dodgebal
 
 ---
 
-## Step 9 — Optional RoundStatus UI
+## Step 10 — RoundStatus countdown text
 
-Use the **same** ScreenGui as **[05-round-reset — Step 5](../05-round-reset/README.md#step-5--optional-roundstatus-ui-countdown-text)** (`RoundStatus` / `CountdownLabel` / `RoundStatusClient` LocalScript).
+If you built **`RoundStatus`** in step 5, **replace** the **RoundStatusClient** LocalScript with **[scripts/RoundStatusClient.local.lua](../scripts/RoundStatusClient.local.lua)**. Setup steps: **[05-round-reset — Step 5](../05-round-reset/README.md#step-5--optional-roundstatus-ui-countdown-text)**.
 
-If you already pasted the old step 5 script, **replace** it with the latest **[scripts/RoundStatusClient.local.lua](../scripts/RoundStatusClient.local.lua)** so lobby countdown shows instead of `Round N — PLAY!` while `MatchPhase` is **Lobby**.
+**Lobby examples** (top of screen):
 
-**Checklist**
+| Situation | Example text |
+|-----------|----------------|
+| Only 1 player in server | `Lobby — waiting for another player…` |
+| 2+ players but fewer than 2 joining | `Lobby — 1 joined next match (need 2)…` |
+| Countdown running | `Lobby — match starts in 24s (2 playing)` |
+| Joiners needed | `Lobby — tap Play next match to join (1/2+)…` |
 
-- ScreenGui named **`RoundStatus`** (not `MatchStatus`).
-- TextLabel named **`CountdownLabel`**; **Text** property empty.
-- Child script is **`RoundStatusClient`**, class **LocalScript**, code from the repo file above.
+The last line is a nudge when the countdown is paused—use the **`OptInToggle`** button (**Joining next match** / **Spectating**), not a separate “Play” control.
 
 ---
 
-## Step 10 — Test with F5
+## Step 11 — Test with F5
 
 ### Two players (basic)
 
@@ -222,9 +223,9 @@ If you already pasted the old step 5 script, **replace** it with the latest **[s
 ### Three players (opt-in + spectator)
 
 1. **Test → 3 Players**.
-2. **Player C**: tap **spectate** to opt **out**. **Players A & B** stay default opted in.
+2. **Player C**: tap the button until it says **Spectating**. **Players A & B** stay **Joining next match**.
 3. Confirm countdown runs; when it hits **0**, **A** and **B** spawn on arena pads; **C** stays on **LobbySpawn** and cannot throw.
-4. Let the match finish → all return to lobby → **C** is **still opted out** until they tap opt-in (no server reset).
+4. Let the match finish → all return to lobby → **C** is still **Spectating** until they tap **Joining next match**.
 
 **Stop** when done.
 
@@ -261,8 +262,9 @@ Workspace
 
 | Problem | What to try |
 |---------|-------------|
-| Countdown never starts | Need **2+ opted-in** players (tap **Play next match** on two clients); check Output for pause message |
-| Everyone in lobby but timer paused | At least **2** must opt in — spectators alone do not start the countdown |
+| Countdown never starts | Need **2+** players on **Joining next match** on two clients; check Output for pause message |
+| Everyone in lobby but timer paused | At least **2** must tap **Joining next match** — **Spectating** alone does not start the timer |
+| No join button | Paste **LobbyJoinNextMatchClient** under **StarterPlayerScripts**; **LobbyService** must run |
 | Stuck at lobby spawn after countdown | Team pads can be named anything (e.g. **RedSpawn** / **BlueSpawn**). Each must have **Neutral off** and **TeamColor** matching **Teams → Red** or **Teams → Blue** — not the pad name. **LobbySpawn** must have **Neutral on**. Re-paste **LobbyService** and watch Output for the TeamColor hint. |
 | Wrong lobby spot | Fix **Name** or **Tag** vs **DodgeballConfig** |
 | Rounds start immediately | Paste new **LobbyService** + **RoundService**; delete old duplicates |

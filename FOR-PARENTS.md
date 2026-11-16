@@ -37,7 +37,7 @@ Review [Roblox community standards](https://create.roblox.com/docs/production/pu
 
 ## Sharing this project with kids
 
-- Clone or bookmark **https://github.com/aarondavidcode/roblox-dodgeball** and follow folders `01` → `03` in order.
+- Clone or bookmark **https://github.com/aarondavidcode/roblox-dodgeball** and follow folders `01` → `06` in order for the full lobby + match flow.
 - For scripts, use GitHub’s file view or **Raw** to copy text—no need to download the whole repo unless you want to.
 - When this repo updates, kids can paste new script versions into **ServerScriptService** without rebuilding the map.
 

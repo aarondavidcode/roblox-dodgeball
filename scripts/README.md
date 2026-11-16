@@ -64,4 +64,10 @@ Optional UI works for step 5 and step 6.
 | [LobbyService.server.lua](LobbyService.server.lua) | `LobbyService` | Script (**new**) |
 | [LobbyJoinNextMatchClient.local.lua](LobbyJoinNextMatchClient.local.lua) | `LobbyJoinNextMatchClient` under **StarterPlayerScripts** | **LocalScript** |
 
-Walkthrough: **[06-lobby-and-matches](../06-lobby-and-matches/README.md)** (lobby **SpawnLocation** + refresh **RoundStatusClient** if you added UI in step 5 + optional **LobbyJoinNextMatchClient** opt-in button).
+Walkthrough: **[06-lobby-and-matches](../06-lobby-and-matches/README.md)** (lobby **SpawnLocation**, **LobbyJoinNextMatchClient** join button, refresh **RoundStatusClient** if you added UI in step 5).
+
+### LobbyJoinNextMatchClient
+
+- **One** LocalScript under **StarterPlayerScripts**, named `LobbyJoinNextMatchClient`.
+- **F5** → bottom bar: **Joining next match** / **Spectating**; **PlayerGui → JoinNextMatch** while Play runs.
+- Requires fresh **LobbyService** so **DodgeballRemotes → SetJoinNextMatch** exists.

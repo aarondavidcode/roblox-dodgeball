@@ -123,4 +123,4 @@ See also **[FOR-PARENTS.md](../FOR-PARENTS.md)**.
 
 ## What is next?
 
-Read **[WHATS-NEXT.md](../WHATS-NEXT.md)** for dodgeball features to add later (ball tool, out-of-bounds, round reset).
+**Next:** **[04-balls-and-throwing](../04-balls-and-throwing/README.md)** — dodgeballs, throws, and OUT rules.
