@@ -1,4 +1,4 @@
--- Studio setup: docs/LobbyJoinNextMatchClient.md
+-- Studio setup: LobbyJoinNextMatchClient.md
 -- Paste as LocalScript named LobbyJoinNextMatchClient under StarterPlayerScripts.
 -- Builds ScreenGui "JoinNextMatch" (BottomBar: OptInToggle + one-time QueueHint) at run time.
 
@@ -49,7 +49,14 @@ local function ensureGui(): (ScreenGui, TextButton, TextButton, CanvasGroup)
 			local btn = bar:FindFirstChild("OptInToggle")
 			local hint = bar:FindFirstChild("QueueHint")
 			local canvas = if hint then hint:FindFirstChild("HintCanvas") else nil
-			if btn and btn:IsA("TextButton") and hint and hint:IsA("TextButton") and canvas and canvas:IsA("CanvasGroup") then
+			if
+				btn
+				and btn:IsA("TextButton")
+				and hint
+				and hint:IsA("TextButton")
+				and canvas
+				and canvas:IsA("CanvasGroup")
+			then
 				return existing, btn, hint, canvas
 			end
 		end

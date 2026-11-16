@@ -9,13 +9,15 @@
 | `throw` | `ServerScriptService/throw` | **Folder** |
 | `DefaultThrow` | `ServerScriptService/throw/DefaultThrow` | **ModuleScript** |
 
-Paste from [scripts/throw/DefaultThrow.lua](../scripts/throw/DefaultThrow.lua).
+Paste from [DefaultThrow.lua](./DefaultThrow.lua).
+
+**Repo:** GitHub folder `scripts/<Name>/` is for organization only. Paste by **Explorer path** in the table (instance **name** must match). ModuleScripts use `require()` by instance name — not repo paths.
 
 **Depends on:** `DodgeballConfig` in `ServerScriptService`.
 
 ## What you build in Studio
 
-Nothing beyond the folder and module above. Balls and arena are covered in [DodgeballService.md](DodgeballService.md).
+Nothing beyond the folder and module above. Balls and arena are covered in [DodgeballService.md](../DodgeballService/DodgeballService.md).
 
 ## What scripts create
 

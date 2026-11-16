@@ -8,7 +8,9 @@
 |--------|------|------|
 | `LobbyJoinNextMatchClient` | `StarterPlayer/StarterPlayerScripts/LobbyJoinNextMatchClient` | **LocalScript** |
 
-Paste from [scripts/LobbyJoinNextMatchClient.local.lua](../scripts/LobbyJoinNextMatchClient.local.lua).
+Paste from [LobbyJoinNextMatchClient.local.lua](./LobbyJoinNextMatchClient.local.lua).
+
+**Repo:** GitHub folder `scripts/<Name>/` is for organization only. Paste by **Explorer path** in the table (instance **name** must match). ModuleScripts use `require()` by instance name — not repo paths.
 
 ## What you build in Studio
 

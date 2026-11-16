@@ -1,4 +1,4 @@
--- Studio setup: docs/LobbyPracticeBallService.md
+-- Studio setup: LobbyPracticeBallService.md
 -- Paste as Script named LobbyPracticeBallService under ServerScriptService.
 -- Lobby/spectator practice balls: spawn, pickup, throw via DefaultThrow + DodgeballRemotes (same as match balls).
 
@@ -867,6 +867,6 @@ end)
 local volumes = gatherSpawnVolumes()
 if #volumes == 0 then
 	warn(
-		`[LobbyPracticeBallService] No spawn volumes tagged {Config.LOBBY_BALL_SPAWN_VOLUME_TAG}. Tag lobby Parts/Models in Studio — see docs/LobbyPracticeBallService.md.`
+		`[LobbyPracticeBallService] No spawn volumes tagged {Config.LOBBY_BALL_SPAWN_VOLUME_TAG}. Tag lobby Parts/Models in Studio — see LobbyPracticeBallService.md in repo.`
 	)
 end

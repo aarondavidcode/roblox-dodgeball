@@ -1,4 +1,4 @@
--- Studio setup: docs/DodgeballConfig.md
+-- Studio setup: DodgeballConfig.md
 -- Paste this as a ModuleScript named DodgeballConfig under ServerScriptService.
 -- Change the numbers below to tune how dodgeball feels.
 

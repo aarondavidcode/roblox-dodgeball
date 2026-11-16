@@ -1,6 +1,6 @@
 # Cursor Cloud agents — roblox-dodgeball
 
-Luau sources + per-script Studio docs. The game runs in **Roblox Studio**, not in this repo. No **Rojo** — humans paste from `scripts/` into Explorer.
+Luau sources + colocated Studio docs per script. The game runs in **Roblox Studio**, not in this repo. No **Rojo** — humans paste from `scripts/<Name>/` into Explorer by **instance name**.
 
 ## Agent playbook
 
@@ -8,15 +8,19 @@ Luau sources + per-script Studio docs. The game runs in **Roblox Studio**, not i
 
 | Area | Use |
 |------|-----|
-| `scripts/*.lua` | Luau to paste (server, local, `scripts/throw/` modules) |
-| `docs/<Script>.md` | Explorer path, human-built objects, config knobs, auto-created instances |
+| `scripts/<Name>/*.lua` | Luau to paste (server, local, `scripts/throw/DefaultThrow/`) |
+| `scripts/<Name>/<Name>.md` | Explorer path, human-built objects, config knobs, auto-created instances |
 | `README.md` | System map and **Script / LocalScript / ModuleScript** paste targets |
 
-**New human Studio objects** (spawn names, UI children, teams, folders) → update **only** that script’s `docs/<Script>.md`. No numbered step guides.
+**New human Studio objects** (spawn names, UI children, teams, folders) → update **only** that script’s colocated `.md` in its `scripts/<Name>/` folder. No numbered step guides.
 
 **Gameplay-only change** with **no** new Explorer setup → doc edit not required.
 
 **One feature → one PR.** Lua + markdown; do not add npm/node unless the task requires it.
+
+### Repo folders vs Studio `require()`
+
+GitHub uses nested folders for agents; Studio stays **flat by Explorer name** (`ServerScriptService/DodgeballConfig`, `ServerScriptService/throw/DefaultThrow`). Luau in this repo uses `WaitForChild("DodgeballConfig")` and `throw:WaitForChild("DefaultThrow")` — those names must match what humans paste. Do not switch to `script.Parent` repo-style requires unless Studio docs change too.
 
 ### Paste targets
 
@@ -34,7 +38,7 @@ Duplicating them in docs or Studio instructions is wrong.
 
 Extend existing systems — **no parallel game framework:**
 
-- **LobbyService**, **DodgeballService**, **RoundService**, **TeamAutoBalance**, shared **DodgeballConfig**, client LocalScripts under **StarterPlayerScripts** or **StarterGui** as documented.
+- **LobbyService**, **DodgeballService**, **LobbyPracticeBallService**, **RoundService**, **TeamAutoBalance**, shared **DodgeballConfig**, client LocalScripts under **StarterPlayerScripts** or **StarterGui** as documented.
 
 **Semantics (do not confuse):**
 
@@ -50,7 +54,7 @@ Extend existing systems — **no parallel game framework:**
 
 Beginner-friendly: plain words, short sentences. No kid/parent/lesson framing, no PR number or changelog voice in user-facing docs.
 
-Prefer `docs/` over long Lua comments; a one-line `Studio setup: docs/...` header is fine.
+Prefer colocated `.md` over long Lua comments; a one-line `Studio setup: <Name>.md` header is fine.
 
 ### Verify (optional in cloud)
 

@@ -1,4 +1,4 @@
--- Studio setup: docs/RoundStatusClient.md
+-- Studio setup: RoundStatusClient.md
 -- Paste as LocalScript named RoundStatusClient inside StarterGui/RoundStatus
 -- Parent ScreenGui must be named RoundStatus; label must be CountdownLabel (Text = empty).
 
@@ -182,17 +182,19 @@ local function refresh()
 	commitLabelText(buildStatusText())
 end
 
-for _, name in {
-	"MatchPhase",
-	"MatchScore_Red",
-	"MatchScore_Blue",
-	"MatchPointsToWin",
-	"LobbyCountdownEndsAt",
-	"LobbyOptedInCount",
-	"RoundState",
-	"RoundNumber",
-	"IntermissionEndsAt",
-} do
+for _, name in
+	{
+		"MatchPhase",
+		"MatchScore_Red",
+		"MatchScore_Blue",
+		"MatchPointsToWin",
+		"LobbyCountdownEndsAt",
+		"LobbyOptedInCount",
+		"RoundState",
+		"RoundNumber",
+		"IntermissionEndsAt",
+	}
+do
 	folder:GetAttributeChangedSignal(name):Connect(refresh)
 end
 

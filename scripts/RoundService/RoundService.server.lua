@@ -1,4 +1,4 @@
--- Studio setup: docs/RoundService.md
+-- Studio setup: RoundService.md
 -- Paste as Script named RoundService under ServerScriptService (with TeamAutoBalance + DodgeballService + LobbyService).
 -- Ends a round when one team is all OUT; optional countdown; clears outs, respawns players and balls.
 -- Rounds only run during match phase (LobbyService sets MatchPhase on ReplicatedStorage/RoundStatus).

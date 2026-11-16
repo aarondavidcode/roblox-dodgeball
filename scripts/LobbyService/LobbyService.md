@@ -8,7 +8,9 @@
 |--------|------|------|
 | `LobbyService` | `ServerScriptService/LobbyService` | **Script** |
 
-Paste from [scripts/LobbyService.server.lua](../scripts/LobbyService.server.lua).
+Paste from [LobbyService.server.lua](./LobbyService.server.lua).
+
+**Repo:** GitHub folder `scripts/<Name>/` is for organization only. Paste by **Explorer path** in the table (instance **name** must match). ModuleScripts use `require()` by instance name — not repo paths.
 
 **Depends on:** `DodgeballConfig`, **RoundService**, **DodgeballService**, **TeamAutoBalance** (team assignment after countdown).
 
@@ -18,7 +20,7 @@ Paste from [scripts/LobbyService.server.lua](../scripts/LobbyService.server.lua)
 |------|---------|
 | Lobby **SpawnLocation** | In **Workspace**. Default: rename to `LobbySpawn` (`LOBBY_SPAWN_NAME`). **TeamColor** = **Neutral**, **Neutral** on. **AllowTeamChangeOnTouch** off if you do not want team touch on that pad. |
 | Tag option | Or tag a SpawnLocation with the string in `LOBBY_SPAWN_TAG` (leave tag empty in config to use name only). |
-| Arena spawns | Team pads: **Neutral** off, **TeamColor** matches **Teams → Red** or **Blue** — same rules as [TeamAutoBalance.md](TeamAutoBalance.md). |
+| Arena spawns | Team pads: **Neutral** off, **TeamColor** matches **Teams → Red** or **Blue** — same rules as [TeamAutoBalance.md](../TeamAutoBalance/TeamAutoBalance.md). |
 | Teams | `Red` and `Blue` with distinct **TeamColor** |
 
 You choose where the lobby pad sits on the map; scripts only find it by name or tag.

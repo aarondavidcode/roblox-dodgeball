@@ -1,4 +1,4 @@
--- Studio setup: docs/DodgeballService.md
+-- Studio setup: DodgeballService.md
 -- Paste as Script named DodgeballService under ServerScriptService.
 -- Needs DodgeballConfig (ModuleScript), throw/DefaultThrow (ModuleScript), and Workspace/Dodgeballs.
 --
@@ -278,10 +278,7 @@ end
 
 local function applyHoldPenalty(player: Player)
 	local now = workspace:GetServerTimeNow()
-	player:SetAttribute(
-		ATTR_HOLD_PENALTY_PICKUP_UNTIL,
-		now + Config.HOLD_PENALTY_PICKUP_COOLDOWN_SECONDS
-	)
+	player:SetAttribute(ATTR_HOLD_PENALTY_PICKUP_UNTIL, now + Config.HOLD_PENALTY_PICKUP_COOLDOWN_SECONDS)
 
 	holdPenaltySlowToken[player] = (holdPenaltySlowToken[player] or 0) + 1
 	local slowToken = holdPenaltySlowToken[player]

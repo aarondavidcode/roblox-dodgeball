@@ -10,7 +10,9 @@
 | `DodgeballConfig` | `ServerScriptService/DodgeballConfig` | **ModuleScript** (required) |
 | `DefaultThrow` | `ServerScriptService/throw/DefaultThrow` | **ModuleScript** (required) |
 
-Paste from [scripts/LobbyPracticeBallService.server.lua](../scripts/LobbyPracticeBallService.server.lua).
+Paste from [LobbyPracticeBallService.server.lua](./LobbyPracticeBallService.server.lua).
+
+**Repo:** GitHub folder `scripts/<Name>/` is for organization only. Paste by **Explorer path** in the table (instance **name** must match). ModuleScripts use `require()` by instance name — not repo paths.
 
 **Depends on:** **DodgeballService** (creates remotes), **LobbyService** (`MatchPhase` on `RoundStatus`), **DodgeballThrowInput** (client gates for lobby practice).
 
@@ -60,7 +62,7 @@ Match players in the arena use arena balls only; this script drops lobby balls i
 
 ## Config knobs
 
-See [DodgeballConfig.md](DodgeballConfig.md) keys under lobby practice balls: min/max per area, idle timeout, maintenance interval, folder/tag names, ball size.
+See [DodgeballConfig.md](../DodgeballConfig/DodgeballConfig.md) keys under lobby practice balls: min/max per area, idle timeout, maintenance interval, folder/tag names, ball size.
 
 **Idle timeout:** when a ball is not held and stays slower than pickup speed for `LOBBY_BALL_IDLE_TIMEOUT_SECONDS`, it respawns.
 
@@ -68,9 +70,9 @@ See [DodgeballConfig.md](DodgeballConfig.md) keys under lobby practice balls: mi
 
 ## Related docs
 
-- [DodgeballThrowInput.md](DodgeballThrowInput.md) — aim UI when holding lobby balls
-- [DefaultThrow.md](DefaultThrow.md) — impulse math
-- [LobbyService.md](LobbyService.md) — lobby vs spectator rules
+- [DodgeballThrowInput.md](../DodgeballThrowInput/DodgeballThrowInput.md) — aim UI when holding lobby balls
+- [DefaultThrow.md](../DefaultThrow/DefaultThrow.md) — impulse math
+- [LobbyService.md](../LobbyService/LobbyService.md) — lobby vs spectator rules
 
 ## What not to build
 

@@ -11,7 +11,9 @@
 | `throw` | `ServerScriptService/throw` | **Folder** |
 | `DefaultThrow` | `ServerScriptService/throw/DefaultThrow` | **ModuleScript** (required) |
 
-Paste from [scripts/DodgeballService.server.lua](../scripts/DodgeballService.server.lua).
+Paste from [DodgeballService.server.lua](./DodgeballService.server.lua).
+
+**Repo:** GitHub folder `scripts/<Name>/` is for organization only. Paste by **Explorer path** in the table (instance **name** must match). ModuleScripts use `require()` by instance name — not repo paths.
 
 ## What you build in Studio
 
@@ -20,7 +22,7 @@ Paste from [scripts/DodgeballService.server.lua](../scripts/DodgeballService.ser
 | `Dodgeballs` folder | Under **Workspace**, name must match `BALL_FOLDER_NAME` in config (default `Dodgeballs`). |
 | Ball Parts | Inside the folder: **Ball** parts, **Anchored** off, **CanCollide** on, **CanTouch** on. Any Part name is fine. |
 | Tag (recommended) | Add tag `Dodgeball` (or value of `DODGEBALL_TAG`) in Tag Editor. |
-| Teams / spawns | Same as [TeamAutoBalance.md](TeamAutoBalance.md) — friendly fire does not eliminate. |
+| Teams / spawns | Same as [TeamAutoBalance.md](../TeamAutoBalance/TeamAutoBalance.md) — friendly fire does not eliminate. |
 
 On first run the service can create an **empty** `Dodgeballs` folder and warn in **Output** — add ball Parts for gameplay.
 
@@ -34,7 +36,7 @@ On first run the service can create an **empty** `Dodgeballs` folder and warn in
 
 **LobbyService** adds `SetJoinNextMatch` under the same remotes folder — do not create remotes by hand.
 
-**LobbyPracticeBallService** also listens on `RequestThrow` / `StartAiming` for players holding lobby practice balls (see [LobbyPracticeBallService.md](LobbyPracticeBallService.md)). Arena ball logic in this script is unchanged.
+**LobbyPracticeBallService** also listens on `RequestThrow` / `StartAiming` for players holding lobby practice balls (see [LobbyPracticeBallService.md](../LobbyPracticeBallService/LobbyPracticeBallService.md)). Arena ball logic in this script is unchanged.
 
 ## Config knobs (most used)
 
