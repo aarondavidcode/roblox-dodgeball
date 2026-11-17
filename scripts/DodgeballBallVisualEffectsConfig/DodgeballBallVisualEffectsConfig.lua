@@ -20,12 +20,14 @@ local DodgeballBallVisualEffectsConfig = {
 	-- SpeedGlow disables below HIT_MIN_SPEED * this (reduces threshold flicker).
 	SPEED_GLOW_HYSTERESIS_FRACTION = 0.92,
 
-	-- SpeedGlow client shell: Highlight adorns a welded transparent sphere sized ballDiameter × this (spheres only).
+	-- SpeedGlow particle halo: visual diameter ≈ ballDiameter × this × particleSizeScale.
 	SPEED_GLOW_SHELL_DIAMETER_SCALE = 1.4,
 
-	-- SpeedGlow Highlight strength while glowing (0 = opaque, 1 = invisible).
-	SPEED_GLOW_FILL_TRANSPARENCY = 0.55,
-	SPEED_GLOW_OUTLINE_TRANSPARENCY = 0.12,
+	-- SpeedGlow ParticleEmitter on ball Attachment (local client; see renderer notes in .md).
+	SPEED_GLOW_PARTICLE_RATE = 72,
+	SPEED_GLOW_PARTICLE_SIZE_SCALE = 0.38,
+	SPEED_GLOW_PARTICLE_LIGHT_EMISSION = 1,
+	SPEED_GLOW_PARTICLE_TRANSPARENCY = 0.15,
 
 	-- When fill is near-white on a pale ball, outline uses this rim color instead of fill+brighten.
 	SPEED_GLOW_SPECTATOR_OUTLINE_COLOR = Color3.fromRGB(200, 220, 255),

@@ -10,6 +10,18 @@
 
 Paste from [DodgeballBallVisualEffectsConfig.lua](./DodgeballBallVisualEffectsConfig.lua).
 
+## SpeedGlow renderer choice (brief)
+
+Client-only, team-colored, scalable halos on fast-moving sphere Parts:
+
+| Approach | Verdict |
+|----------|---------|
+| **Highlight** | We tried this first. Fill/outline on pale yellow balls stayed invisible or flickered; `Adornee` + welded shells + `AlwaysOnTop` still unreliable in Studio play. Not our primary renderer. |
+| **ParticleEmitter + Attachment** | **Primary for SpeedGlow.** Runs locally per client, `ColorSequence` from **BallVisualEffectColors**, size from `SPEED_GLOW_SHELL_DIAMETER_SCALE` × `SPEED_GLOW_PARTICLE_SIZE_SCALE`. Non-colliding; parented on the ball; obvious at speed ≥ `HIT_MIN_SPEED`. |
+| **PointLight** | Simple, team `Color`, but flat lighting and weak on bright outdoor maps; no silhouette halo. Good future accent, not main trail. |
+| **BillboardGui + ImageLabel** | Always faces camera and tints easily, but 2D sticker on a 3D ball; depth/occlusion quirks. Better for icons than speed aura. |
+| **SelectionBox / ForceField shell** | Visible shell possible, but extra welded Part + material tricks; heavier than particles and still fights camera depth. **BallVisualEffectShell** remains available for other registry effects. |
+
 ## Config knobs
 
 | Key | Meaning |
@@ -18,9 +30,11 @@ Paste from [DodgeballBallVisualEffectsConfig.lua](./DodgeballBallVisualEffectsCo
 | `BALL_VISUAL_EFFECT_PLAYER_ATTR`, `BALL_VISUAL_EFFECT_BALL_ATTR` | Future per-player / per-ball effect id |
 | `SET_BALL_VISUAL_EFFECT_REMOTE_NAME` | Intended RemoteFunction name (not wired) |
 | `SPEED_GLOW_HYSTERESIS_FRACTION` | SpeedGlow off threshold = `HIT_MIN_SPEED` × this |
-| `SPEED_GLOW_SHELL_DIAMETER_SCALE` | Halo shell = ball diameter × scale |
-| `SPEED_GLOW_FILL_TRANSPARENCY`, `SPEED_GLOW_OUTLINE_TRANSPARENCY` | Highlight strength while glowing (lower = more visible) |
-| `SPEED_GLOW_SPECTATOR_OUTLINE_COLOR`, `SPEED_GLOW_MIN_OUTLINE_LUMINANCE` | Contrast on pale / white throws (yellow ball) |
+| `SPEED_GLOW_SHELL_DIAMETER_SCALE` | Halo diameter multiplier (used with particle size) |
+| `SPEED_GLOW_PARTICLE_RATE` | Emitter rate while glowing |
+| `SPEED_GLOW_PARTICLE_SIZE_SCALE` | Particle size = ball diameter × shell scale × this |
+| `SPEED_GLOW_PARTICLE_LIGHT_EMISSION`, `SPEED_GLOW_PARTICLE_TRANSPARENCY` | Brightness / alpha |
+| `SPEED_GLOW_SPECTATOR_OUTLINE_COLOR`, `SPEED_GLOW_MIN_OUTLINE_LUMINANCE` | Contrast for pale throw colors |
 | `BALL_VISUAL_EFFECT_SPECTATOR_COLOR` | VFX color with no team thrower |
 
 **Future shell scales:** add `BALL_VISUAL_EFFECT_<EFFECTID>_SHELL_DIAMETER_SCALE` in this module, mirror in **DodgeballService** `publishClientTunables`, read in **DodgeballBallVisualEffectsClient**.
@@ -34,7 +48,7 @@ Paste from [DodgeballBallVisualEffectsConfig.lua](./DodgeballBallVisualEffectsCo
 
 ## Remotes attributes mirrored (SpeedGlow)
 
-`DEFAULT_BALL_VISUAL_EFFECT`, `SPEED_GLOW_HYSTERESIS_FRACTION`, `SPEED_GLOW_SHELL_DIAMETER_SCALE`, `SPEED_GLOW_FILL_TRANSPARENCY`, `SPEED_GLOW_OUTLINE_TRANSPARENCY`, `SPEED_GLOW_MIN_OUTLINE_LUMINANCE`, `SPEED_GLOW_SPECTATOR_OUTLINE_COLOR`, `BALL_VISUAL_EFFECT_SPECTATOR_COLOR`, `BALL_VISUAL_EFFECT_BALL_ATTR`, `BALL_VISUAL_EFFECT_PLAYER_ATTR`
+`DEFAULT_BALL_VISUAL_EFFECT`, `SPEED_GLOW_HYSTERESIS_FRACTION`, `SPEED_GLOW_SHELL_DIAMETER_SCALE`, `SPEED_GLOW_PARTICLE_RATE`, `SPEED_GLOW_PARTICLE_SIZE_SCALE`, `SPEED_GLOW_PARTICLE_LIGHT_EMISSION`, `SPEED_GLOW_PARTICLE_TRANSPARENCY`, `SPEED_GLOW_MIN_OUTLINE_LUMINANCE`, `SPEED_GLOW_SPECTATOR_OUTLINE_COLOR`, `BALL_VISUAL_EFFECT_SPECTATOR_COLOR`, `BALL_VISUAL_EFFECT_BALL_ATTR`, `BALL_VISUAL_EFFECT_PLAYER_ATTR`
 
 ## Related
 

@@ -12,8 +12,10 @@ export type EffectShellTunables = {
 }
 
 export type SpeedGlowTunables = {
-	fillTransparency: number,
-	outlineTransparency: number,
+	particleRate: number,
+	particleSizeScale: number,
+	particleLightEmission: number,
+	particleTransparency: number,
 	minOutlineLuminance: number,
 	spectatorOutlineColor: Color3,
 }

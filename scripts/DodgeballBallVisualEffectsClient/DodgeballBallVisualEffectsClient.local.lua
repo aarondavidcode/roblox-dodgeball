@@ -41,8 +41,10 @@ local ballEffectAttr = "BallVisualEffectId"
 local playerEffectAttr = "BallVisualEffect"
 local spectatorColor = RemoteDefaults.BALL_VISUAL_EFFECT_SPECTATOR_COLOR
 local speedGlowShellDiameterScale = RemoteDefaults.SPEED_GLOW_SHELL_DIAMETER_SCALE
-local speedGlowFillTransparency = RemoteDefaults.SPEED_GLOW_FILL_TRANSPARENCY
-local speedGlowOutlineTransparency = RemoteDefaults.SPEED_GLOW_OUTLINE_TRANSPARENCY
+local speedGlowParticleRate = RemoteDefaults.SPEED_GLOW_PARTICLE_RATE
+local speedGlowParticleSizeScale = RemoteDefaults.SPEED_GLOW_PARTICLE_SIZE_SCALE
+local speedGlowParticleLightEmission = RemoteDefaults.SPEED_GLOW_PARTICLE_LIGHT_EMISSION
+local speedGlowParticleTransparency = RemoteDefaults.SPEED_GLOW_PARTICLE_TRANSPARENCY
 local speedGlowMinOutlineLuminance = RemoteDefaults.SPEED_GLOW_MIN_OUTLINE_LUMINANCE
 local speedGlowSpectatorOutlineColor = RemoteDefaults.SPEED_GLOW_SPECTATOR_OUTLINE_COLOR
 
@@ -168,8 +170,16 @@ local function hookRemoteTunables(folder: Folder)
 		playerEffectAttr = readStringAttr("BALL_VISUAL_EFFECT_PLAYER_ATTR", playerEffectAttr)
 		spectatorColor = readColor3Attr("BALL_VISUAL_EFFECT_SPECTATOR_COLOR", spectatorColor)
 		speedGlowShellDiameterScale = readNumberAttr("SPEED_GLOW_SHELL_DIAMETER_SCALE", speedGlowShellDiameterScale)
-		speedGlowFillTransparency = readOpacityAttr("SPEED_GLOW_FILL_TRANSPARENCY", speedGlowFillTransparency)
-		speedGlowOutlineTransparency = readOpacityAttr("SPEED_GLOW_OUTLINE_TRANSPARENCY", speedGlowOutlineTransparency)
+		speedGlowParticleRate = readNumberAttr("SPEED_GLOW_PARTICLE_RATE", speedGlowParticleRate)
+		speedGlowParticleSizeScale = readFractionAttr("SPEED_GLOW_PARTICLE_SIZE_SCALE", speedGlowParticleSizeScale)
+		speedGlowParticleLightEmission = readOpacityAttr(
+			"SPEED_GLOW_PARTICLE_LIGHT_EMISSION",
+			speedGlowParticleLightEmission
+		)
+		speedGlowParticleTransparency = readOpacityAttr(
+			"SPEED_GLOW_PARTICLE_TRANSPARENCY",
+			speedGlowParticleTransparency
+		)
 		speedGlowMinOutlineLuminance = readOpacityAttr("SPEED_GLOW_MIN_OUTLINE_LUMINANCE", speedGlowMinOutlineLuminance)
 		speedGlowSpectatorOutlineColor =
 			readColor3Attr("SPEED_GLOW_SPECTATOR_OUTLINE_COLOR", speedGlowSpectatorOutlineColor)
@@ -186,8 +196,10 @@ local function hookRemoteTunables(folder: Folder)
 			"BALL_VISUAL_EFFECT_PLAYER_ATTR",
 			"BALL_VISUAL_EFFECT_SPECTATOR_COLOR",
 			"SPEED_GLOW_SHELL_DIAMETER_SCALE",
-			"SPEED_GLOW_FILL_TRANSPARENCY",
-			"SPEED_GLOW_OUTLINE_TRANSPARENCY",
+			"SPEED_GLOW_PARTICLE_RATE",
+			"SPEED_GLOW_PARTICLE_SIZE_SCALE",
+			"SPEED_GLOW_PARTICLE_LIGHT_EMISSION",
+			"SPEED_GLOW_PARTICLE_TRANSPARENCY",
 			"SPEED_GLOW_MIN_OUTLINE_LUMINANCE",
 			"SPEED_GLOW_SPECTATOR_OUTLINE_COLOR",
 			"DEBUG_BALL_VISUAL_EFFECTS",
@@ -227,8 +239,13 @@ local function makeContext(ball: BasePart, effectId: string): Registry.EffectCon
 			diameterScale = shellScale,
 		},
 		speedGlow = {
-			fillTransparency = readOpacityAttr("SPEED_GLOW_FILL_TRANSPARENCY", speedGlowFillTransparency),
-			outlineTransparency = readOpacityAttr("SPEED_GLOW_OUTLINE_TRANSPARENCY", speedGlowOutlineTransparency),
+			particleRate = readNumberAttr("SPEED_GLOW_PARTICLE_RATE", speedGlowParticleRate),
+			particleSizeScale = readFractionAttr("SPEED_GLOW_PARTICLE_SIZE_SCALE", speedGlowParticleSizeScale),
+			particleLightEmission = readOpacityAttr(
+				"SPEED_GLOW_PARTICLE_LIGHT_EMISSION",
+				speedGlowParticleLightEmission
+			),
+			particleTransparency = readOpacityAttr("SPEED_GLOW_PARTICLE_TRANSPARENCY", speedGlowParticleTransparency),
 			minOutlineLuminance = readOpacityAttr("SPEED_GLOW_MIN_OUTLINE_LUMINANCE", speedGlowMinOutlineLuminance),
 			spectatorOutlineColor = readColor3Attr(
 				"SPEED_GLOW_SPECTATOR_OUTLINE_COLOR",
@@ -285,21 +302,14 @@ logThrowSample = function(ball: BasePart, label: string)
 	local teamLine = if colorRes.teamName
 		then `team={colorRes.teamName} color={VisualEffectsDebug.formatColor3(colorRes.effectColor)}`
 		else `spectator color={VisualEffectsDebug.formatColor3(colorRes.effectColor)}`
-	local renderLine = ""
 	local glowLine = if snap
-		then (function()
-			if snap.shouldGlow or snap.highlightEnabled then
-				renderLine =
-					` fillTrans={formatNum(snap.fillTransparency, speedGlowFillTransparency)} outlineTrans={formatNum(
-						snap.outlineTransparency,
-						speedGlowOutlineTransparency
-					)} depthMode={snap.depthMode}`
-			end
-			return `speed={formatNum(snap.speed, 0)} shouldGlow={snap.shouldGlow} hiEnabled={snap.highlightEnabled} adornee={snap.adorneeName} shell={snap.shellExists} shellSize={snap.shellSize} hitMin={formatNum(
-				snap.hitMinSpeed,
-				hitMinSpeed
-			)} offAt={formatNum(snap.offThreshold, hitMinSpeed)}{renderLine}`
-		end)()
+		then `speed={formatNum(snap.speed, 0)} shouldGlow={snap.shouldGlow} emitter={snap.emitterEnabled} rate={formatNum(
+			snap.particleRate,
+			speedGlowParticleRate
+		)} size={formatNum(snap.particleSize, 0)} attach={snap.attachmentName} hitMin={formatNum(
+			snap.hitMinSpeed,
+			hitMinSpeed
+		)} offAt={formatNum(snap.offThreshold, hitMinSpeed)}`
 		else "SpeedGlow state=nil (not attached)"
 	VisualEffectsDebug.log(
 		`throw sample {label} ball={ball.Name} tracked={entry ~= nil} tags={ballTagsSummary(ball)} effectId={effectId} tunables hitMin={hitMinSpeed} hysteresis={speedGlowHysteresisFraction} shellScale={speedGlowShellDiameterScale} {teamLine} {glowLine}`

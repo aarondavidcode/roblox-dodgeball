@@ -1,6 +1,5 @@
 -- Studio setup: SpeedGlow.md
--- Paste as ModuleScript SpeedGlow under StarterPlayer → StarterPlayerScripts → ballVisualEffects.
--- Faint highlight when the ball moves at or above HIT_MIN_SPEED (from replicated tunables).
+-- Client Particles on Attachment when speed >= HIT_MIN_SPEED (team/spectator color).
 
 --!strict
 
@@ -8,29 +7,21 @@ local SpeedGlow = {}
 
 SpeedGlow.id = "SpeedGlow"
 
-local BallVisualEffectShell = require(script.Parent:WaitForChild("BallVisualEffectShell"))
-
-type ShellHandle = BallVisualEffectShell.ShellHandle
-
 export type DebugSnapshot = {
 	glowing: boolean,
 	shouldGlow: boolean,
 	speed: number,
 	hitMinSpeed: number,
 	offThreshold: number,
-	highlightEnabled: boolean,
-	adorneeName: string,
-	shellExists: boolean,
-	shellSize: string,
-	fillTransparency: number,
-	outlineTransparency: number,
-	depthMode: string,
+	emitterEnabled: boolean,
+	particleRate: number,
+	particleSize: number,
+	attachmentName: string,
 }
 
 type State = {
-	highlight: Highlight,
-	adornee: BasePart,
-	shell: ShellHandle?,
+	attachment: Attachment,
+	emitter: ParticleEmitter,
 	glowing: boolean,
 	lastShouldGlow: boolean,
 	lastSpeed: number,
@@ -42,106 +33,113 @@ local Registry = require(script.Parent:WaitForChild("BallVisualEffectRegistry"))
 local BallVisualEffectColors = require(script.Parent:WaitForChild("BallVisualEffectColors"))
 local RemoteDefaults = require(script.Parent:WaitForChild("BallVisualEffectRemoteDefaults"))
 
+local function ballRadius(ball: BasePart): number
+	return math.max(ball.Size.X, ball.Size.Y, ball.Size.Z) * 0.5
+end
+
 local function resolveSpeedGlow(context: Registry.EffectContext): Registry.SpeedGlowTunables
 	local sg = context.speedGlow
-	local fillT = RemoteDefaults.SPEED_GLOW_FILL_TRANSPARENCY
-	local outlineT = RemoteDefaults.SPEED_GLOW_OUTLINE_TRANSPARENCY
-	local minLum = RemoteDefaults.SPEED_GLOW_MIN_OUTLINE_LUMINANCE
-	local paleOutline = RemoteDefaults.SPEED_GLOW_SPECTATOR_OUTLINE_COLOR
-	if sg then
-		if typeof(sg.fillTransparency) == "number" then
-			fillT = sg.fillTransparency
-		end
-		if typeof(sg.outlineTransparency) == "number" then
-			outlineT = sg.outlineTransparency
-		end
-		if typeof(sg.minOutlineLuminance) == "number" then
-			minLum = sg.minOutlineLuminance
-		end
-		if typeof(sg.spectatorOutlineColor) == "Color3" then
-			paleOutline = sg.spectatorOutlineColor
-		end
+	local defaults = {
+		particleRate = RemoteDefaults.SPEED_GLOW_PARTICLE_RATE,
+		particleSizeScale = RemoteDefaults.SPEED_GLOW_PARTICLE_SIZE_SCALE,
+		particleLightEmission = RemoteDefaults.SPEED_GLOW_PARTICLE_LIGHT_EMISSION,
+		particleTransparency = RemoteDefaults.SPEED_GLOW_PARTICLE_TRANSPARENCY,
+		minOutlineLuminance = RemoteDefaults.SPEED_GLOW_MIN_OUTLINE_LUMINANCE,
+		spectatorOutlineColor = RemoteDefaults.SPEED_GLOW_SPECTATOR_OUTLINE_COLOR,
+	}
+	if not sg then
+		return defaults
 	end
 	return {
-		fillTransparency = fillT,
-		outlineTransparency = outlineT,
-		minOutlineLuminance = minLum,
-		spectatorOutlineColor = paleOutline,
+		particleRate = if typeof(sg.particleRate) == "number" then sg.particleRate else defaults.particleRate,
+		particleSizeScale = if typeof(sg.particleSizeScale) == "number"
+			then sg.particleSizeScale
+			else defaults.particleSizeScale,
+		particleLightEmission = if typeof(sg.particleLightEmission) == "number"
+			then sg.particleLightEmission
+			else defaults.particleLightEmission,
+		particleTransparency = if typeof(sg.particleTransparency) == "number"
+			then sg.particleTransparency
+			else defaults.particleTransparency,
+		minOutlineLuminance = if typeof(sg.minOutlineLuminance) == "number"
+			then sg.minOutlineLuminance
+			else defaults.minOutlineLuminance,
+		spectatorOutlineColor = if typeof(sg.spectatorOutlineColor) == "Color3"
+			then sg.spectatorOutlineColor
+			else defaults.spectatorOutlineColor,
 	}
 end
 
-local function applyColors(state: State, context: Registry.EffectContext, glowing: boolean)
-	local speedGlow = resolveSpeedGlow(context)
+local function particleColorForContext(context: Registry.EffectContext, tunables: Registry.SpeedGlowTunables): Color3
 	local glowOpts: BallVisualEffectColors.GlowColorOptions = {
-		minOutlineLuminance = speedGlow.minOutlineLuminance,
-		paleOutline = speedGlow.spectatorOutlineColor,
+		minOutlineLuminance = tunables.minOutlineLuminance,
+		paleOutline = tunables.spectatorOutlineColor,
 	}
-	local fill, outline = BallVisualEffectColors.colorsForGlow(context.effectColor, glowOpts)
-	state.highlight.FillColor = fill
-	state.highlight.OutlineColor = outline
-	if glowing then
-		state.highlight.FillTransparency = speedGlow.fillTransparency
-		state.highlight.OutlineTransparency = speedGlow.outlineTransparency
-	end
+	local fill, _outline = BallVisualEffectColors.colorsForGlow(context.effectColor, glowOpts)
+	return fill
 end
 
-local function ensureHighlightOnBall(state: State, ball: BasePart)
-	state.highlight.Adornee = ball
-	state.highlight.Parent = ball
-	state.adornee = ball
-end
-
-local function syncShell(state: State, ball: BasePart, context: Registry.EffectContext, glowing: boolean)
-	local scale = context.shell.diameterScale
-	local shell = state.shell
-	if shell and shell.part.Parent then
-		shell.setDiameterScale(scale)
-		shell.setGlowActive(glowing)
-		ensureHighlightOnBall(state, ball)
-		return
+local function applyEmitterAppearance(state: State, context: Registry.EffectContext, glowing: boolean)
+	local tunables = resolveSpeedGlow(context)
+	local diameter = ballRadius(state.attachment.Parent :: BasePart) * 2
+	local shellScale = context.shell.diameterScale
+	if shellScale <= 0 then
+		shellScale = 1
+	end
+	local particleSize = diameter * shellScale * tunables.particleSizeScale
+	if particleSize < 0.05 then
+		particleSize = 0.05
 	end
 
-	if shell then
-		shell.destroy()
-		state.shell = nil
-	end
-
-	local created = BallVisualEffectShell.create(ball, SpeedGlow.id, scale)
-	if created then
-		state.shell = created
-		created.setGlowActive(glowing)
-	end
-	ensureHighlightOnBall(state, ball)
+	local color = particleColorForContext(context, tunables)
+	state.emitter.Color = ColorSequence.new(color)
+	state.emitter.LightEmission = tunables.particleLightEmission
+	state.emitter.Size = NumberSequence.new(particleSize)
+	local trans = tunables.particleTransparency
+	state.emitter.Transparency = NumberSequence.new(trans)
+	state.emitter.Rate = if glowing then math.max(0, tunables.particleRate) else 0
+	state.emitter.Enabled = glowing
 end
 
 local function createState(ball: BasePart, context: Registry.EffectContext): State
-	local highlight = Instance.new("Highlight")
-	highlight.Name = "SpeedGlow"
-	highlight.FillColor = Color3.new(1, 1, 1)
-	highlight.OutlineColor = Color3.new(1, 1, 1)
-	highlight.FillTransparency = 1
-	highlight.OutlineTransparency = 1
-	highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-	highlight.Enabled = false
+	local attachment = Instance.new("Attachment")
+	attachment.Name = "SpeedGlowAttachment"
+	attachment.Position = Vector3.zero
+	attachment.Parent = ball
+
+	local emitter = Instance.new("ParticleEmitter")
+	emitter.Name = "SpeedGlowParticles"
+	emitter.Texture = "rbxassetid://241685484"
+	emitter.Lifetime = NumberRange.new(0.15, 0.35)
+	emitter.Speed = NumberRange.new(0.05, 0.4)
+	emitter.SpreadAngle = Vector2.new(180, 180)
+	emitter.Shape = Enum.ParticleEmitterShape.Sphere
+	emitter.ShapeStyle = Enum.ParticleEmitterShapeStyle.Surface
+	emitter.ShapePartial = 1
+	emitter.Orientation = Enum.ParticleOrientation.FacingCamera
+	emitter.LightInfluence = 0
+	emitter.Drag = 0
+	emitter.RotSpeed = NumberRange.new(-30, 30)
+	emitter.Rotation = NumberRange.new(0, 360)
+	emitter.ZOffset = 0.1
+	emitter.Rate = 0
+	emitter.Parent = attachment
 
 	local state: State = {
-		highlight = highlight,
-		adornee = ball,
-		shell = nil,
+		attachment = attachment,
+		emitter = emitter,
 		glowing = false,
 		lastShouldGlow = false,
 		lastSpeed = 0,
 	}
-	syncShell(state, ball, context, false)
-	applyColors(state, context, false)
+	applyEmitterAppearance(state, context, false)
 	return state
 end
 
 function SpeedGlow.attach(ball: BasePart, context: Registry.EffectContext)
 	local existing = stateByBall[ball]
 	if existing then
-		syncShell(existing, ball, context, existing.glowing)
-		applyColors(existing, context, existing.glowing)
+		applyEmitterAppearance(existing, context, existing.glowing)
 		return
 	end
 	stateByBall[ball] = createState(ball, context)
@@ -152,10 +150,8 @@ function SpeedGlow.detach(ball: BasePart)
 	if not state then
 		return
 	end
-	state.highlight:Destroy()
-	if state.shell then
-		state.shell.destroy()
-	end
+	state.emitter:Destroy()
+	state.attachment:Destroy()
 	stateByBall[ball] = nil
 end
 
@@ -180,12 +176,15 @@ function SpeedGlow.step(ball: BasePart, context: Registry.EffectContext)
 		shouldGlow = speed >= onThreshold
 	end
 
-	syncShell(state, ball, context, shouldGlow)
-	applyColors(state, context, shouldGlow)
+	if shouldGlow ~= state.glowing then
+		applyEmitterAppearance(state, context, shouldGlow)
+	elseif shouldGlow then
+		applyEmitterAppearance(state, context, true)
+	end
+
 	state.glowing = shouldGlow
 	state.lastShouldGlow = shouldGlow
 	state.lastSpeed = speed
-	state.highlight.Enabled = shouldGlow
 end
 
 function SpeedGlow.getDebugSnapshot(ball: BasePart, context: Registry.EffectContext): DebugSnapshot?
@@ -195,25 +194,18 @@ function SpeedGlow.getDebugSnapshot(ball: BasePart, context: Registry.EffectCont
 	end
 	local onThreshold = context.hitMinSpeed
 	local offThreshold = onThreshold * context.speedGlowHysteresisFraction
-	local shellPart = state.shell and state.shell.part
-	local shellSize = if shellPart then tostring(shellPart.Size) else "none"
+	local sizeKey = state.emitter.Size.Keypoints[1]
+	local particleSize = if sizeKey then sizeKey.Value else 0
 	return {
 		glowing = state.glowing,
 		shouldGlow = state.lastShouldGlow,
 		speed = state.lastSpeed,
 		hitMinSpeed = onThreshold,
 		offThreshold = offThreshold,
-		highlightEnabled = state.highlight.Enabled,
-		adorneeName = state.adornee.Name,
-		shellExists = shellPart ~= nil and shellPart.Parent ~= nil,
-		shellSize = shellSize,
-		fillTransparency = if typeof(state.highlight.FillTransparency) == "number"
-			then state.highlight.FillTransparency
-			else 1,
-		outlineTransparency = if typeof(state.highlight.OutlineTransparency) == "number"
-			then state.highlight.OutlineTransparency
-			else 1,
-		depthMode = tostring(state.highlight.DepthMode),
+		emitterEnabled = state.emitter.Enabled,
+		particleRate = state.emitter.Rate,
+		particleSize = particleSize,
+		attachmentName = state.attachment.Name,
 	}
 end
 
