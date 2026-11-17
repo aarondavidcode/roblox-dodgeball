@@ -44,6 +44,7 @@ Copy from the `.lua` file in each folder under [scripts/](scripts/) on GitHub (*
 | [scripts/ballVisualEffects/BallVisualEffectRegistry/BallVisualEffectRegistry.lua](scripts/ballVisualEffects/BallVisualEffectRegistry/BallVisualEffectRegistry.lua) | `StarterPlayer/StarterPlayerScripts/ballVisualEffects/BallVisualEffectRegistry` | ModuleScript | [BallVisualEffectRegistry.md](scripts/ballVisualEffects/BallVisualEffectRegistry/BallVisualEffectRegistry.md) |
 | [scripts/ballVisualEffects/SpeedGlow/SpeedGlow.lua](scripts/ballVisualEffects/SpeedGlow/SpeedGlow.lua) | `StarterPlayer/StarterPlayerScripts/ballVisualEffects/SpeedGlow` | ModuleScript | [SpeedGlow.md](scripts/ballVisualEffects/SpeedGlow/SpeedGlow.md) |
 | [scripts/ballVisualEffects/BallVisualEffectColors/BallVisualEffectColors.lua](scripts/ballVisualEffects/BallVisualEffectColors/BallVisualEffectColors.lua) | `StarterPlayer/StarterPlayerScripts/ballVisualEffects/BallVisualEffectColors` | ModuleScript | [BallVisualEffectColors.md](scripts/ballVisualEffects/BallVisualEffectColors/BallVisualEffectColors.md) |
+| [scripts/ballVisualEffects/BallVisualEffectShell/BallVisualEffectShell.lua](scripts/ballVisualEffects/BallVisualEffectShell/BallVisualEffectShell.lua) | `StarterPlayer/StarterPlayerScripts/ballVisualEffects/BallVisualEffectShell` | ModuleScript | [BallVisualEffectShell.md](scripts/ballVisualEffects/BallVisualEffectShell/BallVisualEffectShell.md) |
 
 **Third-party:** [thaalish/ball-physics](https://github.com/thaalish/ball-physics) v1.0.0 (MIT) — vendored under `scripts/ball-physics/`.
 

@@ -209,6 +209,10 @@ local function publishClientTunables()
 	folder:SetAttribute("HIT_MIN_SPEED", Config.HIT_MIN_SPEED)
 	folder:SetAttribute("DEFAULT_BALL_VISUAL_EFFECT", Config.DEFAULT_BALL_VISUAL_EFFECT)
 	folder:SetAttribute("SPEED_GLOW_HYSTERESIS_FRACTION", Config.SPEED_GLOW_HYSTERESIS_FRACTION)
+	local speedGlowShellScale = Config.SPEED_GLOW_SHELL_DIAMETER_SCALE
+	if typeof(speedGlowShellScale) == "number" and speedGlowShellScale > 0 then
+		folder:SetAttribute("SPEED_GLOW_SHELL_DIAMETER_SCALE", speedGlowShellScale)
+	end
 	folder:SetAttribute("DODGEBALL_TAG", Config.DODGEBALL_TAG)
 	local physicsTag = Config.BALL_PHYSICS_TAG
 	if typeof(physicsTag) == "string" and physicsTag ~= "" then

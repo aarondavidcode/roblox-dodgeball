@@ -18,6 +18,7 @@ Child modules (required):
 | `ballVisualEffects/BallVisualEffectRegistry` | [BallVisualEffectRegistry.md](../ballVisualEffects/BallVisualEffectRegistry/BallVisualEffectRegistry.md) |
 | `ballVisualEffects/SpeedGlow` | [SpeedGlow.md](../ballVisualEffects/SpeedGlow/SpeedGlow.md) |
 | `ballVisualEffects/BallVisualEffectColors` | [BallVisualEffectColors.md](../ballVisualEffects/BallVisualEffectColors/BallVisualEffectColors.md) |
+| `ballVisualEffects/BallVisualEffectShell` | [BallVisualEffectShell.md](../ballVisualEffects/BallVisualEffectShell/BallVisualEffectShell.md) |
 
 ## Depends on (auto-created)
 
@@ -58,3 +59,9 @@ Built each frame in **BallVisualEffectColors** and passed on `EffectContext`:
 | `throwerUserId` | Attribute value when present; else `nil` |
 
 Works for any team names in Explorer — not tied to `TEAM_NAMES`. Re-throws update color when `LastThrowerUserId` changes (each **Heartbeat** `step`).
+
+## Shell halo size
+
+`EffectContext.shell.diameterScale` is set per active effect id (`shellDiameterScaleForEffect` in the LocalScript). **SpeedGlow** uses **BallVisualEffectShell** and adorns the shell with **Highlight**. Sphere dodgeballs only; non-spheres fall back to highlighting the ball Part.
+
+**Another effect / scale:** add `BALL_VISUAL_EFFECT_<EFFECTID>_SHELL_DIAMETER_SCALE` in **DodgeballConfig**, mirror on remotes, extend `shellDiameterScaleForEffect`, and call `BallVisualEffectShell.create(ball, effectId, context.shell.diameterScale)` in the effect module.

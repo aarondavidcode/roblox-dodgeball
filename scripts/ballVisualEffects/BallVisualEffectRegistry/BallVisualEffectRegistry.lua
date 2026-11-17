@@ -6,6 +6,11 @@
 
 local BallVisualEffectRegistry = {}
 
+export type EffectShellTunables = {
+	-- Shell diameter = max(ball.Size) × diameterScale (BallVisualEffectShell).
+	diameterScale: number,
+}
+
 export type EffectContext = {
 	hitMinSpeed: number,
 	speedGlowHysteresisFraction: number,
@@ -14,6 +19,8 @@ export type EffectContext = {
 	spectatorColor: Color3,
 	throwerUserId: number?,
 	teamName: string?,
+	-- Per-effect shell scale for the active effect on this ball (see DodgeballConfig BALL_VISUAL_EFFECT_*_SHELL_*).
+	shell: EffectShellTunables,
 }
 
 export type BallVisualEffectModule = {

@@ -16,5 +16,6 @@ Paste from [SpeedGlow.lua](./SpeedGlow.lua). Requires sibling **BallVisualEffect
 |-----|--------|
 | `HIT_MIN_SPEED` | **DodgeballConfig** → mirrored on `ReplicatedStorage/DodgeballRemotes` |
 | `SPEED_GLOW_HYSTERESIS_FRACTION` | **DodgeballConfig** → remotes attributes |
+| `SPEED_GLOW_SHELL_DIAMETER_SCALE` | Halo size: ball diameter × scale ([BallVisualEffectShell](../BallVisualEffectShell/BallVisualEffectShell.md)) |
 
 Registry id: **`SpeedGlow`** (default `DEFAULT_BALL_VISUAL_EFFECT` in **DodgeballConfig**).

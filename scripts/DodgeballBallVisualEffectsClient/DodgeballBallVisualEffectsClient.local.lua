@@ -34,6 +34,7 @@ local physicsBallTag = "PhysicsBall"
 local ballEffectAttr = "BallVisualEffectId"
 local playerEffectAttr = "BallVisualEffect"
 local spectatorColor = Color3.fromRGB(255, 255, 255)
+local speedGlowShellDiameterScale = 1.4
 
 local remotes: Folder? = nil
 
@@ -79,6 +80,7 @@ local function hookRemoteTunables(folder: Folder)
 		ballEffectAttr = readStringAttr("BALL_VISUAL_EFFECT_BALL_ATTR", ballEffectAttr)
 		playerEffectAttr = readStringAttr("BALL_VISUAL_EFFECT_PLAYER_ATTR", playerEffectAttr)
 		spectatorColor = readColor3Attr("BALL_VISUAL_EFFECT_SPECTATOR_COLOR", spectatorColor)
+		speedGlowShellDiameterScale = readNumberAttr("SPEED_GLOW_SHELL_DIAMETER_SCALE", speedGlowShellDiameterScale)
 	end
 	for _, name in
 		{
@@ -91,6 +93,7 @@ local function hookRemoteTunables(folder: Folder)
 			"BALL_VISUAL_EFFECT_BALL_ATTR",
 			"BALL_VISUAL_EFFECT_PLAYER_ATTR",
 			"BALL_VISUAL_EFFECT_SPECTATOR_COLOR",
+			"SPEED_GLOW_SHELL_DIAMETER_SCALE",
 		}
 	do
 		folder:GetAttributeChangedSignal(name):Connect(refresh)
@@ -98,7 +101,15 @@ local function hookRemoteTunables(folder: Folder)
 	refresh()
 end
 
-local function makeContext(ball: BasePart): Registry.EffectContext
+local function shellDiameterScaleForEffect(effectId: string): number
+	if effectId == "SpeedGlow" then
+		return speedGlowShellDiameterScale
+	end
+	-- Future: elseif effectId == "TrailBurst" then return readNumberAttr("BALL_VISUAL_EFFECT_TRAILBURST_SHELL_DIAMETER_SCALE", 1.25)
+	return 1
+end
+
+local function makeContext(ball: BasePart, effectId: string): Registry.EffectContext
 	local colorRes = BallVisualEffectColors.resolveForBall(ball, spectatorColor)
 	return {
 		hitMinSpeed = hitMinSpeed,
@@ -107,6 +118,9 @@ local function makeContext(ball: BasePart): Registry.EffectContext
 		spectatorColor = spectatorColor,
 		throwerUserId = colorRes.throwerUserId,
 		teamName = colorRes.teamName,
+		shell = {
+			diameterScale = shellDiameterScaleForEffect(effectId),
+		},
 	}
 end
 
@@ -147,7 +161,7 @@ local function attachEffect(ball: BasePart)
 	if not module then
 		return
 	end
-	module.attach(ball, makeContext(ball))
+	module.attach(ball, makeContext(ball, effectId))
 	tracked[ball] = {
 		effectId = effectId,
 		module = module,
@@ -247,7 +261,7 @@ RunService.Heartbeat:Connect(function()
 		end
 
 		local desiredId = resolveEffectId(ball)
-		local context = makeContext(ball)
+		local context = makeContext(ball, desiredId)
 
 		if desiredId ~= entry.effectId then
 			entry.module.detach(ball)

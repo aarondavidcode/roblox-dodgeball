@@ -38,3 +38,4 @@ Explorer **instance names** must match the root README table. `require()` in Lua
 | [ballVisualEffects/BallVisualEffectRegistry/](ballVisualEffects/BallVisualEffectRegistry/BallVisualEffectRegistry.md) | Registry for client ball VFX modules |
 | [ballVisualEffects/SpeedGlow/](ballVisualEffects/SpeedGlow/SpeedGlow.md) | Default speed-threshold glow effect |
 | [ballVisualEffects/BallVisualEffectColors/](ballVisualEffects/BallVisualEffectColors/BallVisualEffectColors.md) | Team / spectator color resolution for VFX context |
+| [ballVisualEffects/BallVisualEffectShell/](ballVisualEffects/BallVisualEffectShell/BallVisualEffectShell.md) | Non-colliding welded halo Part for highlights |

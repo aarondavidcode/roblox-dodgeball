@@ -45,7 +45,8 @@ Paste from [DodgeballConfig.lua](./DodgeballConfig.lua).
 | `BALL_FOLDER_NAME`, `DODGEBALL_TAG` | Where balls live and optional tag |
 | `BALL_DIAMETER`, `BALL_COLOR`, `BALL_MATERIAL`, `BALL_PART_NAME`, `BALL_PHYSICAL_*` | Shared look/physics for arena + lobby practice ([DodgeballBallTemplate.md](../DodgeballBallTemplate/DodgeballBallTemplate.md)) |
 | `BALL_PHYSICS_TAG`, `BALL_PHYSICS_*` | Vendored [BallPhysics](../ball-physics/README.md) — magnus, knuckle, damping, anti-gravity; applied by **BallPhysicsAutoSetup** |
-| `DEFAULT_BALL_VISUAL_EFFECT`, `SPEED_GLOW_HYSTERESIS_FRACTION`, `BALL_VISUAL_EFFECT_SPECTATOR_COLOR` | Client ball VFX via [DodgeballBallVisualEffectsClient](../DodgeballBallVisualEffectsClient/DodgeballBallVisualEffectsClient.md) (mirrored on remotes) |
+| `DEFAULT_BALL_VISUAL_EFFECT`, `SPEED_GLOW_HYSTERESIS_FRACTION`, `SPEED_GLOW_SHELL_DIAMETER_SCALE`, `BALL_VISUAL_EFFECT_SPECTATOR_COLOR` | Client ball VFX via [DodgeballBallVisualEffectsClient](../DodgeballBallVisualEffectsClient/DodgeballBallVisualEffectsClient.md) (mirrored on remotes) |
+| Future shell scale | `BALL_VISUAL_EFFECT_<EFFECTID>_SHELL_DIAMETER_SCALE` (document in config comment) |
 | `BALL_VISUAL_EFFECT_PLAYER_ATTR`, `BALL_VISUAL_EFFECT_BALL_ATTR`, `SET_BALL_VISUAL_EFFECT_REMOTE_NAME` | Future per-player ball VFX (extension points; server remote not wired) |
 | `THROW_SIDE_SPIN_RAD_PER_SEC` | Initial spin on aimed throws (pairs with Magnus) — see [DefaultThrow.md](../throw/DefaultThrow/DefaultThrow.md) |
 | `PICKUP_MAX_SPEED`, `THROW_IMPULSE`, `CARRY_OFFSET`, `PICKUP_COOLDOWN_SECONDS`, aim/hold keys | Shared pickup, throw, and carry feel (arena + lobby) |
