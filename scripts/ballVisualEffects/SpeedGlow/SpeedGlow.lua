@@ -1,5 +1,5 @@
 -- Studio setup: SpeedGlow.md
--- Client Particles on Attachment when speed >= HIT_MIN_SPEED (team/spectator color).
+-- Client-only subtle team-colored aura on dodgeballs when speed >= HIT_MIN_SPEED (hysteresis off threshold).
 
 --!strict
 
@@ -14,23 +14,29 @@ export type DebugSnapshot = {
 	hitMinSpeed: number,
 	offThreshold: number,
 	emitterEnabled: boolean,
+	highlightEnabled: boolean,
+	shellActive: boolean,
+	held: boolean,
+	inThrowWindow: boolean,
 	particleRate: number,
 	particleSize: number,
-	attachmentName: string,
 }
 
+type ShellHandle = BallVisualEffectShell.ShellHandle
+
 type State = {
-	attachment: Attachment,
+	highlight: Highlight,
 	emitter: ParticleEmitter,
-	glowing: boolean,
-	lastShouldGlow: boolean,
+	shell: ShellHandle?,
 	lastSpeed: number,
+	glowing: boolean,
 }
 
 local stateByBall: { [BasePart]: State } = {}
 
 local Registry = require(script.Parent:WaitForChild("BallVisualEffectRegistry"))
 local BallVisualEffectColors = require(script.Parent:WaitForChild("BallVisualEffectColors"))
+local BallVisualEffectShell = require(script.Parent:WaitForChild("BallVisualEffectShell"))
 local RemoteDefaults = require(script.Parent:WaitForChild("BallVisualEffectRemoteDefaults"))
 
 local function ballRadius(ball: BasePart): number
@@ -70,18 +76,79 @@ local function resolveSpeedGlow(context: Registry.EffectContext): Registry.Speed
 	}
 end
 
-local function particleColorForContext(context: Registry.EffectContext, tunables: Registry.SpeedGlowTunables): Color3
+local function throwOutWindowSeconds(windowSeconds: number): number
+	if typeof(windowSeconds) ~= "number" or windowSeconds <= 0 then
+		return 3
+	end
+	return windowSeconds
+end
+
+local function isWithinThrowOutWindow(ball: BasePart, windowSeconds: number): boolean
+	local throwTime = ball:GetAttribute("LastThrowTime")
+	if typeof(throwTime) ~= "number" or throwTime <= 0 then
+		return false
+	end
+	local elapsed = workspace:GetServerTimeNow() - throwTime
+	return elapsed >= 0 and elapsed <= throwOutWindowSeconds(windowSeconds)
+end
+
+-- Client physics/replication can under-report speed during a live throw; server stores LastThrowSpeed.
+local function isBallHeldByPlayer(ball: BasePart): boolean
+	local holderId = ball:GetAttribute("HolderUserId")
+	return typeof(holderId) == "number" and holderId > 0
+end
+
+local function resolveGlowSpeed(ball: BasePart, context: Registry.EffectContext): number
+	local measured = ball.AssemblyLinearVelocity.Magnitude
+	local threshold = context.hitMinSpeed
+	if measured >= threshold then
+		return measured
+	end
+	local lastThrow = ball:GetAttribute("LastThrowSpeed")
+	if typeof(lastThrow) ~= "number" or lastThrow < threshold then
+		return measured
+	end
+	if not isWithinThrowOutWindow(ball, context.throwOutWindowSeconds) then
+		return measured
+	end
+	return lastThrow
+end
+
+local function glowColorsForContext(context: Registry.EffectContext, tunables: Registry.SpeedGlowTunables): (Color3, Color3)
 	local glowOpts: BallVisualEffectColors.GlowColorOptions = {
 		minOutlineLuminance = tunables.minOutlineLuminance,
 		paleOutline = tunables.spectatorOutlineColor,
 	}
-	local fill, _outline = BallVisualEffectColors.colorsForGlow(context.effectColor, glowOpts)
-	return fill
+	return BallVisualEffectColors.colorsForGlow(context.effectColor, glowOpts)
 end
 
-local function applyEmitterAppearance(state: State, context: Registry.EffectContext, glowing: boolean)
+local function particleColorForContext(context: Registry.EffectContext, tunables: Registry.SpeedGlowTunables): Color3
+	local fill, outline = glowColorsForContext(context, tunables)
+	return fill:Lerp(outline, 0.35)
+end
+
+local function applyGlowAppearance(state: State, context: Registry.EffectContext)
 	local tunables = resolveSpeedGlow(context)
-	local diameter = ballRadius(state.attachment.Parent :: BasePart) * 2
+	local ball = state.highlight.Adornee :: BasePart
+	local active = state.glowing and not isBallHeldByPlayer(ball)
+
+	local fill, outline = glowColorsForContext(context, tunables)
+	state.highlight.FillColor = fill
+	state.highlight.OutlineColor = outline
+	state.highlight.FillTransparency = 0.9
+	state.highlight.OutlineTransparency = if active then 0.15 else 1
+	state.highlight.Enabled = active
+
+	if state.shell then
+		state.shell.part.Color = outline
+		state.shell.setDiameterScale(context.shell.diameterScale)
+		state.shell.setGlowActive(active)
+		if active then
+			state.shell.part.Transparency = 0.78
+		end
+	end
+
+	local diameter = ballRadius(ball) * 2
 	local shellScale = context.shell.diameterScale
 	if shellScale <= 0 then
 		shellScale = 1
@@ -94,55 +161,100 @@ local function applyEmitterAppearance(state: State, context: Registry.EffectCont
 	local color = particleColorForContext(context, tunables)
 	state.emitter.Color = ColorSequence.new(color)
 	state.emitter.LightEmission = tunables.particleLightEmission
-	state.emitter.Size = NumberSequence.new(particleSize)
-	local trans = tunables.particleTransparency
-	state.emitter.Transparency = NumberSequence.new(trans)
-	state.emitter.Rate = if glowing then math.max(0, tunables.particleRate) else 0
-	state.emitter.Enabled = glowing
+	local coreTrans = math.clamp(tunables.particleTransparency, 0, 1)
+	state.emitter.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, particleSize),
+		NumberSequenceKeypoint.new(0.65, particleSize * 0.55),
+		NumberSequenceKeypoint.new(1, particleSize * 0.2),
+	})
+	state.emitter.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, coreTrans),
+		NumberSequenceKeypoint.new(0.5, math.clamp(coreTrans + 0.12, 0, 1)),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	state.emitter.Rate = math.max(0, tunables.particleRate)
+	state.emitter.Enabled = active and state.emitter.Rate > 0
+end
+
+local function updateGlowFromSpeed(state: State, speed: number, context: Registry.EffectContext)
+	local onThreshold = context.hitMinSpeed
+	local offThreshold = onThreshold * context.speedGlowHysteresisFraction
+	if state.glowing then
+		if speed < offThreshold then
+			state.glowing = false
+		end
+	elseif speed >= onThreshold then
+		state.glowing = true
+	end
 end
 
 local function createState(ball: BasePart, context: Registry.EffectContext): State
-	local attachment = Instance.new("Attachment")
-	attachment.Name = "SpeedGlowAttachment"
-	attachment.Position = Vector3.zero
-	attachment.Parent = ball
+	local shellScale = context.shell.diameterScale
+	if shellScale <= 0 then
+		shellScale = RemoteDefaults.SPEED_GLOW_SHELL_DIAMETER_SCALE
+	end
 
+	local highlight = Instance.new("Highlight")
+	highlight.Name = "SpeedGlowHighlight"
+	highlight.Adornee = ball
+	highlight.DepthMode = Enum.HighlightDepthMode.Occluded
+	highlight.Enabled = false
+	highlight.Parent = ball
+
+	-- ParticleEmitters parented under Attachments often fail to render (Roblox engine quirk); parent to the Part.
 	local emitter = Instance.new("ParticleEmitter")
 	emitter.Name = "SpeedGlowParticles"
-	emitter.Texture = "rbxassetid://241685484"
-	emitter.Lifetime = NumberRange.new(0.15, 0.35)
-	emitter.Speed = NumberRange.new(0.05, 0.4)
-	emitter.SpreadAngle = Vector2.new(180, 180)
+	emitter.Texture = "rbxassetid://243660364"
+	emitter.Lifetime = NumberRange.new(0.45, 0.85)
+	emitter.Speed = NumberRange.new(0.2, 0.55)
+	emitter.SpreadAngle = Vector2.new(22, 22)
 	emitter.Shape = Enum.ParticleEmitterShape.Sphere
 	emitter.ShapeStyle = Enum.ParticleEmitterShapeStyle.Surface
 	emitter.ShapePartial = 1
 	emitter.Orientation = Enum.ParticleOrientation.FacingCamera
-	emitter.LightInfluence = 0
-	emitter.Drag = 0
-	emitter.RotSpeed = NumberRange.new(-30, 30)
+	emitter.LightInfluence = 0.1
+	emitter.LockedToPart = true
+	emitter.Drag = 1.5
+	emitter.RotSpeed = NumberRange.new(-12, 12)
 	emitter.Rotation = NumberRange.new(0, 360)
-	emitter.ZOffset = 0.1
 	emitter.Rate = 0
-	emitter.Parent = attachment
+	emitter.Enabled = false
+	emitter.Parent = ball
+
+	local shell = BallVisualEffectShell.create(ball, "SpeedGlow", shellScale)
 
 	local state: State = {
-		attachment = attachment,
+		highlight = highlight,
 		emitter = emitter,
-		glowing = false,
-		lastShouldGlow = false,
+		shell = shell,
 		lastSpeed = 0,
+		glowing = false,
 	}
-	applyEmitterAppearance(state, context, false)
+	applyGlowAppearance(state, context)
 	return state
+end
+
+local function refreshGlowState(state: State, ball: BasePart, context: Registry.EffectContext)
+	state.lastSpeed = resolveGlowSpeed(ball, context)
+	local inWindow = isWithinThrowOutWindow(ball, context.throwOutWindowSeconds)
+	if isBallHeldByPlayer(ball) or not inWindow then
+		state.glowing = false
+	else
+		updateGlowFromSpeed(state, state.lastSpeed, context)
+	end
 end
 
 function SpeedGlow.attach(ball: BasePart, context: Registry.EffectContext)
 	local existing = stateByBall[ball]
 	if existing then
-		applyEmitterAppearance(existing, context, existing.glowing)
+		refreshGlowState(existing, ball, context)
+		applyGlowAppearance(existing, context)
 		return
 	end
-	stateByBall[ball] = createState(ball, context)
+	local state = createState(ball, context)
+	refreshGlowState(state, ball, context)
+	applyGlowAppearance(state, context)
+	stateByBall[ball] = state
 end
 
 function SpeedGlow.detach(ball: BasePart)
@@ -150,8 +262,11 @@ function SpeedGlow.detach(ball: BasePart)
 	if not state then
 		return
 	end
+	state.highlight:Destroy()
 	state.emitter:Destroy()
-	state.attachment:Destroy()
+	if state.shell then
+		state.shell.destroy()
+	end
 	stateByBall[ball] = nil
 end
 
@@ -165,26 +280,8 @@ function SpeedGlow.step(ball: BasePart, context: Registry.EffectContext)
 		return
 	end
 
-	local speed = ball.AssemblyLinearVelocity.Magnitude
-	local onThreshold = context.hitMinSpeed
-	local offThreshold = onThreshold * context.speedGlowHysteresisFraction
-
-	local shouldGlow: boolean
-	if state.glowing then
-		shouldGlow = speed >= offThreshold
-	else
-		shouldGlow = speed >= onThreshold
-	end
-
-	if shouldGlow ~= state.glowing then
-		applyEmitterAppearance(state, context, shouldGlow)
-	elseif shouldGlow then
-		applyEmitterAppearance(state, context, true)
-	end
-
-	state.glowing = shouldGlow
-	state.lastShouldGlow = shouldGlow
-	state.lastSpeed = speed
+	refreshGlowState(state, ball, context)
+	applyGlowAppearance(state, context)
 end
 
 function SpeedGlow.getDebugSnapshot(ball: BasePart, context: Registry.EffectContext): DebugSnapshot?
@@ -196,16 +293,20 @@ function SpeedGlow.getDebugSnapshot(ball: BasePart, context: Registry.EffectCont
 	local offThreshold = onThreshold * context.speedGlowHysteresisFraction
 	local sizeKey = state.emitter.Size.Keypoints[1]
 	local particleSize = if sizeKey then sizeKey.Value else 0
+	local shouldGlow = state.glowing
 	return {
 		glowing = state.glowing,
-		shouldGlow = state.lastShouldGlow,
+		shouldGlow = shouldGlow,
 		speed = state.lastSpeed,
 		hitMinSpeed = onThreshold,
 		offThreshold = offThreshold,
 		emitterEnabled = state.emitter.Enabled,
+		highlightEnabled = state.highlight.Enabled,
+		shellActive = if state.shell then state.shell.part.Transparency < 1 else false,
 		particleRate = state.emitter.Rate,
 		particleSize = particleSize,
-		attachmentName = state.attachment.Name,
+		held = isBallHeldByPlayer(ball),
+		inThrowWindow = isWithinThrowOutWindow(ball, context.throwOutWindowSeconds),
 	}
 end
 

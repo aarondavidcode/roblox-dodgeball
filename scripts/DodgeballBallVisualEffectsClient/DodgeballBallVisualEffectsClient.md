@@ -1,6 +1,6 @@
 # DodgeballBallVisualEffectsClient
 
-**Purpose:** Tracks arena + lobby dodgeballs (same tags as **BallPhysicsAutoSetup** / **DodgeballBallTemplate**) and runs registered visual effects each frame. Default effect: **SpeedGlow** at throw speed.
+**Purpose:** Tracks arena + lobby dodgeballs (same tags as **BallPhysicsAutoSetup** / **DodgeballBallTemplate**) and runs registered visual effects each frame. Default effect: **SpeedGlow** (subtle aura at throw speeds ≥ `HIT_MIN_SPEED`).
 
 ## Studio paste
 

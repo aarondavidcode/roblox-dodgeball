@@ -41,6 +41,7 @@ Paste from [DodgeballConfig.lua](./DodgeballConfig.lua).
 | `THROW_IMPULSE` | Max throw strength at 100% power |
 | `AIM_POWER_CHARGE_SECONDS`, `AIM_MAX_SECONDS`, `BALL_MAX_HOLD_SECONDS` | Aim UI timing (mirrored on remotes as attributes for clients) |
 | `HOLD_PENALTY_*`, `HOLD_ROLL_IMPULSE` | Penalty when you hold a ball too long without aiming |
+| `VOLUNTARY_DROP_IMPULSE`, `VOLUNTARY_DROP_SAME_BALL_COOLDOWN_SECONDS` | Drop key: light nudge and re-pickup block on that ball |
 | `THROWER_BALL_NOCOLLIDE_SECONDS` | Grace after throw/hold roll where thrower does not collide with balls (`0` = off); see [DodgeballThrowerCollision.md](../DodgeballThrowerCollision/DodgeballThrowerCollision.md) |
 | `BALL_FOLDER_NAME`, `DODGEBALL_TAG` | Where balls live and optional tag |
 | `BALL_DIAMETER`, `BALL_COLOR`, `BALL_MATERIAL`, `BALL_PART_NAME`, `BALL_PHYSICAL_*` | Shared look/physics for arena + lobby practice ([DodgeballBallTemplate.md](../DodgeballBallTemplate/DodgeballBallTemplate.md)) |
@@ -48,7 +49,7 @@ Paste from [DodgeballConfig.lua](./DodgeballConfig.lua).
 | `THROW_SIDE_SPIN_RAD_PER_SEC` | Initial spin on aimed throws (pairs with Magnus) — see [DefaultThrow.md](../throw/DefaultThrow/DefaultThrow.md) |
 | `PICKUP_MAX_SPEED`, `THROW_IMPULSE`, `CARRY_OFFSET`, `PICKUP_COOLDOWN_SECONDS`, aim/hold keys | Shared pickup, throw, and carry feel (arena + lobby) |
 | `ACTIVE_THROW_PROFILE` | Module name under `ServerScriptService/throw/` (default `Default`) |
-| `REMOTES_FOLDER_NAME`, `THROW_REMOTE_NAME` | Remote folder and throw event names |
+| `REMOTES_FOLDER_NAME`, `THROW_REMOTE_NAME`, `DROP_REMOTE_NAME` | Remote folder, throw, and voluntary drop event names |
 | `ROUND_INTERMISSION_SECONDS`, `TEAM_NAMES`, `ROUND_TIE_RESET_DELAY_SECONDS` | Round pacing |
 | `ROUND_STATUS_FOLDER_NAME` | Folder name for match/round UI data |
 | `DEFAULT_WALK_SPEED`, `DEFAULT_JUMP_POWER`, `OUT_STRAY_RESPAWN_FALLBACK` | OUT / respawn behavior |

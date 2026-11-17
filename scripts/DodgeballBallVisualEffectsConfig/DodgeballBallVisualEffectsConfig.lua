@@ -17,17 +17,17 @@ local DodgeballBallVisualEffectsConfig = {
 	-- Future RemoteFunction under DodgeballRemotes (server stub not created yet).
 	SET_BALL_VISUAL_EFFECT_REMOTE_NAME = "SetBallVisualEffect",
 
-	-- SpeedGlow disables below HIT_MIN_SPEED * this (reduces threshold flicker).
+	-- SpeedGlow turns off below HIT_MIN_SPEED × this (avoids flicker when speed hovers near threshold).
 	SPEED_GLOW_HYSTERESIS_FRACTION = 0.92,
 
-	-- SpeedGlow particle halo: visual diameter ≈ ballDiameter × this × particleSizeScale.
-	SPEED_GLOW_SHELL_DIAMETER_SCALE = 1.4,
+	-- SpeedGlow aura shell: visual diameter ≈ ballDiameter × this × particleSizeScale.
+	SPEED_GLOW_SHELL_DIAMETER_SCALE = 1.1,
 
-	-- SpeedGlow ParticleEmitter on ball Attachment (local client; see renderer notes in .md).
-	SPEED_GLOW_PARTICLE_RATE = 72,
-	SPEED_GLOW_PARTICLE_SIZE_SCALE = 0.38,
-	SPEED_GLOW_PARTICLE_LIGHT_EMISSION = 1,
-	SPEED_GLOW_PARTICLE_TRANSPARENCY = 0.15,
+	-- SpeedGlow ParticleEmitter on ball Attachment (local client; on when speed >= HIT_MIN_SPEED).
+	SPEED_GLOW_PARTICLE_RATE = 18, -- Emitter.Rate (particles/sec). Higher = denser aura.
+	SPEED_GLOW_PARTICLE_SIZE_SCALE = 0.26, -- Multiplier on ball diameter × shell scale → Emitter.Size (studs).
+	SPEED_GLOW_PARTICLE_LIGHT_EMISSION = 0.52, -- Emitter.LightEmission (0–1). Keep low for a subtle rim.
+	SPEED_GLOW_PARTICLE_TRANSPARENCY = 0.48, -- Base alpha at particle birth (fades to 1 over lifetime).
 
 	-- When fill is near-white on a pale ball, outline uses this rim color instead of fill+brighten.
 	SPEED_GLOW_SPECTATOR_OUTLINE_COLOR = Color3.fromRGB(200, 220, 255),

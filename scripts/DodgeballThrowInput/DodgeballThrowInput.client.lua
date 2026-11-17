@@ -1,6 +1,7 @@
 -- Studio setup: DodgeballThrowInput.md
 -- LocalScript: DodgeballThrowInput under StarterPlayer → StarterPlayerScripts
 -- Hold F or left-click / gamepad A to aim; release to throw with power charge.
+-- Press X to drop a held ball without throwing.
 -- Creates ScreenGui "DodgeballAimGui" (crosshair + hold bar + power bar).
 
 --!strict
@@ -22,6 +23,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 local AIM_FALLBACK_STUDS = 200
 local ACTION_THROW_AIM = "DodgeballThrowAim"
+local ACTION_DROP_BALL = "DodgeballDropBall"
 local FREE_CURSOR_CAMERA_BIND = "DodgeballThrowFreeCursorCamera"
 local ROUND_STATUS_FOLDER = "RoundStatus"
 
@@ -35,8 +37,10 @@ local lobbyPracticeBallTag = "LobbyPracticeBall"
 local remotes: Folder? = nil
 local throwRemote: RemoteEvent? = nil
 local startAimingRemote: RemoteEvent? = nil
+local dropRemote: RemoteEvent? = nil
 local warnedMissingStartAiming = false
 local warnedMissingThrow = false
+local warnedMissingDrop = false
 local warnedMissingRemotesFolder = false
 
 local function readTunable(name: string, fallback: number): number
@@ -108,6 +112,33 @@ local function attachRemotes(folder: Folder)
 				`{SCRIPT_TAG} StartAiming RemoteEvent missing — re-paste DodgeballService from the repo (needed for hold rules).`
 			)
 		end
+	end
+	local dropName = "RequestDropBall"
+	local drop = folder:FindFirstChild(dropName)
+	if drop and drop:IsA("RemoteEvent") then
+		dropRemote = drop
+	else
+		local dropConn: RBXScriptConnection? = nil
+		dropConn = folder.ChildAdded:Connect(function(child)
+			if child.Name == dropName and child:IsA("RemoteEvent") then
+				dropRemote = child
+				if dropConn then
+					dropConn:Disconnect()
+				end
+			end
+		end)
+		task.delay(30, function()
+			if dropRemote or warnedMissingDrop then
+				return
+			end
+			warnedMissingDrop = true
+			warn(
+				`{SCRIPT_TAG} RequestDropBall RemoteEvent missing — re-paste DodgeballService on the server (drop needs the new remote).`
+			)
+			if dropConn then
+				dropConn:Disconnect()
+			end
+		end)
 	end
 	hookTunableSignals()
 end
@@ -431,6 +462,15 @@ local function canThrowHeldBall(): boolean
 	return player:GetAttribute("MatchParticipant") ~= false
 end
 
+local function canDropHeldBall(): boolean
+	if player:GetAttribute("IsOut") == true then
+		return false
+	end
+	return localPlayerHoldsBall()
+end
+
+local lastDropRequestAt = -1
+
 -- Block aim UI unless the held ball is throwable (arena dodgeball or lobby practice).
 local function cannotUseThrowInput(): boolean
 	if player:GetAttribute("IsOut") == true then
@@ -574,6 +614,29 @@ local function fireThrow(powerRatio: number)
 	holdBarBack.Visible = false
 end
 
+local function requestDropBall()
+	if os.clock() - lastDropRequestAt < 0.15 then
+		return
+	end
+	if not dropRemote then
+		if not warnedMissingDrop then
+			warnedMissingDrop = true
+			warn(`{SCRIPT_TAG} Cannot drop — RequestDropBall remote missing. Re-paste DodgeballService.`)
+		end
+		return
+	end
+	if not canDropHeldBall() then
+		return
+	end
+	lastDropRequestAt = os.clock()
+	if aiming then
+		endAimUi()
+	end
+	holdBallSince = nil
+	holdBarBack.Visible = false
+	dropRemote:FireServer()
+end
+
 local function fireStartAiming()
 	if localPlayerHoldsLobbyPracticeBall() then
 		return
@@ -705,6 +768,36 @@ local function bindThrowAction()
 end
 
 bindThrowAction()
+
+local function onDropAction(_actionName: string, inputState: Enum.UserInputState, _inputObject: InputObject)
+	if inputState ~= Enum.UserInputState.Begin then
+		return Enum.ContextActionResult.Pass
+	end
+	requestDropBall()
+	return Enum.ContextActionResult.Sink
+end
+
+ContextActionService:BindActionAtPriority(
+	ACTION_DROP_BALL,
+	onDropAction,
+	false,
+	Enum.ContextActionPriority.High.Value + 1,
+	Enum.KeyCode.X
+)
+
+-- CAS can lose keyboard input to chat / PlayerModule; UIS backup when carrying a ball (same pattern as throw mouse fallback).
+UserInputService.InputBegan:Connect(function(input: InputObject, gameProcessed: boolean)
+	if input.UserInputType ~= Enum.UserInputType.Keyboard then
+		return
+	end
+	if input.KeyCode ~= Enum.KeyCode.X then
+		return
+	end
+	if gameProcessed and not localPlayerHoldsBall() then
+		return
+	end
+	requestDropBall()
+end)
 
 RunService:BindToRenderStep(FREE_CURSOR_CAMERA_BIND, Enum.RenderPriority.Camera.Value + 1, function()
 	if aiming and aimUsesFreeCursor then

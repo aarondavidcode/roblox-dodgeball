@@ -30,7 +30,7 @@ Paste from [DodgeballThrowInput.client.lua](./DodgeballThrowInput.client.lua).
 
 | Item | Source |
 |------|--------|
-| `ReplicatedStorage/DodgeballRemotes` | **DodgeballService** (`RequestThrow`, `StartAiming`) |
+| `ReplicatedStorage/DodgeballRemotes` | **DodgeballService** (`RequestThrow`, `StartAiming`, `RequestDropBall`) |
 | Attributes on remotes folder | Aim/hold seconds from **DodgeballConfig** |
 | `ReplicatedStorage/RoundStatus` → `MatchPhase` | **LobbyService** |
 | Player `IsOut`, `MatchParticipant` | Server scripts |
@@ -50,6 +50,7 @@ Same LocalScript for arena and lobby practice throws.
 | Input | While aiming | Aim direction |
 |--------|----------------|---------------|
 | **Mouse + keyboard** (PC: hold **F** or **left click**) | Free mouse + yellow **Crosshair** follows the pointer (hides default arrow); **third-person camera unchanged** (look around with RMB) | Throw ray through pointer; scope UI is script-built only — no Studio cursor asset |
+| **X** (keyboard) | — | Drop the held ball without throwing (cancels aim if charging) |
 | **Touch** (phone/tablet) | Center-locked cursor + on-screen crosshair | Ray through screen center (unchanged) |
 | **Gamepad** (hold **R2**) | Center lock + crosshair | Ray through screen center (unchanged) |
 

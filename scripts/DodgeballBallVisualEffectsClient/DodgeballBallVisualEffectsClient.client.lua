@@ -32,6 +32,7 @@ local throwDebugWired: { [BasePart]: boolean } = {}
 local lastThrowSampleTime: { [BasePart]: number } = {}
 
 local hitMinSpeed = 25
+local throwOutWindowSeconds = 3
 local speedGlowHysteresisFraction = RemoteDefaults.SPEED_GLOW_HYSTERESIS_FRACTION
 local defaultEffectId = RemoteDefaults.DEFAULT_BALL_VISUAL_EFFECT
 local dodgeballTag = "Dodgeball"
@@ -161,6 +162,7 @@ local function hookRemoteTunables(folder: Folder)
 	remotes = folder
 	local function refresh()
 		hitMinSpeed = readNumberAttr("HIT_MIN_SPEED", hitMinSpeed)
+		throwOutWindowSeconds = readNumberAttr("THROW_OUT_WINDOW_SECONDS", throwOutWindowSeconds)
 		speedGlowHysteresisFraction = readFractionAttr("SPEED_GLOW_HYSTERESIS_FRACTION", speedGlowHysteresisFraction)
 		defaultEffectId = readStringAttr("DEFAULT_BALL_VISUAL_EFFECT", defaultEffectId)
 		dodgeballTag = readStringAttr("DODGEBALL_TAG", dodgeballTag)
@@ -183,6 +185,7 @@ local function hookRemoteTunables(folder: Folder)
 	for _, name in
 		{
 			"HIT_MIN_SPEED",
+			"THROW_OUT_WINDOW_SECONDS",
 			"SPEED_GLOW_HYSTERESIS_FRACTION",
 			"DEFAULT_BALL_VISUAL_EFFECT",
 			"DODGEBALL_TAG",
@@ -227,6 +230,7 @@ local function makeContext(ball: BasePart, effectId: string): Registry.EffectCon
 	return {
 		hitMinSpeed = hitMinSpeed,
 		speedGlowHysteresisFraction = speedGlowHysteresisFraction,
+		throwOutWindowSeconds = throwOutWindowSeconds,
 		effectColor = colorRes.effectColor,
 		spectatorColor = spectatorColor,
 		throwerUserId = colorRes.throwerUserId,
@@ -299,10 +303,10 @@ logThrowSample = function(ball: BasePart, label: string)
 		then `team={colorRes.teamName} color={VisualEffectsDebug.formatColor3(colorRes.effectColor)}`
 		else `spectator color={VisualEffectsDebug.formatColor3(colorRes.effectColor)}`
 	local glowLine = if snap
-		then `speed={formatNum(snap.speed, 0)} shouldGlow={snap.shouldGlow} emitter={snap.emitterEnabled} rate={formatNum(
+		then `speed={formatNum(snap.speed, 0)} shouldGlow={snap.shouldGlow} inWindow={snap.inThrowWindow} held={snap.held} highlight={snap.highlightEnabled} shell={snap.shellActive} emitter={snap.emitterEnabled} rate={formatNum(
 			snap.particleRate,
 			speedGlowParticleRate
-		)} size={formatNum(snap.particleSize, 0)} attach={snap.attachmentName} hitMin={formatNum(
+		)} size={formatNum(snap.particleSize, 0)} hitMin={formatNum(
 			snap.hitMinSpeed,
 			hitMinSpeed
 		)} offAt={formatNum(snap.offThreshold, hitMinSpeed)}`

@@ -17,7 +17,7 @@ Client-only, team-colored, scalable halos on fast-moving sphere Parts:
 | Approach | Verdict |
 |----------|---------|
 | **Highlight** | We tried this first. Fill/outline on pale yellow balls stayed invisible or flickered; `Adornee` + welded shells + `AlwaysOnTop` still unreliable in Studio play. Not our primary renderer. |
-| **ParticleEmitter + Attachment** | **Primary for SpeedGlow.** Runs locally per client, `ColorSequence` from **BallVisualEffectColors**, size from `SPEED_GLOW_SHELL_DIAMETER_SCALE` × `SPEED_GLOW_PARTICLE_SIZE_SCALE`. Non-colliding; parented on the ball; obvious at speed ≥ `HIT_MIN_SPEED`. |
+| **Highlight + ForceField shell + Part particles** | **Primary for SpeedGlow.** Outline/shell when speed ≥ `HIT_MIN_SPEED`; team tint from **BallVisualEffectColors**. Particles parent on the ball Part (not Attachment). Optional shell scale from `SPEED_GLOW_SHELL_DIAMETER_SCALE`. |
 | **PointLight** | Simple, team `Color`, but flat lighting and weak on bright outdoor maps; no silhouette halo. Good future accent, not main trail. |
 | **BillboardGui + ImageLabel** | Always faces camera and tints easily, but 2D sticker on a 3D ball; depth/occlusion quirks. Better for icons than speed aura. |
 | **SelectionBox / ForceField shell** | Visible shell possible, but extra welded Part + material tricks; heavier than particles and still fights camera depth. **BallVisualEffectShell** remains available for other registry effects. |
@@ -29,7 +29,7 @@ Client-only, team-colored, scalable halos on fast-moving sphere Parts:
 | `DEFAULT_BALL_VISUAL_EFFECT` | Registry id (default `SpeedGlow`) |
 | `BALL_VISUAL_EFFECT_PLAYER_ATTR`, `BALL_VISUAL_EFFECT_BALL_ATTR` | Future per-player / per-ball effect id |
 | `SET_BALL_VISUAL_EFFECT_REMOTE_NAME` | Intended RemoteFunction name (not wired) |
-| `SPEED_GLOW_HYSTERESIS_FRACTION` | SpeedGlow off threshold = `HIT_MIN_SPEED` × this |
+| `SPEED_GLOW_HYSTERESIS_FRACTION` | Glow off below `HIT_MIN_SPEED ×` this (default 0.92) |
 | `SPEED_GLOW_SHELL_DIAMETER_SCALE` | Halo diameter multiplier (used with particle size) |
 | `SPEED_GLOW_PARTICLE_RATE` | Emitter rate while glowing |
 | `SPEED_GLOW_PARTICLE_SIZE_SCALE` | Particle size = ball diameter × shell scale × this |

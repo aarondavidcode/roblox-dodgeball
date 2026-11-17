@@ -1,6 +1,6 @@
 # LobbyPracticeBallService
 
-**Purpose:** Spawns **lobby practice balls** in tagged volumes so neutral players (lobby waiters and mid-match spectators) can pick up and throw while they wait. Throw math uses **DefaultThrow** and the same **RequestThrow** / **StartAiming** remotes as **DodgeballService**. Lobby hits never eliminate anyone or deal match damage.
+**Purpose:** Spawns **lobby practice balls** in tagged volumes so neutral players (lobby waiters and mid-match spectators) can pick up and throw while they wait. Throw math uses **DefaultThrow** and the same **RequestThrow** / **StartAiming** / **RequestDropBall** remotes as **DodgeballService**. Lobby hits never eliminate anyone or deal match damage.
 
 ## Explorer
 

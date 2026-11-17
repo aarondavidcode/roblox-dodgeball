@@ -32,7 +32,7 @@ On first run the service can create an **empty** `Dodgeballs` folder and warn in
 
 | Item | Location | Contents |
 |------|----------|----------|
-| `DodgeballRemotes` | `ReplicatedStorage` | `RequestThrow`, `StartAiming` RemoteEvents; folder attributes mirror aim/hold tunables from config |
+| `DodgeballRemotes` | `ReplicatedStorage` | `RequestThrow`, `StartAiming`, `RequestDropBall` RemoteEvents; folder attributes mirror aim/hold tunables from config |
 | `DodgeballRoundBridge` | `ServerScriptService` | BindableFunction/Event for **RoundService** (reset balls, drop held, etc.) |
 | Empty `Dodgeballs` | `Workspace` | Only if missing — prefer you add balls yourself |
 

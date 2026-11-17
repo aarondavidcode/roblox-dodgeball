@@ -10,7 +10,7 @@ local DodgeballConfig = {
 	PICKUP_MAX_SPEED = 15,
 
 	-- Out: a thrown ball must be at least this fast when it hits someone.
-	HIT_MIN_SPEED = 25,
+	HIT_MIN_SPEED = 60,
 
 	-- Out: only hits within this many seconds after a throw can eliminate someone.
 	THROW_OUT_WINDOW_SECONDS = 3,
@@ -42,7 +42,13 @@ local DodgeballConfig = {
 	HOLD_PENALTY_WALK_SPEED_MULTIPLIER = 0.5,
 
 	-- Gentle roll speed when max hold forces a drop (cannot eliminate anyone).
-	HOLD_ROLL_IMPULSE = 12,
+	HOLD_ROLL_IMPULSE = 50,
+
+	-- Voluntary drop (drop key): light nudge away from the carrier.
+	VOLUNTARY_DROP_IMPULSE = 10,
+
+	-- After voluntary drop, that player cannot pick up the same ball for this long (seconds).
+	VOLUNTARY_DROP_SAME_BALL_COOLDOWN_SECONDS = 1,
 
 	-- After releasing a throw or hold roll, thrower character parts skip ball collision this long (seconds).
 	-- Uses PhysicsService collision groups (see DodgeballThrowerCollision). 0 disables.
@@ -62,8 +68,8 @@ local DodgeballConfig = {
 	-- Default Part name when a script creates a ball (studio-placed balls can use any name).
 	BALL_PART_NAME = "Dodgeball",
 
-	BALL_COLOR = Color3.fromRGB(255, 220, 90),
-	BALL_MATERIAL = Enum.Material.Plastic,
+	BALL_COLOR = Color3.fromRGB(220, 220, 220),
+	BALL_MATERIAL = Enum.Material.Fabric,
 
 	-- Optional custom mass/feel (nil or omit → Roblox default). All three must be numbers to apply.
 	BALL_PHYSICAL_DENSITY = 0.3,
@@ -105,6 +111,9 @@ local DodgeballConfig = {
 	-- Name of the throw RemoteEvent (client asks server to throw).
 	THROW_REMOTE_NAME = "RequestThrow",
 
+	-- Client asks server to release a held ball without throwing (drop key).
+	DROP_REMOTE_NAME = "RequestDropBall",
+
 	-- How far the ball sits from the hand while carried.
 	CARRY_OFFSET = Vector3.new(0, 0, -1.5),
 
@@ -132,7 +141,7 @@ local DodgeballConfig = {
 	ROUND_STATUS_FOLDER_NAME = "RoundStatus",
 
 	-- Walk/jump restored when a round clears OUT (before LoadCharacter).
-	DEFAULT_WALK_SPEED = 16,
+	DEFAULT_WALK_SPEED = 25,
 	DEFAULT_JUMP_POWER = 50,
 
 	-- If a stray character still appears while OUT mid-match, "destroy" removes it (default).

@@ -17,6 +17,8 @@ local Teams = game:GetService("Teams")
 local Workspace = game:GetService("Workspace")
 
 local Config = require(ServerScriptService:WaitForChild("DodgeballConfig"))
+local DebugConfig = require(ServerScriptService:WaitForChild("DodgeballDebugConfig"))
+local VisualEffectsConfig = require(ServerScriptService:WaitForChild("DodgeballBallVisualEffectsConfig"))
 local BallTemplate = require(ServerScriptService:WaitForChild("DodgeballBallTemplate"))
 local ThrowerCollision = require(ServerScriptService:WaitForChild("DodgeballThrowerCollision"))
 local BallPhysicsDebug = require(ServerScriptService:WaitForChild("DodgeballBallPhysicsDebug"))
@@ -42,10 +44,13 @@ if Config.ACTIVE_THROW_PROFILE ~= "Default" then
 end
 
 local heldByPlayer: { [Player]: BasePart } = {}
+local lastPickupTime: { [Player]: number } = {}
 local ballHeldConnection: { [BasePart]: RBXScriptConnection } = {}
 local throwSweepWatch: { [BasePart]: RBXScriptConnection } = {}
 
 local ATTR_HOLD_PENALTY_PICKUP_UNTIL = "HoldPenaltyPickupUntil"
+local ATTR_VOLUNTARY_DROP_BLOCK_USER_ID = "VoluntaryDropBlockUserId"
+local ATTR_VOLUNTARY_DROP_PICKUP_UNTIL = "VoluntaryDropPickupUntil"
 local START_AIMING_REMOTE_NAME = "StartAiming"
 
 local aimingBeforeThrow: { [Player]: boolean } = {}
@@ -192,6 +197,22 @@ local function getStartAimingRemote(): RemoteEvent
 	return newRemote
 end
 
+local function getDropBallRemote(): RemoteEvent
+	local folder = getOrCreateRemotesFolder()
+	local remoteName = Config.DROP_REMOTE_NAME
+	if typeof(remoteName) ~= "string" or remoteName == "" then
+		remoteName = "RequestDropBall"
+	end
+	local remote = folder:FindFirstChild(remoteName)
+	if remote and remote:IsA("RemoteEvent") then
+		return remote
+	end
+	local newRemote = Instance.new("RemoteEvent")
+	newRemote.Name = remoteName
+	newRemote.Parent = folder
+	return newRemote
+end
+
 local function publishClientTunables()
 	local folder = getOrCreateRemotesFolder()
 	folder:SetAttribute("AIM_POWER_CHARGE_SECONDS", Config.AIM_POWER_CHARGE_SECONDS)
@@ -206,10 +227,30 @@ local function publishClientTunables()
 		folder:SetAttribute("LOBBY_PRACTICE_BALL_TAG", practiceTag)
 	end
 	folder:SetAttribute("DEBUG_BALL_PHYSICS", Config.DEBUG_BALL_PHYSICS == true)
+
+	folder:SetAttribute("HIT_MIN_SPEED", Config.HIT_MIN_SPEED)
+	folder:SetAttribute("THROW_OUT_WINDOW_SECONDS", Config.THROW_OUT_WINDOW_SECONDS)
+	folder:SetAttribute("DODGEBALL_TAG", Config.DODGEBALL_TAG)
+	folder:SetAttribute("BALL_PHYSICS_TAG", Config.BALL_PHYSICS_TAG)
+
+	folder:SetAttribute("DEFAULT_BALL_VISUAL_EFFECT", VisualEffectsConfig.DEFAULT_BALL_VISUAL_EFFECT)
+	folder:SetAttribute("BALL_VISUAL_EFFECT_PLAYER_ATTR", VisualEffectsConfig.BALL_VISUAL_EFFECT_PLAYER_ATTR)
+	folder:SetAttribute("BALL_VISUAL_EFFECT_BALL_ATTR", VisualEffectsConfig.BALL_VISUAL_EFFECT_BALL_ATTR)
+	folder:SetAttribute("SPEED_GLOW_HYSTERESIS_FRACTION", VisualEffectsConfig.SPEED_GLOW_HYSTERESIS_FRACTION)
+	folder:SetAttribute("SPEED_GLOW_SHELL_DIAMETER_SCALE", VisualEffectsConfig.SPEED_GLOW_SHELL_DIAMETER_SCALE)
+	folder:SetAttribute("SPEED_GLOW_PARTICLE_RATE", VisualEffectsConfig.SPEED_GLOW_PARTICLE_RATE)
+	folder:SetAttribute("SPEED_GLOW_PARTICLE_SIZE_SCALE", VisualEffectsConfig.SPEED_GLOW_PARTICLE_SIZE_SCALE)
+	folder:SetAttribute("SPEED_GLOW_PARTICLE_LIGHT_EMISSION", VisualEffectsConfig.SPEED_GLOW_PARTICLE_LIGHT_EMISSION)
+	folder:SetAttribute("SPEED_GLOW_PARTICLE_TRANSPARENCY", VisualEffectsConfig.SPEED_GLOW_PARTICLE_TRANSPARENCY)
+	folder:SetAttribute("SPEED_GLOW_MIN_OUTLINE_LUMINANCE", VisualEffectsConfig.SPEED_GLOW_MIN_OUTLINE_LUMINANCE)
+	folder:SetAttribute("SPEED_GLOW_SPECTATOR_OUTLINE_COLOR", VisualEffectsConfig.SPEED_GLOW_SPECTATOR_OUTLINE_COLOR)
+	folder:SetAttribute("BALL_VISUAL_EFFECT_SPECTATOR_COLOR", VisualEffectsConfig.BALL_VISUAL_EFFECT_SPECTATOR_COLOR)
+	folder:SetAttribute("DEBUG_BALL_VISUAL_EFFECTS", DebugConfig.DEBUG_BALL_VISUAL_EFFECTS == true)
 end
 
 local throwRemote = getThrowRemote()
 local startAimingRemote = getStartAimingRemote()
+local dropRemote = getDropBallRemote()
 publishClientTunables()
 
 local function isPlayerOut(player: Player): boolean
@@ -504,8 +545,15 @@ dropBallFromPlayer = function(player: Player)
 		end
 	end
 	ball.Anchored = false
+	ball.Massless = false
 	ball.CanCollide = true
+	ball:SetAttribute("HolderUserId", nil)
 	ball.Parent = Workspace:FindFirstChild(Config.BALL_FOLDER_NAME) or Workspace
+	if ball:CanSetNetworkOwnership() then
+		pcall(function()
+			ball:SetNetworkOwner(nil)
+		end)
+	end
 	heldByPlayer[player] = nil
 end
 
@@ -614,6 +662,61 @@ rollBallFromMaxHold = function(player: Player)
 	applyHoldPenalty(player)
 end
 
+local function flatAwayFromPlayer(player: Player, fromPosition: Vector3): Vector3
+	local character = player.Character
+	local pivot = if character then character:GetPivot().Position else fromPosition
+	local flat = Vector3.new(fromPosition.X - pivot.X, 0, fromPosition.Z - pivot.Z)
+	if flat.Magnitude < 0.35 and character then
+		local root = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if root then
+			local look = root.CFrame.LookVector
+			flat = Vector3.new(look.X, 0, look.Z)
+		end
+	end
+	if flat.Magnitude < 0.05 then
+		return Vector3.new(0, 0, -1)
+	end
+	return flat.Unit
+end
+
+local function applyVoluntaryDropRelease(player: Player, released: BasePart)
+	released.AssemblyAngularVelocity = Vector3.zero
+	released.AssemblyLinearVelocity = Vector3.zero
+	local character = player.Character
+	local pivot = if character then character:GetPivot().Position else released.Position
+	local awayFlat = flatAwayFromPlayer(player, released.Position)
+	local placeOffset = 2.75
+	released.CFrame = CFrame.new(pivot + awayFlat * placeOffset + Vector3.new(0, -0.2, 0))
+	local dropDir = (awayFlat + Vector3.new(0, 0.12, 0)).Unit
+	local impulse = Config.VOLUNTARY_DROP_IMPULSE
+	if typeof(impulse) ~= "number" or impulse <= 0 then
+		impulse = 8
+	end
+	released:ApplyImpulse(dropDir * impulse * released.AssemblyMass)
+	local now = workspace:GetServerTimeNow()
+	local blockSeconds = Config.VOLUNTARY_DROP_SAME_BALL_COOLDOWN_SECONDS
+	if typeof(blockSeconds) ~= "number" or blockSeconds < 0 then
+		blockSeconds = 1
+	end
+	released:SetAttribute(ATTR_VOLUNTARY_DROP_BLOCK_USER_ID, player.UserId)
+	released:SetAttribute(ATTR_VOLUNTARY_DROP_PICKUP_UNTIL, now + blockSeconds)
+end
+
+local function voluntaryDropHeldBall(player: Player)
+	if not isMatchParticipant(player) or isPlayerOut(player) then
+		return
+	end
+	if not heldByPlayer[player] then
+		return
+	end
+	cancelHoldWatch(player)
+	local released = releaseBallForThrow(player)
+	if not released then
+		return
+	end
+	applyVoluntaryDropRelease(player, released)
+end
+
 local function sanitizePowerMultiplier(input: any): number
 	if typeof(input) ~= "number" then
 		return 1
@@ -698,8 +801,6 @@ local function throwBall(player: Player, lookDirection: Vector3, powerMultiplier
 	startThrowSweep(released)
 end
 
-local lastPickupTime: { [Player]: number } = {}
-
 local function tryPickup(player: Player, ball: BasePart)
 	if not isMatchParticipant(player) then
 		return
@@ -719,6 +820,16 @@ local function tryPickup(player: Player, ball: BasePart)
 	if typeof(penaltyUntil) == "number" and now < penaltyUntil then
 		return
 	end
+	local dropUntil = ball:GetAttribute(ATTR_VOLUNTARY_DROP_PICKUP_UNTIL)
+	local dropBlockUserId = ball:GetAttribute(ATTR_VOLUNTARY_DROP_BLOCK_USER_ID)
+	if
+		typeof(dropUntil) == "number"
+		and now < dropUntil
+		and typeof(dropBlockUserId) == "number"
+		and dropBlockUserId == player.UserId
+	then
+		return
+	end
 	local last = lastPickupTime[player]
 	if last and now - last < Config.PICKUP_COOLDOWN_SECONDS then
 		return
@@ -728,6 +839,8 @@ local function tryPickup(player: Player, ball: BasePart)
 		return
 	end
 	lastPickupTime[player] = now
+	ball:SetAttribute(ATTR_VOLUNTARY_DROP_BLOCK_USER_ID, nil)
+	ball:SetAttribute(ATTR_VOLUNTARY_DROP_PICKUP_UNTIL, nil)
 	attachBallToPlayer(player, ball)
 end
 
@@ -1042,6 +1155,10 @@ throwRemote.OnServerEvent:Connect(function(player: Player, direction: any, power
 		return
 	end
 	throwBall(player, dir, powerMultiplier)
+end)
+
+dropRemote.OnServerEvent:Connect(function(player: Player)
+	voluntaryDropHeldBall(player)
 end)
 
 Players.PlayerAdded:Connect(function(player)

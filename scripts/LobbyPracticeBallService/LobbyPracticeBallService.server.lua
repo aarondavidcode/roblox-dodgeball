@@ -30,6 +30,8 @@ local function lobbyPracticeAttrName(): string
 end
 local START_AIMING_REMOTE_NAME = "StartAiming"
 local ATTR_HOLD_PENALTY_PICKUP_UNTIL = "HoldPenaltyPickupUntil"
+local ATTR_VOLUNTARY_DROP_BLOCK_USER_ID = "VoluntaryDropBlockUserId"
+local ATTR_VOLUNTARY_DROP_PICKUP_UNTIL = "VoluntaryDropPickupUntil"
 
 local heldByPlayer: { [Player]: BasePart } = {}
 local aimBeforeThrow: { [Player]: boolean } = {}
@@ -101,6 +103,22 @@ local function getStartAimingRemote(): RemoteEvent?
 		return nil
 	end
 	local remote = folder:FindFirstChild(START_AIMING_REMOTE_NAME)
+	if remote and remote:IsA("RemoteEvent") then
+		return remote
+	end
+	return nil
+end
+
+local function getDropRemote(): RemoteEvent?
+	local folder = getRemotesFolder()
+	if not folder then
+		return nil
+	end
+	local remoteName = Config.DROP_REMOTE_NAME
+	if typeof(remoteName) ~= "string" or remoteName == "" then
+		remoteName = "RequestDropBall"
+	end
+	local remote = folder:FindFirstChild(remoteName)
 	if remote and remote:IsA("RemoteEvent") then
 		return remote
 	end
@@ -494,6 +512,47 @@ local function releaseBallForThrow(player: Player): BasePart?
 	return ball
 end
 
+local function flatAwayFromPlayer(player: Player, fromPosition: Vector3): Vector3
+	local character = player.Character
+	local pivot = if character then character:GetPivot().Position else fromPosition
+	local flat = Vector3.new(fromPosition.X - pivot.X, 0, fromPosition.Z - pivot.Z)
+	if flat.Magnitude < 0.35 and character then
+		local root = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if root then
+			local look = root.CFrame.LookVector
+			flat = Vector3.new(look.X, 0, look.Z)
+		end
+	end
+	if flat.Magnitude < 0.05 then
+		return Vector3.new(0, 0, -1)
+	end
+	return flat.Unit
+end
+
+local function applyVoluntaryDropRelease(player: Player, released: BasePart)
+	released.AssemblyAngularVelocity = Vector3.zero
+	released.AssemblyLinearVelocity = Vector3.zero
+	local character = player.Character
+	local pivot = if character then character:GetPivot().Position else released.Position
+	local awayFlat = flatAwayFromPlayer(player, released.Position)
+	local placeOffset = 2.75
+	released.CFrame = CFrame.new(pivot + awayFlat * placeOffset + Vector3.new(0, -0.2, 0))
+	local dropDir = (awayFlat + Vector3.new(0, 0.12, 0)).Unit
+	local impulse = Config.VOLUNTARY_DROP_IMPULSE
+	if typeof(impulse) ~= "number" or impulse <= 0 then
+		impulse = 8
+	end
+	released:ApplyImpulse(dropDir * impulse * released.AssemblyMass)
+	local now = workspace:GetServerTimeNow()
+	local blockSeconds = Config.VOLUNTARY_DROP_SAME_BALL_COOLDOWN_SECONDS
+	if typeof(blockSeconds) ~= "number" or blockSeconds < 0 then
+		blockSeconds = 1
+	end
+	released:SetAttribute(ATTR_VOLUNTARY_DROP_BLOCK_USER_ID, player.UserId)
+	released:SetAttribute(ATTR_VOLUNTARY_DROP_PICKUP_UNTIL, now + blockSeconds)
+	markBallIdle(released)
+end
+
 local function cancelHoldWatch(player: Player)
 	holdWatchToken[player] = (holdWatchToken[player] or 0) + 1
 	aimBeforeThrow[player] = false
@@ -664,6 +723,16 @@ local function tryPickup(player: Player, ball: BasePart)
 	if typeof(penaltyUntil) == "number" and now < penaltyUntil then
 		return
 	end
+	local dropUntil = ball:GetAttribute(ATTR_VOLUNTARY_DROP_PICKUP_UNTIL)
+	local dropBlockUserId = ball:GetAttribute(ATTR_VOLUNTARY_DROP_BLOCK_USER_ID)
+	if
+		typeof(dropUntil) == "number"
+		and now < dropUntil
+		and typeof(dropBlockUserId) == "number"
+		and dropBlockUserId == player.UserId
+	then
+		return
+	end
 	local last = lastPickupTime[player]
 	if last and now - last < Config.PICKUP_COOLDOWN_SECONDS then
 		return
@@ -673,6 +742,8 @@ local function tryPickup(player: Player, ball: BasePart)
 		return
 	end
 	lastPickupTime[player] = now
+	ball:SetAttribute(ATTR_VOLUNTARY_DROP_BLOCK_USER_ID, nil)
+	ball:SetAttribute(ATTR_VOLUNTARY_DROP_PICKUP_UNTIL, nil)
 	attachBallToPlayer(player, ball)
 end
 
@@ -818,6 +889,33 @@ local function maintainIdleAndBounds()
 end
 
 local remotesWired = false
+local dropRemoteWired = false
+
+local function wireDropRemote()
+	if dropRemoteWired then
+		return
+	end
+	local dropRemote = getDropRemote()
+	if not dropRemote then
+		return
+	end
+	dropRemoteWired = true
+	dropRemote.OnServerEvent:Connect(function(player: Player)
+		if not canUseLobbyPracticeBalls(player) or not heldByPlayer[player] then
+			return
+		end
+		local ball = heldByPlayer[player]
+		if not isLobbyPracticeBall(ball) then
+			return
+		end
+		aimBeforeThrow[player] = false
+		local released = releaseBallForThrow(player)
+		if not released then
+			return
+		end
+		applyVoluntaryDropRelease(player, released)
+	end)
+end
 
 local function wireRemotes()
 	if remotesWired then
@@ -857,6 +955,20 @@ local function wireRemotes()
 				return
 			end
 			aimBeforeThrow[player] = true
+		end)
+	end
+
+	wireDropRemote()
+	local remotesFolder = getRemotesFolder()
+	if remotesFolder and not dropRemoteWired then
+		local dropName = Config.DROP_REMOTE_NAME
+		if typeof(dropName) ~= "string" or dropName == "" then
+			dropName = "RequestDropBall"
+		end
+		remotesFolder.ChildAdded:Connect(function(child)
+			if child.Name == dropName and child:IsA("RemoteEvent") then
+				wireDropRemote()
+			end
 		end)
 	end
 end
