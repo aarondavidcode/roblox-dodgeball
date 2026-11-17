@@ -31,19 +31,41 @@ Copy from the `.lua` file in each folder under [scripts/](scripts/) on GitHub (*
 | [scripts/TeamAutoBalance/TeamAutoBalance.server.lua](scripts/TeamAutoBalance/TeamAutoBalance.server.lua) | `ServerScriptService/TeamAutoBalance` | Script | [TeamAutoBalance.md](scripts/TeamAutoBalance/TeamAutoBalance.md) |
 | [scripts/DodgeballService/DodgeballService.server.lua](scripts/DodgeballService/DodgeballService.server.lua) | `ServerScriptService/DodgeballService` | Script | [DodgeballService.md](scripts/DodgeballService/DodgeballService.md) |
 | [scripts/throw/DefaultThrow/DefaultThrow.lua](scripts/throw/DefaultThrow/DefaultThrow.lua) | `ServerScriptService/throw/DefaultThrow` | ModuleScript | [DefaultThrow.md](scripts/throw/DefaultThrow/DefaultThrow.md) |
-| [scripts/DodgeballThrowInput/DodgeballThrowInput.local.lua](scripts/DodgeballThrowInput/DodgeballThrowInput.local.lua) | `StarterPlayer/StarterPlayerScripts/DodgeballThrowInput` | LocalScript | [DodgeballThrowInput.md](scripts/DodgeballThrowInput/DodgeballThrowInput.md) |
+| [scripts/DodgeballThrowInput/DodgeballThrowInput.client.lua](scripts/DodgeballThrowInput/DodgeballThrowInput.client.lua) | `StarterPlayer/StarterPlayerScripts/DodgeballThrowInput` | LocalScript | [DodgeballThrowInput.md](scripts/DodgeballThrowInput/DodgeballThrowInput.md) |
 | [scripts/RoundService/RoundService.server.lua](scripts/RoundService/RoundService.server.lua) | `ServerScriptService/RoundService` | Script | [RoundService.md](scripts/RoundService/RoundService.md) |
-| [scripts/RoundStatusClient/RoundStatusClient.local.lua](scripts/RoundStatusClient/RoundStatusClient.local.lua) | `StarterGui/RoundStatus/RoundStatusClient` | LocalScript | [RoundStatusClient.md](scripts/RoundStatusClient/RoundStatusClient.md) |
+| [scripts/RoundStatusClient/RoundStatusClient.client.lua](scripts/RoundStatusClient/RoundStatusClient.client.lua) | `StarterGui/RoundStatus/RoundStatusClient` | LocalScript | [RoundStatusClient.md](scripts/RoundStatusClient/RoundStatusClient.md) |
 | [scripts/LobbyService/LobbyService.server.lua](scripts/LobbyService/LobbyService.server.lua) | `ServerScriptService/LobbyService` | Script | [LobbyService.md](scripts/LobbyService/LobbyService.md) |
 | [scripts/LobbyPracticeBallService/LobbyPracticeBallService.server.lua](scripts/LobbyPracticeBallService/LobbyPracticeBallService.server.lua) | `ServerScriptService/LobbyPracticeBallService` | Script | [LobbyPracticeBallService.md](scripts/LobbyPracticeBallService/LobbyPracticeBallService.md) |
-| [scripts/LobbyJoinNextMatchClient/LobbyJoinNextMatchClient.local.lua](scripts/LobbyJoinNextMatchClient/LobbyJoinNextMatchClient.local.lua) | `StarterPlayer/StarterPlayerScripts/LobbyJoinNextMatchClient` | LocalScript | [LobbyJoinNextMatchClient.md](scripts/LobbyJoinNextMatchClient/LobbyJoinNextMatchClient.md) |
+| [scripts/LobbyJoinNextMatchClient/LobbyJoinNextMatchClient.client.lua](scripts/LobbyJoinNextMatchClient/LobbyJoinNextMatchClient.client.lua) | `StarterPlayer/StarterPlayerScripts/LobbyJoinNextMatchClient` | LocalScript | [LobbyJoinNextMatchClient.md](scripts/LobbyJoinNextMatchClient/LobbyJoinNextMatchClient.md) |
 | [scripts/ball-physics/src/](scripts/ball-physics/) (v1.0.0) | `ReplicatedStorage/BallPhysics` (**ModuleScript** root + children) | Module tree | [ball-physics/README.md](scripts/ball-physics/README.md) |
 | [scripts/BallPhysicsAutoSetup/BallPhysicsAutoSetup.server.lua](scripts/BallPhysicsAutoSetup/BallPhysicsAutoSetup.server.lua) | `ServerScriptService/BallPhysicsAutoSetup` | Script | [BallPhysicsAutoSetup.md](scripts/BallPhysicsAutoSetup/BallPhysicsAutoSetup.md) |
-| [scripts/BallPhysicsClient/BallPhysicsClient.local.lua](scripts/BallPhysicsClient/BallPhysicsClient.local.lua) | `StarterPlayer/StarterPlayerScripts/BallPhysicsClient` | LocalScript | [BallPhysicsClient.md](scripts/BallPhysicsClient/BallPhysicsClient.md) |
+| [scripts/BallPhysicsClient/BallPhysicsClient.client.lua](scripts/BallPhysicsClient/BallPhysicsClient.client.lua) | `StarterPlayer/StarterPlayerScripts/BallPhysicsClient` | LocalScript | [BallPhysicsClient.md](scripts/BallPhysicsClient/BallPhysicsClient.md) |
+| [scripts/DodgeballBallVisualEffectsClient/DodgeballBallVisualEffectsClient.client.lua](scripts/DodgeballBallVisualEffectsClient/DodgeballBallVisualEffectsClient.client.lua) | `StarterPlayer/StarterPlayerScripts/DodgeballBallVisualEffectsClient` | LocalScript | [DodgeballBallVisualEffectsClient.md](scripts/DodgeballBallVisualEffectsClient/DodgeballBallVisualEffectsClient.md) |
+| [scripts/ballVisualEffects/BallVisualEffectRegistry/BallVisualEffectRegistry.lua](scripts/ballVisualEffects/BallVisualEffectRegistry/BallVisualEffectRegistry.lua) | `StarterPlayer/StarterPlayerScripts/ballVisualEffects/BallVisualEffectRegistry` | ModuleScript | [BallVisualEffectRegistry.md](scripts/ballVisualEffects/BallVisualEffectRegistry/BallVisualEffectRegistry.md) |
+| [scripts/ballVisualEffects/SpeedGlow/SpeedGlow.lua](scripts/ballVisualEffects/SpeedGlow/SpeedGlow.lua) | `StarterPlayer/StarterPlayerScripts/ballVisualEffects/SpeedGlow` | ModuleScript | [SpeedGlow.md](scripts/ballVisualEffects/SpeedGlow/SpeedGlow.md) |
+| [scripts/DodgeballBallVisualEffectsConfig/DodgeballBallVisualEffectsConfig.lua](scripts/DodgeballBallVisualEffectsConfig/DodgeballBallVisualEffectsConfig.lua) | `ServerScriptService/DodgeballBallVisualEffectsConfig` | ModuleScript | [DodgeballBallVisualEffectsConfig.md](scripts/DodgeballBallVisualEffectsConfig/DodgeballBallVisualEffectsConfig.md) |
+| [scripts/DodgeballDebugConfig/DodgeballDebugConfig.lua](scripts/DodgeballDebugConfig/DodgeballDebugConfig.lua) | `ServerScriptService/DodgeballDebugConfig` | ModuleScript | [DodgeballDebugConfig.md](scripts/DodgeballDebugConfig/DodgeballDebugConfig.md) |
+| [scripts/DodgeballBallPhysicsDebug/DodgeballBallPhysicsDebug.lua](scripts/DodgeballBallPhysicsDebug/DodgeballBallPhysicsDebug.lua) | `ServerScriptService/DodgeballBallPhysicsDebug` | ModuleScript | [DodgeballBallPhysicsDebug.md](scripts/DodgeballBallPhysicsDebug/DodgeballBallPhysicsDebug.md) |
 
 **Third-party:** [thaalish/ball-physics](https://github.com/thaalish/ball-physics) v1.0.0 (MIT) — vendored under `scripts/ball-physics/`.
 
 **Place setup you build (not in repo):** arena in `Workspace`, **Teams** named `Red` and `Blue`, team **SpawnLocations** with matching **TeamColor** and **Neutral** off, lobby **SpawnLocation** (**Neutral** on), folder `Workspace/Dodgeballs` with ball Parts, lobby practice **spawn volumes** tagged `LobbyBallSpawnVolume` (optional exclude zones). Details live in each script’s markdown above.
+
+## Development workflows
+
+### Paste (beginners)
+
+See [Paste or update one script](#paste-or-update-one-script) below. Copy the `.lua` / `.client.lua` file from each `scripts/<Name>/` folder into Studio by **Explorer name** (table above).
+
+### Rojo (recommended for Aaron)
+
+Sync scripts from disk into your **existing** local place (arena and teams stay in Studio, not in git):
+
+1. Install Rojo — `aftman install` at repo root, or see [docs/rojo-studio-sync.md](docs/rojo-studio-sync.md).
+2. `rojo serve` in the repo root.
+3. Studio → Rojo plugin → **Connect** while your dodgeball place is open.
+
+Mapping lives in [`default.project.json`](default.project.json). Full steps and troubleshooting: [docs/rojo-studio-sync.md](docs/rojo-studio-sync.md).
 
 ## Paste or update one script
 
