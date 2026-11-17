@@ -43,6 +43,18 @@ Throw and aim for **arena** balls are blocked in **Lobby**, when **OUT**, or whe
 
 Reads tunables from remote folder attributes (from **DodgeballConfig**): `AIM_POWER_CHARGE_SECONDS`, `AIM_MAX_SECONDS`, `BALL_MAX_HOLD_SECONDS`.
 
+## Aim by device (third person)
+
+Same LocalScript for arena and lobby practice throws.
+
+| Input | While aiming | Aim direction |
+|--------|----------------|---------------|
+| **Mouse + keyboard** (PC: hold **F** or **left click**) | Normal mouse cursor; **third-person camera unchanged** (look around with RMB) | Throw uses a ray through the cursor only; `RotationType` stays movement-relative during aim so PlayerModule does not lock the view to the cursor; **LMB** hold uses `UserInputService` for begin/end |
+| **Touch** (phone/tablet) | Center-locked cursor + on-screen crosshair | Ray through screen center (unchanged) |
+| **Gamepad** (hold **R2**) | Center lock + crosshair | Ray through screen center (unchanged) |
+
+Touch-only clients (`TouchEnabled`, no mouse) always use the center-lock path, even if the throw bind fires as a tap.
+
 ## Testing
 
 **F5** → **Output**: search `[DodgeballThrowInput]`. Remotes missing → **DodgeballService** not running or stale copy. During **InMatch**, pick up a ball → yellow hold bar; hold throw → crosshair + blue power bar.

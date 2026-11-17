@@ -11,6 +11,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local ContextActionService = game:GetService("ContextActionService")
+local GuiService = game:GetService("GuiService")
+
+local UserGameSettings = UserSettings():GetService("UserGameSettings")
 
 local SCRIPT_TAG = "[DodgeballThrowInput]"
 
@@ -19,6 +22,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 local AIM_FALLBACK_STUDS = 200
 local ACTION_THROW_AIM = "DodgeballThrowAim"
+local FREE_CURSOR_CAMERA_BIND = "DodgeballThrowFreeCursorCamera"
 local ROUND_STATUS_FOLDER = "RoundStatus"
 
 -- Tunables (defaults until DodgeballRemotes folder replicates)
@@ -252,10 +256,62 @@ powerBarLabel.ZIndex = 7
 powerBarLabel.Parent = powerBarBack
 
 local aiming = false
+local aimUsesFreeCursor = false
 local aimBeganAt = 0
 local holdBallSince: number? = nil
 local heartbeatConn: RBXScriptConnection? = nil
 local lastAimWorldPoint: Vector3? = nil
+local savedRotationType: Enum.RotationType? = nil
+local rightMouseHeld = false
+
+-- Mouse + keyboard: free cursor and screen-point aim. Touch and gamepad: center lock (unchanged).
+local function shouldUseFreeCursorAim(inputObject: InputObject): boolean
+	local inputType = inputObject.UserInputType
+	if inputType == Enum.UserInputType.Gamepad1 or inputType == Enum.UserInputType.Gamepad2 then
+		return false
+	end
+	if inputType == Enum.UserInputType.Touch then
+		return false
+	end
+	if UserInputService.TouchEnabled and not UserInputService.MouseEnabled then
+		return false
+	end
+	return UserInputService.MouseEnabled
+end
+
+-- PlayerModule / shift lock can steer rotation and mouse lock toward the cursor; re-apply each aim frame.
+local function applyFreeCursorCameraIndependence()
+	UserGameSettings.RotationType = Enum.RotationType.MovementRelative
+	UserInputService.MouseIconEnabled = true
+	if not rightMouseHeld then
+		UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+	end
+end
+
+local function saveRotationTypeForAim()
+	if savedRotationType == nil then
+		savedRotationType = UserGameSettings.RotationType
+	end
+end
+
+local function restoreRotationTypeAfterAim()
+	if savedRotationType ~= nil then
+		UserGameSettings.RotationType = savedRotationType
+		savedRotationType = nil
+	end
+end
+
+UserInputService.InputBegan:Connect(function(input: InputObject, _gameProcessed: boolean)
+	if input.UserInputType == Enum.UserInputType.MouseButton2 then
+		rightMouseHeld = true
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input: InputObject, _gameProcessed: boolean)
+	if input.UserInputType == Enum.UserInputType.MouseButton2 then
+		rightMouseHeld = false
+	end
+end)
 
 local function getMatchPhase(): string?
 	local folder = ReplicatedStorage:FindFirstChild(ROUND_STATUS_FOLDER)
@@ -402,8 +458,19 @@ local function computeAimWorldPoint(): Vector3?
 	if not camera then
 		return nil
 	end
-	local viewport = camera.ViewportSize
-	local ray = camera:ViewportPointToRay(viewport.X * 0.5, viewport.Y * 0.5)
+	local rayX: number
+	local rayY: number
+	if aimUsesFreeCursor then
+		local mouse = UserInputService:GetMouseLocation()
+		local inset = GuiService:GetGuiInset()
+		rayX = mouse.X - inset.X
+		rayY = mouse.Y - inset.Y
+	else
+		local viewport = camera.ViewportSize
+		rayX = viewport.X * 0.5
+		rayY = viewport.Y * 0.5
+	end
+	local ray = camera:ViewportPointToRay(rayX, rayY)
 
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
@@ -453,8 +520,10 @@ end
 
 local function endAimUi()
 	aiming = false
+	aimUsesFreeCursor = false
 	crosshair.Visible = false
 	powerBarBack.Visible = false
+	restoreRotationTypeAfterAim()
 	UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 	stopAimHeartbeat()
 end
@@ -502,20 +571,26 @@ local function fireStartAiming()
 	end
 end
 
-local function beginAim()
+local function beginAim(inputObject: InputObject)
 	if aiming or cannotUseThrowInput() or not localPlayerHoldsBall() or not canThrowHeldBall() then
 		return
 	end
 	aiming = true
+	aimUsesFreeCursor = shouldUseFreeCursorAim(inputObject)
 	aimBeganAt = os.clock()
 	fireStartAiming()
 	holdBallSince = nil
 	holdBarBack.Visible = false
 
-	crosshair.Visible = true
+	crosshair.Visible = not aimUsesFreeCursor
 	powerBarBack.Visible = true
 	setPowerUi(0)
-	UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+	if aimUsesFreeCursor then
+		saveRotationTypeForAim()
+		applyFreeCursorCameraIndependence()
+	else
+		UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+	end
 
 	stopAimHeartbeat()
 	heartbeatConn = RunService.RenderStepped:Connect(function()
@@ -544,46 +619,79 @@ local function endAimAndThrow()
 end
 
 local throwActionBound = false
+local mouseThrowInputConn: RBXScriptConnection? = nil
+local mouseThrowReleaseConn: RBXScriptConnection? = nil
 
-local function onThrowAction(_actionName: string, inputState: Enum.UserInputState, _inputObject: InputObject)
+local function onThrowAction(_actionName: string, inputState: Enum.UserInputState, inputObject: InputObject)
 	if inputState == Enum.UserInputState.Begin then
-		beginAim()
+		beginAim(inputObject)
 	elseif inputState == Enum.UserInputState.End or inputState == Enum.UserInputState.Cancel then
 		endAimAndThrow()
 	end
 	return Enum.ContextActionResult.Sink
 end
 
-local function inputIsThrowRelease(input: InputObject): boolean
-	return input.KeyCode == Enum.KeyCode.F
-		or input.KeyCode == Enum.KeyCode.ButtonR2
-		or input.UserInputType == Enum.UserInputType.MouseButton1
-end
-
-UserInputService.InputEnded:Connect(function(input, gameProcessed)
-	if gameProcessed or not aiming or not inputIsThrowRelease(input) then
+-- Free cursor: PlayerModule / UI often win LMB before CAS at Medium; LockCenter hid that. UIS backs up PC mouse hold.
+local function connectMouseThrowInputFallback()
+	if mouseThrowInputConn or mouseThrowReleaseConn then
 		return
 	end
-	endAimAndThrow()
-end)
+	if not UserInputService.MouseEnabled then
+		return
+	end
+
+	mouseThrowInputConn = UserInputService.InputBegan:Connect(function(input: InputObject, gameProcessed: boolean)
+		if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+			return
+		end
+		if not shouldUseFreeCursorAim(input) then
+			return
+		end
+		if gameProcessed and (not localPlayerHoldsBall() or not canThrowHeldBall()) then
+			return
+		end
+		beginAim(input)
+	end)
+
+	mouseThrowReleaseConn = UserInputService.InputEnded:Connect(function(input: InputObject, _gameProcessed: boolean)
+		if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+			return
+		end
+		if aiming and aimUsesFreeCursor then
+			endAimAndThrow()
+		end
+	end)
+end
 
 local function bindThrowAction()
 	if throwActionBound then
 		return
 	end
 	throwActionBound = true
-	ContextActionService:BindActionAtPriority(
-		ACTION_THROW_AIM,
-		onThrowAction,
-		false,
-		Enum.ContextActionPriority.Medium.Value,
+	local priority = Enum.ContextActionPriority.High.Value
+	local casInputs: { Enum.KeyCode | Enum.UserInputType } = {
 		Enum.KeyCode.F,
-		Enum.UserInputType.MouseButton1,
-		Enum.KeyCode.ButtonR2
-	)
+		Enum.KeyCode.ButtonR2,
+	}
+	local touchOnly = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
+	if touchOnly then
+		table.insert(casInputs, Enum.UserInputType.MouseButton1)
+	elseif UserInputService.TouchEnabled then
+		table.insert(casInputs, Enum.UserInputType.Touch)
+	end
+	ContextActionService:BindActionAtPriority(ACTION_THROW_AIM, onThrowAction, false, priority, table.unpack(casInputs))
+	if UserInputService.MouseEnabled then
+		connectMouseThrowInputFallback()
+	end
 end
 
 bindThrowAction()
+
+RunService:BindToRenderStep(FREE_CURSOR_CAMERA_BIND, Enum.RenderPriority.Camera.Value + 1, function()
+	if aiming and aimUsesFreeCursor then
+		applyFreeCursorCameraIndependence()
+	end
+end)
 
 RunService.RenderStepped:Connect(function()
 	if localPlayerHoldsLobbyPracticeBall() then
