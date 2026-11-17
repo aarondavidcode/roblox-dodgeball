@@ -41,6 +41,8 @@ Paste from [DodgeballConfig.lua](./DodgeballConfig.lua).
 | `HOLD_PENALTY_*`, `HOLD_ROLL_IMPULSE` | Penalty when you hold a ball too long without aiming |
 | `BALL_FOLDER_NAME`, `DODGEBALL_TAG` | Where balls live and optional tag |
 | `BALL_DIAMETER`, `BALL_COLOR`, `BALL_MATERIAL`, `BALL_PART_NAME`, `BALL_PHYSICAL_*` | Shared look/physics for arena + lobby practice ([DodgeballBallTemplate.md](../DodgeballBallTemplate/DodgeballBallTemplate.md)) |
+| `BALL_PHYSICS_TAG`, `BALL_PHYSICS_*` | Vendored [BallPhysics](../ball-physics/README.md) — magnus, knuckle, damping, anti-gravity; applied by **BallPhysicsAutoSetup** |
+| `THROW_SIDE_SPIN_RAD_PER_SEC` | Initial spin on aimed throws (pairs with Magnus) — see [DefaultThrow.md](../throw/DefaultThrow/DefaultThrow.md) |
 | `PICKUP_MAX_SPEED`, `THROW_IMPULSE`, `CARRY_OFFSET`, `PICKUP_COOLDOWN_SECONDS`, aim/hold keys | Shared pickup, throw, and carry feel (arena + lobby) |
 | `ACTIVE_THROW_PROFILE` | Module name under `ServerScriptService/throw/` (default `Default`) |
 | `REMOTES_FOLDER_NAME`, `THROW_REMOTE_NAME` | Remote folder and throw event names |
@@ -55,4 +57,4 @@ Paste from [DodgeballConfig.lua](./DodgeballConfig.lua).
 
 ## Related scripts
 
-Requires nothing at load time. Required by **TeamAutoBalance**, **DodgeballBallTemplate**, **DodgeballService**, **LobbyPracticeBallService**, **RoundService**, **LobbyService**, **DefaultThrow**, and indirectly by client scripts (names must stay in sync).
+Requires nothing at load time. Required by **TeamAutoBalance**, **DodgeballBallTemplate**, **DodgeballService**, **LobbyPracticeBallService**, **RoundService**, **LobbyService**, **DefaultThrow**, **BallPhysicsAutoSetup**, and indirectly by client scripts (names must stay in sync).

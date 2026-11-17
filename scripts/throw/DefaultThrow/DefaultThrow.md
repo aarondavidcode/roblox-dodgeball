@@ -1,6 +1,6 @@
 # DefaultThrow
 
-**Purpose:** Standard straight-line throw: applies impulse from the thrower’s hand using `THROW_IMPULSE` and power 0–1 from the client. Sets ball attributes so **DodgeballService** can apply OUT rules.
+**Purpose:** Standard throw: applies **linear impulse** from `THROW_IMPULSE` and power 0–1, then optional **side spin** (`THROW_SIDE_SPIN_RAD_PER_SEC`) for vendored **BallPhysics** Magnus. Aerodynamic forces (Magnus, knuckle, etc.) come from the library — not from a second impulse. Sets ball attributes so **DodgeballService** can apply OUT rules.
 
 ## Explorer
 
@@ -28,6 +28,7 @@ This module does not create instances. **DodgeballService** `require`s it (or an
 | Key | Role |
 |-----|------|
 | `THROW_IMPULSE` | Base impulse at 100% power |
+| `THROW_SIDE_SPIN_RAD_PER_SEC` | Spin magnitude after impulse (scaled by power); set `0` for no deliberate curve |
 | `ACTIVE_THROW_PROFILE` | Set to `Default` for this module; future throws = new ModuleScripts in `throw/` and change this string |
 
 ## Adding more throw types later

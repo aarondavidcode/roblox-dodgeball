@@ -29,3 +29,6 @@ Explorer **instance names** must match the root README table. `require()` in Lua
 | [LobbyService/](LobbyService/LobbyService.md) | [LobbyService.md](LobbyService/LobbyService.md) |
 | [LobbyPracticeBallService/](LobbyPracticeBallService/LobbyPracticeBallService.md) | [LobbyPracticeBallService.md](LobbyPracticeBallService/LobbyPracticeBallService.md) |
 | [LobbyJoinNextMatchClient/](LobbyJoinNextMatchClient/LobbyJoinNextMatchClient.md) | [LobbyJoinNextMatchClient.md](LobbyJoinNextMatchClient/LobbyJoinNextMatchClient.md) |
+| [ball-physics/](ball-physics/README.md) | Vendored **BallPhysics** v1.0.0 module tree → `ReplicatedStorage/BallPhysics` |
+| [BallPhysicsAutoSetup/](BallPhysicsAutoSetup/BallPhysicsAutoSetup.md) | [BallPhysicsAutoSetup.md](BallPhysicsAutoSetup/BallPhysicsAutoSetup.md) |
+| [BallPhysicsClient/](BallPhysicsClient/BallPhysicsClient.md) | [BallPhysicsClient.md](BallPhysicsClient/BallPhysicsClient.md) |

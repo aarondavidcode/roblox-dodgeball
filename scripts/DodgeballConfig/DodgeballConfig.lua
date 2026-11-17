@@ -65,6 +65,32 @@ local DodgeballConfig = {
 	BALL_PHYSICAL_FRICTION = 0.4,
 	BALL_PHYSICAL_ELASTICITY = 0.75,
 
+	-- === Vendored BallPhysics (ReplicatedStorage/BallPhysics + AutoSetup) ===
+
+	-- CollectionService tag the library tracks (in addition to DODGEBALL_TAG / lobby tags).
+	BALL_PHYSICS_TAG = "PhysicsBall",
+
+	BALL_PHYSICS_MAGNUS_ENABLED = true,
+	BALL_PHYSICS_MAGNUS_STRENGTH = 0.85,
+	BALL_PHYSICS_MAGNUS_DEFAULT_DENSITY = 0.7,
+
+	BALL_PHYSICS_KNUCKLE_ENABLED = true,
+	BALL_PHYSICS_KNUCKLE_STRENGTH = 18,
+	BALL_PHYSICS_KNUCKLE_TARGET_SPEED = 75,
+
+	BALL_PHYSICS_ANGULAR_DAMPING_ENABLED = true,
+	BALL_PHYSICS_ANGULAR_DAMPING_AIR_RATE = 0.65,
+	BALL_PHYSICS_ANGULAR_DAMPING_GROUND_RATE = 1,
+
+	BALL_PHYSICS_ANTIGRAVITY_ENABLED = true,
+	BALL_PHYSICS_ANTIGRAVITY_FRACTION = 0.35,
+
+	-- Upstream F3/F4 debug scripts are not bundled; keep false for published places.
+	BALL_PHYSICS_DEBUG_ENABLED = false,
+
+	-- Side spin (rad/s) on aimed throws so Magnus can curve; scaled by throw power (0–1).
+	THROW_SIDE_SPIN_RAD_PER_SEC = 12,
+
 	-- Which throw module to use from ServerScriptService/throw/ (more abilities later).
 	ACTIVE_THROW_PROFILE = "Default",
 
