@@ -8,6 +8,7 @@
 |--------|------|------|
 | `DodgeballBallTemplate` | `ServerScriptService/DodgeballBallTemplate` | **ModuleScript** |
 | `DodgeballConfig` | `ServerScriptService/DodgeballConfig` | **ModuleScript** (required) |
+| `DodgeballThrowerCollision` | `ServerScriptService/DodgeballThrowerCollision` | **ModuleScript** (required) |
 
 Paste from [DodgeballBallTemplate.lua](./DodgeballBallTemplate.lua).
 
@@ -21,7 +22,7 @@ Nothing beyond **DodgeballConfig** tuning. Arena ball Parts still live under `Wo
 
 | Function | Role |
 |----------|------|
-| `applyAppearance(part)` | Set shape, size, color, material, physical properties from config; adds **`BALL_PHYSICS_TAG`** for BallPhysics tracking |
+| `applyAppearance(part)` | Set shape, size, color, material, physical properties from config; adds **`BALL_PHYSICS_TAG`** for BallPhysics tracking; assigns ball **PhysicsService** collision group via **DodgeballThrowerCollision** |
 | `createPart()` | New `Part` with defaults + appearance (not parented) |
 | `halfHeight()` | `BALL_DIAMETER / 2` for spawn offsets |
 

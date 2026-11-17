@@ -22,6 +22,6 @@ Nothing extra. **DodgeballBallTemplate** adds the physics tag when balls are cre
 
 All **`BALL_PHYSICS_*`** and **`BALL_PHYSICS_TAG`** keys in [DodgeballConfig.md](../DodgeballConfig/DodgeballConfig.md).
 
-## Stacking with thrower no-collide (PR #25)
+## Thrower no-collide
 
-Optional **`DodgeballThrowerCollision`** from PR #25 is independent — paste it alongside this setup. Both touch throws; merge both before play-testing throw feel.
+Paste **`DodgeballThrowerCollision`** (on `main`) alongside this setup. Both touch throws; update **DodgeballConfig**, **DodgeballBallTemplate**, and throw services together before play-testing.

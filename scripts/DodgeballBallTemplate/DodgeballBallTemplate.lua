@@ -8,6 +8,7 @@ local CollectionService = game:GetService("CollectionService")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 local Config = require(ServerScriptService:WaitForChild("DodgeballConfig"))
+local ThrowerCollision = require(ServerScriptService:WaitForChild("DodgeballThrowerCollision"))
 
 local DodgeballBallTemplate = {}
 
@@ -62,6 +63,7 @@ function DodgeballBallTemplate.applyAppearance(part: BasePart)
 
 	applyPhysicalProperties(part)
 	ensurePhysicsTrackingTag(part)
+	ThrowerCollision.assignBallCollisionGroup(part)
 end
 
 function DodgeballBallTemplate.createPart(): BasePart

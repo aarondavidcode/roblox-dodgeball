@@ -41,13 +41,13 @@ Duplicating them in docs or Studio instructions is wrong.
 - Game tag for simulation: **`BALL_PHYSICS_TAG`** (default `PhysicsBall`); **DodgeballBallTemplate** adds it. Arena **`DODGEBALL_TAG`** / lobby **`LobbyPracticeBall`** stay as-is.
 - Tuning: **`BALL_PHYSICS_*`** in **DodgeballConfig**; **BallPhysicsAutoSetup** copies into library `Config` at startup.
 - Throws: **DefaultThrow** uses `ApplyImpulse` + optional `THROW_SIDE_SPIN_RAD_PER_SEC`; library applies aerodynamic forces — do not double-impulse for curve.
-- Held balls: weld + zero velocity; simulator idles (no shim). Optional **PR #25** **DodgeballThrowerCollision** stacks independently.
+- Held balls: weld + zero velocity; simulator idles (no shim). **DodgeballThrowerCollision** (thrower no-collide grace) is separate and stacks with BallPhysics.
 
 ### Architecture
 
 Extend existing systems — **no parallel game framework:**
 
-- **LobbyService**, **DodgeballService**, **LobbyPracticeBallService**, **RoundService**, **TeamAutoBalance**, shared **DodgeballConfig**, vendored **ReplicatedStorage/BallPhysics** + **BallPhysicsAutoSetup** / **BallPhysicsClient**, client LocalScripts under **StarterPlayerScripts** or **StarterGui** as documented.
+- **LobbyService**, **DodgeballService**, **LobbyPracticeBallService**, **RoundService**, **TeamAutoBalance**, **DodgeballThrowerCollision**, shared **DodgeballConfig**, vendored **ReplicatedStorage/BallPhysics** + **BallPhysicsAutoSetup** / **BallPhysicsClient**, client LocalScripts under **StarterPlayerScripts** or **StarterGui** as documented.
 
 **Semantics (do not confuse):**
 

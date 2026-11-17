@@ -20,6 +20,7 @@ Explorer **instance names** must match the root README table. `require()` in Lua
 |--------|-----|
 | [DodgeballConfig/](DodgeballConfig/DodgeballConfig.md) | [DodgeballConfig.md](DodgeballConfig/DodgeballConfig.md) |
 | [DodgeballBallTemplate/](DodgeballBallTemplate/DodgeballBallTemplate.md) | [DodgeballBallTemplate.md](DodgeballBallTemplate/DodgeballBallTemplate.md) |
+| [DodgeballThrowerCollision/](DodgeballThrowerCollision/DodgeballThrowerCollision.md) | [DodgeballThrowerCollision.md](DodgeballThrowerCollision/DodgeballThrowerCollision.md) |
 | [TeamAutoBalance/](TeamAutoBalance/TeamAutoBalance.md) | [TeamAutoBalance.md](TeamAutoBalance/TeamAutoBalance.md) |
 | [DodgeballService/](DodgeballService/DodgeballService.md) | [DodgeballService.md](DodgeballService/DodgeballService.md) |
 | [throw/DefaultThrow/](throw/DefaultThrow/DefaultThrow.md) | [DefaultThrow.md](throw/DefaultThrow/DefaultThrow.md) |
