@@ -64,6 +64,6 @@ Works for any team names in Explorer — not tied to `TEAM_NAMES`. Re-throws upd
 
 ## Shell halo size
 
-`EffectContext.shell.diameterScale` is set per active effect id (`shellDiameterScaleForEffect` in the LocalScript). **SpeedGlow** uses **BallVisualEffectShell** and adorns the shell with **Highlight**. Sphere dodgeballs only; non-spheres fall back to highlighting the ball Part.
+`EffectContext.shell.diameterScale` is set per active effect id (`shellDiameterScaleForEffect` in the LocalScript). **SpeedGlow** uses **ParticleEmitter** on an **Attachment** (size ≈ ball diameter × shell scale × `SPEED_GLOW_PARTICLE_SIZE_SCALE`). **BallVisualEffectShell** remains for future effects that need a welded halo Part.
 
 **Another effect / scale:** add `BALL_VISUAL_EFFECT_<EFFECTID>_SHELL_DIAMETER_SCALE` in **DodgeballBallVisualEffectsConfig**, mirror on remotes, extend `shellDiameterScaleForEffect`, and call `BallVisualEffectShell.create(ball, effectId, context.shell.diameterScale)` in the effect module.
