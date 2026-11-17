@@ -61,7 +61,7 @@ See [Paste or update one script](#paste-or-update-one-script) below. Copy the `.
 
 Sync scripts from disk into your **existing** local place (arena and teams stay in Studio, not in git):
 
-1. Install Rojo — `aftman install` at repo root, or see [docs/rojo-studio-sync.md](docs/rojo-studio-sync.md).
+1. Install Rojo — install [Rokit](https://github.com/rojo-rbx/rokit), then `rokit install` at repo root (reads [`rokit.toml`](rokit.toml)), or see [docs/rojo-studio-sync.md](docs/rojo-studio-sync.md).
 2. `rojo serve` in the repo root.
 3. Studio → Rojo plugin → **Connect** while your dodgeball place is open.
 

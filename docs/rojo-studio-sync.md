@@ -27,9 +27,9 @@ To smoke-test scripts without your place: `rojo build default.project.json -o bu
 
 ## Aaron setup (recommended)
 
-1. **Install tooling** (pick one):
-   - [Aftman](https://github.com/LPGhatguy/aftman): `aftman install` at repo root (reads [`aftman.toml`](../aftman.toml) — Rojo 7.4.4 + StyLua).
-   - Or [Rojo releases](https://github.com/rojo-rbx/rojo/releases): install Rojo 7.4.x and add to `PATH`.
+1. **Install tooling**
+   - [Rokit](https://github.com/rojo-rbx/rokit): `rokit install` at repo root (reads [`rokit.toml`](../rokit.toml) — pinned Rojo + StyLua).
+   - Or install matching versions from each tool’s releases and add them to `PATH`.
 2. **Clone and open** this repo in Cursor.
 3. **Install the Rojo plugin** in Roblox Studio (from the [Rojo releases](https://github.com/rojo-rbx/rojo/releases) page or Studio plugin search).
 4. In a terminal at the repo root: `rojo serve` (default port 34872).

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Idempotent Cloud Agent install: Luau linter (Selene) + formatter (StyLua).
+# Idempotent Cloud Agent install: Luau linter (Selene) + formatter (StyLua) + Rojo.
+# Version pins for Rojo/StyLua should stay aligned with rokit.toml.
 set -euo pipefail
 
 if ! command -v git >/dev/null 2>&1; then
@@ -12,7 +13,7 @@ mkdir -p "$INSTALL_DIR"
 
 SELENE_VER="0.32.0"
 STYLUA_VER="2.6.0"
-ROJO_VER="7.4.4"
+ROJO_VER="7.7.1"
 
 if [[ -x "${INSTALL_DIR}/selene" && -x "${INSTALL_DIR}/stylua" && -x "${INSTALL_DIR}/rojo" ]]; then
   PATH="${INSTALL_DIR}:${PATH}"
