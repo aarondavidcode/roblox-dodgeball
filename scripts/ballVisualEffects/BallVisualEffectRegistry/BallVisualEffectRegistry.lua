@@ -9,6 +9,11 @@ local BallVisualEffectRegistry = {}
 export type EffectContext = {
 	hitMinSpeed: number,
 	speedGlowHysteresisFraction: number,
+	-- Resolved each frame by DodgeballBallVisualEffectsClient (see BallVisualEffectColors).
+	effectColor: Color3,
+	spectatorColor: Color3,
+	throwerUserId: number?,
+	teamName: string?,
 }
 
 export type BallVisualEffectModule = {

@@ -113,6 +113,9 @@ local DodgeballConfig = {
 	-- SpeedGlow disables below HIT_MIN_SPEED * this (reduces threshold flicker).
 	SPEED_GLOW_HYSTERESIS_FRACTION = 0.92,
 
+	-- Ball VFX when no thrower, thrower left, or thrower has no Team (lobby spectator practice).
+	BALL_VISUAL_EFFECT_SPECTATOR_COLOR = Color3.fromRGB(255, 255, 255),
+
 	-- Which throw module to use from ServerScriptService/throw/ (more abilities later).
 	ACTIVE_THROW_PROFILE = "Default",
 

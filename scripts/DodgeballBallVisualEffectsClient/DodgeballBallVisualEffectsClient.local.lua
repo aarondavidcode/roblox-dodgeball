@@ -11,6 +11,7 @@ local RunService = game:GetService("RunService")
 
 local effectsFolder = script.Parent:WaitForChild("ballVisualEffects")
 local Registry = require(effectsFolder:WaitForChild("BallVisualEffectRegistry"))
+local BallVisualEffectColors = require(effectsFolder:WaitForChild("BallVisualEffectColors"))
 local SpeedGlow = require(effectsFolder:WaitForChild("SpeedGlow"))
 
 Registry.register(SpeedGlow)
@@ -32,6 +33,7 @@ local lobbyPracticeTag = "LobbyPracticeBall"
 local physicsBallTag = "PhysicsBall"
 local ballEffectAttr = "BallVisualEffectId"
 local playerEffectAttr = "BallVisualEffect"
+local spectatorColor = Color3.fromRGB(255, 255, 255)
 
 local remotes: Folder? = nil
 
@@ -55,6 +57,16 @@ local function readStringAttr(name: string, fallback: string): string
 	return fallback
 end
 
+local function readColor3Attr(name: string, fallback: Color3): Color3
+	if remotes then
+		local value = remotes:GetAttribute(name)
+		if typeof(value) == "Color3" then
+			return value
+		end
+	end
+	return fallback
+end
+
 local function hookRemoteTunables(folder: Folder)
 	remotes = folder
 	local function refresh()
@@ -66,6 +78,7 @@ local function hookRemoteTunables(folder: Folder)
 		physicsBallTag = readStringAttr("BALL_PHYSICS_TAG", physicsBallTag)
 		ballEffectAttr = readStringAttr("BALL_VISUAL_EFFECT_BALL_ATTR", ballEffectAttr)
 		playerEffectAttr = readStringAttr("BALL_VISUAL_EFFECT_PLAYER_ATTR", playerEffectAttr)
+		spectatorColor = readColor3Attr("BALL_VISUAL_EFFECT_SPECTATOR_COLOR", spectatorColor)
 	end
 	for _, name in
 		{
@@ -77,6 +90,7 @@ local function hookRemoteTunables(folder: Folder)
 			"BALL_PHYSICS_TAG",
 			"BALL_VISUAL_EFFECT_BALL_ATTR",
 			"BALL_VISUAL_EFFECT_PLAYER_ATTR",
+			"BALL_VISUAL_EFFECT_SPECTATOR_COLOR",
 		}
 	do
 		folder:GetAttributeChangedSignal(name):Connect(refresh)
@@ -84,10 +98,15 @@ local function hookRemoteTunables(folder: Folder)
 	refresh()
 end
 
-local function makeContext(): Registry.EffectContext
+local function makeContext(ball: BasePart): Registry.EffectContext
+	local colorRes = BallVisualEffectColors.resolveForBall(ball, spectatorColor)
 	return {
 		hitMinSpeed = hitMinSpeed,
 		speedGlowHysteresisFraction = speedGlowHysteresisFraction,
+		effectColor = colorRes.effectColor,
+		spectatorColor = spectatorColor,
+		throwerUserId = colorRes.throwerUserId,
+		teamName = colorRes.teamName,
 	}
 end
 
@@ -128,7 +147,7 @@ local function attachEffect(ball: BasePart)
 	if not module then
 		return
 	end
-	module.attach(ball, makeContext())
+	module.attach(ball, makeContext(ball))
 	tracked[ball] = {
 		effectId = effectId,
 		module = module,
@@ -221,26 +240,29 @@ task.spawn(function()
 end)
 
 RunService.Heartbeat:Connect(function()
-	local context = makeContext()
 	for ball, entry in tracked do
 		if not ball.Parent then
 			detachEffect(ball)
-		else
-			local desiredId = resolveEffectId(ball)
-			if desiredId ~= entry.effectId then
-				entry.module.detach(ball)
-				local module = Registry.resolve(desiredId, defaultEffectId)
-				if module then
-					module.attach(ball, context)
-					tracked[ball] = { effectId = desiredId, module = module }
-					entry = tracked[ball]
-				else
-					detachEffect(ball)
-					continue
-				end
-			end
-			entry.module.step(ball, context)
+			continue
 		end
+
+		local desiredId = resolveEffectId(ball)
+		local context = makeContext(ball)
+
+		if desiredId ~= entry.effectId then
+			entry.module.detach(ball)
+			local module = Registry.resolve(desiredId, defaultEffectId)
+			if not module then
+				detachEffect(ball)
+				continue
+			end
+			module.attach(ball, context)
+			tracked[ball] = { effectId = desiredId, module = module }
+			entry = tracked[ball]
+		end
+
+		-- effectColor / teamName refresh every frame when LastThrowerUserId or Team changes.
+		entry.module.step(ball, context)
 	end
 end)
 

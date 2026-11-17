@@ -24,8 +24,8 @@ local function getOrCreateState(ball: BasePart): State
 	local highlight = Instance.new("Highlight")
 	highlight.Name = "SpeedGlow"
 	highlight.Adornee = ball
-	highlight.FillColor = Color3.fromRGB(255, 210, 100)
-	highlight.OutlineColor = Color3.fromRGB(255, 235, 160)
+	highlight.FillColor = Color3.new(1, 1, 1)
+	highlight.OutlineColor = Color3.new(1, 1, 1)
 	highlight.FillTransparency = 0.82
 	highlight.OutlineTransparency = 0.45
 	highlight.DepthMode = Enum.HighlightDepthMode.Occluded
@@ -41,9 +41,16 @@ local function getOrCreateState(ball: BasePart): State
 end
 
 local Registry = require(script.Parent:WaitForChild("BallVisualEffectRegistry"))
+local BallVisualEffectColors = require(script.Parent:WaitForChild("BallVisualEffectColors"))
 
-function SpeedGlow.attach(ball: BasePart, _context: Registry.EffectContext)
-	getOrCreateState(ball)
+local function applyColors(state: State, context: Registry.EffectContext)
+	state.highlight.FillColor = context.effectColor
+	state.highlight.OutlineColor = BallVisualEffectColors.outlineFromFill(context.effectColor)
+end
+
+function SpeedGlow.attach(ball: BasePart, context: Registry.EffectContext)
+	local state = getOrCreateState(ball)
+	applyColors(state, context)
 end
 
 function SpeedGlow.detach(ball: BasePart)
@@ -76,6 +83,7 @@ function SpeedGlow.step(ball: BasePart, context: Registry.EffectContext)
 		shouldGlow = speed >= onThreshold
 	end
 
+	applyColors(state, context)
 	state.glowing = shouldGlow
 	state.highlight.Enabled = shouldGlow
 end

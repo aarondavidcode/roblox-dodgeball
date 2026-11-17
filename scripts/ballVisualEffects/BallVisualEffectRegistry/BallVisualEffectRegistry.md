@@ -16,4 +16,5 @@ Paste from [BallVisualEffectRegistry.lua](./BallVisualEffectRegistry.lua).
 1. Add a new **ModuleScript** next to `SpeedGlow` under `ballVisualEffects` (e.g. `TrailBurst`).
 2. Export `{ id = "TrailBurst", attach, detach, step }` matching **SpeedGlow**.
 3. In **DodgeballBallVisualEffectsClient**, `require` the module and call `Registry.register(...)`.
-4. Optionally set `DEFAULT_BALL_VISUAL_EFFECT` in **DodgeballConfig** or set player/ball attributes (see [DodgeballBallVisualEffectsClient.md](../../DodgeballBallVisualEffectsClient/DodgeballBallVisualEffectsClient.md)).
+4. In `attach` / `step`, use **`context.effectColor`** (team thrower color or spectator fallback). See [BallVisualEffectColors.md](../BallVisualEffectColors/BallVisualEffectColors.md) — do not duplicate team lookup in the effect.
+5. Optionally set `DEFAULT_BALL_VISUAL_EFFECT` in **DodgeballConfig** or set player/ball attributes (see [DodgeballBallVisualEffectsClient.md](../../DodgeballBallVisualEffectsClient/DodgeballBallVisualEffectsClient.md)).

@@ -1,6 +1,6 @@
 # SpeedGlow
 
-**Purpose:** Subtle **Highlight** on dodgeball Parts when `AssemblyLinearVelocity` is at or above **`HIT_MIN_SPEED`** (from **DodgeballRemotes** attributes). Turns off with hysteresis so the ball does not flicker at the threshold.
+**Purpose:** Subtle **Highlight** on dodgeball Parts when `AssemblyLinearVelocity` is at or above **`HIT_MIN_SPEED`** (from **DodgeballRemotes** attributes). Turns off with hysteresis so the ball does not flicker at the threshold. **FillColor** / **OutlineColor** follow **`context.effectColor`** (thrower team or spectator white).
 
 ## Studio paste
 

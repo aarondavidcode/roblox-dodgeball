@@ -37,3 +37,4 @@ Explorer **instance names** must match the root README table. `require()` in Lua
 | [DodgeballBallVisualEffectsClient/](DodgeballBallVisualEffectsClient/DodgeballBallVisualEffectsClient.md) | [DodgeballBallVisualEffectsClient.md](DodgeballBallVisualEffectsClient/DodgeballBallVisualEffectsClient.md) |
 | [ballVisualEffects/BallVisualEffectRegistry/](ballVisualEffects/BallVisualEffectRegistry/BallVisualEffectRegistry.md) | Registry for client ball VFX modules |
 | [ballVisualEffects/SpeedGlow/](ballVisualEffects/SpeedGlow/SpeedGlow.md) | Default speed-threshold glow effect |
+| [ballVisualEffects/BallVisualEffectColors/](ballVisualEffects/BallVisualEffectColors/BallVisualEffectColors.md) | Team / spectator color resolution for VFX context |

@@ -17,12 +17,13 @@ Child modules (required):
 |--------|-----|
 | `ballVisualEffects/BallVisualEffectRegistry` | [BallVisualEffectRegistry.md](../ballVisualEffects/BallVisualEffectRegistry/BallVisualEffectRegistry.md) |
 | `ballVisualEffects/SpeedGlow` | [SpeedGlow.md](../ballVisualEffects/SpeedGlow/SpeedGlow.md) |
+| `ballVisualEffects/BallVisualEffectColors` | [BallVisualEffectColors.md](../ballVisualEffects/BallVisualEffectColors/BallVisualEffectColors.md) |
 
 ## Depends on (auto-created)
 
 | Object | Source |
 |--------|--------|
-| `ReplicatedStorage/DodgeballRemotes` | **DodgeballService** — attributes: `HIT_MIN_SPEED`, `DEFAULT_BALL_VISUAL_EFFECT`, `SPEED_GLOW_HYSTERESIS_FRACTION`, tag names, effect attribute names |
+| `ReplicatedStorage/DodgeballRemotes` | **DodgeballService** — attributes: `HIT_MIN_SPEED`, `DEFAULT_BALL_VISUAL_EFFECT`, `SPEED_GLOW_HYSTERESIS_FRACTION`, `BALL_VISUAL_EFFECT_SPECTATOR_COLOR`, tag names, effect attribute names |
 
 ## Which balls get effects
 
@@ -45,3 +46,15 @@ Not implemented on the server yet. Extension points in **DodgeballConfig**:
 **Client resolution order today:** ball override → thrower `LastThrowerUserId` player attribute → `DEFAULT_BALL_VISUAL_EFFECT`.
 
 When you wire the server, create the RemoteFunction, validate ids against the same registry list you register in this LocalScript, and set the player attribute.
+
+## Team-based effect color
+
+Built each frame in **BallVisualEffectColors** and passed on `EffectContext`:
+
+| Field | Meaning |
+|-------|---------|
+| `effectColor` | `thrower.Team.TeamColor.Color` when `LastThrowerUserId` points at a player on a team; else `BALL_VISUAL_EFFECT_SPECTATOR_COLOR` |
+| `teamName` | Explorer **Team** `.Name` when resolved; else `nil` |
+| `throwerUserId` | Attribute value when present; else `nil` |
+
+Works for any team names in Explorer — not tied to `TEAM_NAMES`. Re-throws update color when `LastThrowerUserId` changes (each **Heartbeat** `step`).

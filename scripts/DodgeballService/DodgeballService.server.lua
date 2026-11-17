@@ -222,6 +222,10 @@ local function publishClientTunables()
 	if typeof(playerEffectAttr) == "string" and playerEffectAttr ~= "" then
 		folder:SetAttribute("BALL_VISUAL_EFFECT_PLAYER_ATTR", playerEffectAttr)
 	end
+	local spectatorVfx = Config.BALL_VISUAL_EFFECT_SPECTATOR_COLOR
+	if typeof(spectatorVfx) == "Color3" then
+		folder:SetAttribute("BALL_VISUAL_EFFECT_SPECTATOR_COLOR", spectatorVfx)
+	end
 	-- Future: create RemoteFunction Config.SET_BALL_VISUAL_EFFECT_REMOTE_NAME to set
 	-- player:GetAttribute(BALL_VISUAL_EFFECT_PLAYER_ATTR) after validating against a server allow-list.
 end
