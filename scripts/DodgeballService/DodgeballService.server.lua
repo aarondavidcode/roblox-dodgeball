@@ -557,6 +557,12 @@ local function releaseBallForThrow(player: Player): BasePart?
 	ball.Parent = Workspace:FindFirstChild(Config.BALL_FOLDER_NAME) or Workspace
 	ball:SetAttribute("HolderUserId", nil)
 	heldByPlayer[player] = nil
+	-- Welded carry often assigns the ball to the client; server impulses only apply with server ownership.
+	if ball:CanSetNetworkOwnership() then
+		pcall(function()
+			ball:SetNetworkOwner(nil)
+		end)
+	end
 	ThrowerCollision.beginThrowerGrace(player, ball)
 	return ball
 end
@@ -631,9 +637,6 @@ local function throwBall(player: Player, lookDirection: Vector3, powerMultiplier
 
 	released.CanTouch = true
 	released.CanCollide = true
-	pcall(function()
-		released:SetNetworkOwner(nil)
-	end)
 
 	local throwSpeed = released:GetAttribute("LastThrowSpeed")
 	if typeof(throwSpeed) == "number" then

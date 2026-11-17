@@ -455,6 +455,11 @@ local function releaseBallForThrow(player: Player): BasePart?
 	ball.Parent = ensureBallFolder()
 	ball:SetAttribute("HolderUserId", nil)
 	heldByPlayer[player] = nil
+	if ball:CanSetNetworkOwnership() then
+		pcall(function()
+			ball:SetNetworkOwner(nil)
+		end)
+	end
 	ThrowerCollision.beginThrowerGrace(player, ball)
 	return ball
 end
@@ -582,9 +587,6 @@ local function throwLobbyBall(player: Player, lookDirection: Vector3, powerMulti
 
 	released:SetAttribute("LobbyIdleSince", nil)
 
-	pcall(function()
-		released:SetNetworkOwner(nil)
-	end)
 	startRecoverSweep(released)
 end
 
