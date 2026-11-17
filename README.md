@@ -12,7 +12,7 @@ The playable game is always your **Roblox place** (arena, teams, spawns). GitHub
 |--------|----------------|----------------|---------------|
 | Teams | `TeamAutoBalance`, `LobbyService` | — | `DodgeballConfig` |
 | Lobby and matches | `LobbyService`, `LobbyPracticeBallService` | `LobbyJoinNextMatchClient` | `DodgeballConfig` |
-| Dodgeballs | `DodgeballService`, `DodgeballBallTemplate`, `DodgeballThrowerCollision` | `DodgeballThrowInput` | `DodgeballConfig`, `throw/DefaultThrow` |
+| Dodgeballs | `DodgeballService`, `DodgeballBallTemplate`, `DodgeballThrowerCollision`, `BallPhysicsAutoSetup` | `DodgeballThrowInput`, `BallPhysicsClient` | `DodgeballConfig`, `throw/DefaultThrow`, `ReplicatedStorage/BallPhysics` |
 | Rounds | `RoundService` | `RoundStatusClient` (optional UI) | `DodgeballConfig` |
 
 **Typical flow:** Players wait on a **lobby spawn** → opt in to the next match → countdown → Red/Blue on arena pads → rounds until one team is all OUT → first to **3** round wins wins the match → back to lobby.
@@ -37,6 +37,11 @@ Copy from the `.lua` file in each folder under [scripts/](scripts/) on GitHub (*
 | [scripts/LobbyService/LobbyService.server.lua](scripts/LobbyService/LobbyService.server.lua) | `ServerScriptService/LobbyService` | Script | [LobbyService.md](scripts/LobbyService/LobbyService.md) |
 | [scripts/LobbyPracticeBallService/LobbyPracticeBallService.server.lua](scripts/LobbyPracticeBallService/LobbyPracticeBallService.server.lua) | `ServerScriptService/LobbyPracticeBallService` | Script | [LobbyPracticeBallService.md](scripts/LobbyPracticeBallService/LobbyPracticeBallService.md) |
 | [scripts/LobbyJoinNextMatchClient/LobbyJoinNextMatchClient.local.lua](scripts/LobbyJoinNextMatchClient/LobbyJoinNextMatchClient.local.lua) | `StarterPlayer/StarterPlayerScripts/LobbyJoinNextMatchClient` | LocalScript | [LobbyJoinNextMatchClient.md](scripts/LobbyJoinNextMatchClient/LobbyJoinNextMatchClient.md) |
+| [scripts/ball-physics/src/](scripts/ball-physics/) (v1.0.0) | `ReplicatedStorage/BallPhysics` (**ModuleScript** root + children) | Module tree | [ball-physics/README.md](scripts/ball-physics/README.md) |
+| [scripts/BallPhysicsAutoSetup/BallPhysicsAutoSetup.server.lua](scripts/BallPhysicsAutoSetup/BallPhysicsAutoSetup.server.lua) | `ServerScriptService/BallPhysicsAutoSetup` | Script | [BallPhysicsAutoSetup.md](scripts/BallPhysicsAutoSetup/BallPhysicsAutoSetup.md) |
+| [scripts/BallPhysicsClient/BallPhysicsClient.local.lua](scripts/BallPhysicsClient/BallPhysicsClient.local.lua) | `StarterPlayer/StarterPlayerScripts/BallPhysicsClient` | LocalScript | [BallPhysicsClient.md](scripts/BallPhysicsClient/BallPhysicsClient.md) |
+
+**Third-party:** [thaalish/ball-physics](https://github.com/thaalish/ball-physics) v1.0.0 (MIT) — vendored under `scripts/ball-physics/`.
 
 **Place setup you build (not in repo):** arena in `Workspace`, **Teams** named `Red` and `Blue`, team **SpawnLocations** with matching **TeamColor** and **Neutral** off, lobby **SpawnLocation** (**Neutral** on), folder `Workspace/Dodgeballs` with ball Parts, lobby practice **spawn volumes** tagged `LobbyBallSpawnVolume` (optional exclude zones). Details live in each script’s markdown above.
 

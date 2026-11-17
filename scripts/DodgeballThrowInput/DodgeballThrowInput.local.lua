@@ -564,6 +564,10 @@ local function fireThrow(powerRatio: number)
 		return
 	end
 	local power = math.clamp(powerRatio, 0.05, 1)
+	local folder = remotes
+	if folder and folder:GetAttribute("DEBUG_BALL_PHYSICS") == true and power >= 0.5 then
+		print(`[DodgeballBallPhysicsDebug] client throwFire power={string.format("%.2f", power)} dir={direction}`)
+	end
 	throwRemote:FireServer(direction, power)
 	endAimUi()
 	holdBallSince = nil

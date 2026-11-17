@@ -19,6 +19,7 @@ local Workspace = game:GetService("Workspace")
 local Config = require(ServerScriptService:WaitForChild("DodgeballConfig"))
 local BallTemplate = require(ServerScriptService:WaitForChild("DodgeballBallTemplate"))
 local ThrowerCollision = require(ServerScriptService:WaitForChild("DodgeballThrowerCollision"))
+local BallPhysicsDebug = require(ServerScriptService:WaitForChild("DodgeballBallPhysicsDebug"))
 
 -- Roblox only documents Players.CharacterAutoLoads (global). When false, the engine does not
 -- auto-call LoadCharacter after death; RespawnTime (default 5s) applies only while global is true.
@@ -204,6 +205,7 @@ local function publishClientTunables()
 	if typeof(practiceTag) == "string" and practiceTag ~= "" then
 		folder:SetAttribute("LOBBY_PRACTICE_BALL_TAG", practiceTag)
 	end
+	folder:SetAttribute("DEBUG_BALL_PHYSICS", Config.DEBUG_BALL_PHYSICS == true)
 end
 
 local throwRemote = getThrowRemote()
@@ -540,6 +542,15 @@ local function attachBallToPlayer(player: Player, ball: BasePart)
 	heldByPlayer[player] = ball
 	ball:SetAttribute("HolderUserId", player.UserId)
 	startHoldWatch(player)
+	local physicsTag = Config.BALL_PHYSICS_TAG
+	if typeof(physicsTag) ~= "string" or physicsTag == "" then
+		physicsTag = "PhysicsBall"
+	end
+	BallPhysicsDebug.log(
+		`pickup player={player.Name} ball={ball.Name} physicsTag={CollectionService:HasTag(ball, physicsTag)} owner={BallPhysicsDebug.formatNetworkOwner(
+			ball
+		)} massless={ball.Massless} weld=DodgeballHoldWeld`
+	)
 end
 
 local function releaseBallForThrow(player: Player): BasePart?
@@ -557,6 +568,21 @@ local function releaseBallForThrow(player: Player): BasePart?
 	ball.Parent = Workspace:FindFirstChild(Config.BALL_FOLDER_NAME) or Workspace
 	ball:SetAttribute("HolderUserId", nil)
 	heldByPlayer[player] = nil
+	local ownerBefore = BallPhysicsDebug.formatNetworkOwner(ball)
+	-- Welded carry often assigns the ball to the client; server impulses only apply with server ownership.
+	if ball:CanSetNetworkOwnership() then
+		pcall(function()
+			ball:SetNetworkOwner(nil)
+		end)
+	end
+	local ownerAfter = BallPhysicsDebug.formatNetworkOwner(ball)
+	local physicsTag = Config.BALL_PHYSICS_TAG
+	if typeof(physicsTag) ~= "string" or physicsTag == "" then
+		physicsTag = "PhysicsBall"
+	end
+	BallPhysicsDebug.log(
+		`release player={player.Name} ball={ball.Name} physicsTag={CollectionService:HasTag(ball, physicsTag)} ownerBefore={ownerBefore} ownerAfter={ownerAfter} massless={ball.Massless}`
+	)
 	ThrowerCollision.beginThrowerGrace(player, ball)
 	return ball
 end
@@ -631,8 +657,37 @@ local function throwBall(player: Player, lookDirection: Vector3, powerMultiplier
 
 	released.CanTouch = true
 	released.CanCollide = true
-	pcall(function()
-		released:SetNetworkOwner(nil)
+
+	local impulseMag = Config.THROW_IMPULSE * released.AssemblyMass * power
+	local spinRate = Config.THROW_SIDE_SPIN_RAD_PER_SEC
+	if typeof(spinRate) ~= "number" then
+		spinRate = 0
+	end
+	local spinMag = released.AssemblyAngularVelocity.Magnitude
+	BallPhysicsDebug.log(
+		`throw player={player.Name} power={string.format("%.2f", power)} impulseMag≈{string.format("%.1f", impulseMag)} spinConfig={spinRate} spinMag={string.format(
+			"%.2f",
+			spinMag
+		)} LastThrowSpeed={released:GetAttribute("LastThrowSpeed")} owner={BallPhysicsDebug.formatNetworkOwner(
+			released
+		)}`
+	)
+	local ballPhysicsEntry = ReplicatedStorage:FindFirstChild("BallPhysics")
+	if ballPhysicsEntry and ballPhysicsEntry:IsA("ModuleScript") then
+		local ok, bp = pcall(require, ballPhysicsEntry)
+		if ok and typeof(bp.isEffectEnabled) == "function" then
+			BallPhysicsDebug.log(
+				`effects magnus={bp.isEffectEnabled("MagnusForce")} knuckle={bp.isEffectEnabled("KnuckleBall")} antiGravity={bp.isEffectEnabled(
+					"AntiGravity"
+				)} angularDamping={bp.isEffectEnabled("AngularDamping")}`
+			)
+		end
+	end
+	local sampledBall = released
+	task.delay(2, function()
+		if sampledBall.Parent then
+			BallPhysicsDebug.logBallState(sampledBall, "throw+2s")
+		end
 	end)
 
 	local throwSpeed = released:GetAttribute("LastThrowSpeed")
@@ -771,6 +826,13 @@ local function hookBall(ball: BasePart)
 		return
 	end
 	BallTemplate.applyAppearance(ball)
+	local physicsTag = Config.BALL_PHYSICS_TAG
+	if typeof(physicsTag) ~= "string" or physicsTag == "" then
+		physicsTag = "PhysicsBall"
+	end
+	if BallPhysicsDebug.isEnabled() and not CollectionService:HasTag(ball, physicsTag) then
+		BallPhysicsDebug.warn(`arena hookBall missing physics tag tag={physicsTag} ball={ball:GetFullName()}`)
+	end
 	ball:SetAttribute("LastThrowTime", ball:GetAttribute("LastThrowTime") or 0)
 	ball:SetAttribute("LastThrowSpeed", ball:GetAttribute("LastThrowSpeed") or 0)
 	if ball:GetAttribute("InThrowWindow") == nil then

@@ -34,6 +34,18 @@ function DefaultThrow.throw(_self: typeof(DefaultThrow), context: ThrowContext)
 
 	ball:ApplyImpulse(impulse)
 
+	local spinRate = Config.THROW_SIDE_SPIN_RAD_PER_SEC
+	if typeof(spinRate) == "number" and spinRate ~= 0 then
+		local up = Vector3.yAxis
+		local sideAxis = direction:Cross(up)
+		if sideAxis.Magnitude < 0.05 then
+			sideAxis = direction:Cross(Vector3.xAxis)
+		end
+		if sideAxis.Magnitude > 0.01 then
+			ball.AssemblyAngularVelocity = sideAxis.Unit * spinRate * power
+		end
+	end
+
 	local now = workspace:GetServerTimeNow()
 	-- Impulse = direction * THROW_IMPULSE * mass * power → speed magnitude ≈ THROW_IMPULSE * power.
 	local estimatedSpeed = Config.THROW_IMPULSE * power

@@ -14,6 +14,7 @@ local Workspace = game:GetService("Workspace")
 local Config = require(ServerScriptService:WaitForChild("DodgeballConfig"))
 local BallTemplate = require(ServerScriptService:WaitForChild("DodgeballBallTemplate"))
 local ThrowerCollision = require(ServerScriptService:WaitForChild("DodgeballThrowerCollision"))
+local BallPhysicsDebug = require(ServerScriptService:WaitForChild("DodgeballBallPhysicsDebug"))
 
 local throwFolder = ServerScriptService:WaitForChild("throw")
 local DefaultThrow = require(throwFolder:WaitForChild("DefaultThrow"))
@@ -260,6 +261,17 @@ local function createLobbyBallAt(areaId: string, position: Vector3): BasePart
 	ball:SetAttribute("LobbyIdleSince", workspace:GetServerTimeNow())
 	CollectionService:AddTag(ball, Config.LOBBY_PRACTICE_BALL_TAG)
 	ball.Parent = folder
+	local physicsTag = Config.BALL_PHYSICS_TAG
+	if typeof(physicsTag) ~= "string" or physicsTag == "" then
+		physicsTag = "PhysicsBall"
+	end
+	if BallPhysicsDebug.isEnabled() then
+		if CollectionService:HasTag(ball, physicsTag) then
+			BallPhysicsDebug.log(`lobby spawn ball={ball.Name} physicsTag=true area={areaId}`)
+		else
+			BallPhysicsDebug.warn(`lobby spawn missing physics tag={physicsTag} ball={ball.Name}`)
+		end
+	end
 	return ball
 end
 
@@ -437,6 +449,15 @@ local function attachBallToPlayer(player: Player, ball: BasePart)
 	heldByPlayer[player] = ball
 	ball:SetAttribute("HolderUserId", player.UserId)
 	ball:SetAttribute("LobbyIdleSince", nil)
+	local physicsTag = Config.BALL_PHYSICS_TAG
+	if typeof(physicsTag) ~= "string" or physicsTag == "" then
+		physicsTag = "PhysicsBall"
+	end
+	BallPhysicsDebug.log(
+		`lobby pickup player={player.Name} ball={ball.Name} physicsTag={CollectionService:HasTag(ball, physicsTag)} owner={BallPhysicsDebug.formatNetworkOwner(
+			ball
+		)} massless={ball.Massless} weld=DodgeballHoldWeld`
+	)
 	-- Lobby practice: no match hold timer / roll-away penalty.
 end
 
@@ -455,6 +476,20 @@ local function releaseBallForThrow(player: Player): BasePart?
 	ball.Parent = ensureBallFolder()
 	ball:SetAttribute("HolderUserId", nil)
 	heldByPlayer[player] = nil
+	local ownerBefore = BallPhysicsDebug.formatNetworkOwner(ball)
+	if ball:CanSetNetworkOwnership() then
+		pcall(function()
+			ball:SetNetworkOwner(nil)
+		end)
+	end
+	local ownerAfter = BallPhysicsDebug.formatNetworkOwner(ball)
+	local physicsTag = Config.BALL_PHYSICS_TAG
+	if typeof(physicsTag) ~= "string" or physicsTag == "" then
+		physicsTag = "PhysicsBall"
+	end
+	BallPhysicsDebug.log(
+		`lobby release player={player.Name} ball={ball.Name} physicsTag={CollectionService:HasTag(ball, physicsTag)} ownerBefore={ownerBefore} ownerAfter={ownerAfter} massless={ball.Massless}`
+	)
 	ThrowerCollision.beginThrowerGrace(player, ball)
 	return ball
 end
@@ -582,9 +617,27 @@ local function throwLobbyBall(player: Player, lookDirection: Vector3, powerMulti
 
 	released:SetAttribute("LobbyIdleSince", nil)
 
-	pcall(function()
-		released:SetNetworkOwner(nil)
+	local power = powerMultiplier
+	if typeof(power) ~= "number" then
+		power = 1
+	end
+	power = math.clamp(power, 0.05, 1)
+	local impulseMag = Config.THROW_IMPULSE * released.AssemblyMass * power
+	BallPhysicsDebug.log(
+		`lobby throw player={player.Name} power={string.format("%.2f", power)} impulseMag≈{string.format(
+			"%.1f",
+			impulseMag
+		)} spinMag={string.format("%.2f", released.AssemblyAngularVelocity.Magnitude)} LastThrowSpeed={released:GetAttribute(
+			"LastThrowSpeed"
+		)} owner={BallPhysicsDebug.formatNetworkOwner(released)}`
+	)
+	local sampledBall = released
+	task.delay(2, function()
+		if sampledBall.Parent then
+			BallPhysicsDebug.logBallState(sampledBall, "lobby throw+2s")
+		end
 	end)
+
 	startRecoverSweep(released)
 end
 

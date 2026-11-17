@@ -1,0 +1,27 @@
+# BallPhysicsAutoSetup
+
+**Purpose:** Server-side tracker for [ball-physics](../ball-physics/README.md). Creates a `BallPhysics.new(ball)` handler for every dodgeball Part tagged with **`BALL_PHYSICS_TAG`** (default `PhysicsBall`).
+
+## Explorer
+
+| Object | Path | Type |
+|--------|------|------|
+| `BallPhysics` | `ReplicatedStorage/BallPhysics` | **ModuleScript** entry (children Config/Effects/Runtime) — **not a Folder** — see [ball-physics README](../ball-physics/README.md) |
+| `BallPhysicsAutoSetup` | `ServerScriptService/BallPhysicsAutoSetup` | **Script** |
+| `DodgeballConfig` | `ServerScriptService/DodgeballConfig` | **ModuleScript** (tuning + tag name) |
+
+Paste from [BallPhysicsAutoSetup.server.lua](./BallPhysicsAutoSetup.server.lua).
+
+**Load order:** Paste **`DodgeballConfig`** and the **`BallPhysics`** modules first, then this Script. It runs once at startup and applies `BALL_PHYSICS_*` keys onto the library `Config` before tracking any balls.
+
+## What you build
+
+Nothing extra. **DodgeballBallTemplate** adds the physics tag when balls are created or refreshed; arena balls get it on **DodgeballService** load via `applyAppearance`.
+
+## Config
+
+All **`BALL_PHYSICS_*`** and **`BALL_PHYSICS_TAG`** keys in [DodgeballConfig.md](../DodgeballConfig/DodgeballConfig.md).
+
+## Thrower no-collide
+
+Paste **`DodgeballThrowerCollision`** (on `main`) alongside this setup. Both touch throws; update **DodgeballConfig**, **DodgeballBallTemplate**, and throw services together before play-testing.

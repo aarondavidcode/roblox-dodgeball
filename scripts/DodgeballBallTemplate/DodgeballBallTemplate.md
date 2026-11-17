@@ -22,13 +22,13 @@ Nothing beyond **DodgeballConfig** tuning. Arena ball Parts still live under `Wo
 
 | Function | Role |
 |----------|------|
-| `applyAppearance(part)` | Set shape, size, color, material, physical properties from config |
+| `applyAppearance(part)` | Set shape, size, color, material, physical properties from config; adds **`BALL_PHYSICS_TAG`** for BallPhysics tracking; assigns ball **PhysicsService** collision group via **DodgeballThrowerCollision** |
 | `createPart()` | New `Part` with defaults + appearance (not parented) |
 | `halfHeight()` | `BALL_DIAMETER / 2` for spawn offsets |
 
 ## Config knobs
 
-All **`BALL_*`** keys in [DodgeballConfig.md](../DodgeballConfig/DodgeballConfig.md) — not lobby spawn tags or counts.
+All **`BALL_*`** keys in [DodgeballConfig.md](../DodgeballConfig/DodgeballConfig.md) — not lobby spawn tags or counts. **`BALL_PHYSICS_TAG`** (default `PhysicsBall`) is separate from arena **`DODGEBALL_TAG`**.
 
 ## What not to build
 

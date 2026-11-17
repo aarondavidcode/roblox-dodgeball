@@ -2,6 +2,8 @@
 
 **Purpose:** One shared table of numbers and names for dodgeball, rounds, and lobby flow. Every server script and the throw module `require` this ModuleScript. Change tuning here instead of editing multiple scripts.
 
+**Repo defaults:** lighter foam-style flight — e.g. `PICKUP_MAX_SPEED` 15, `THROW_IMPULSE` 150, `AIM_POWER_CHARGE_SECONDS` 1, `BALL_MAX_HOLD_SECONDS` 10, `BALL_PHYSICAL_DENSITY` 0.3, stronger Magnus / anti-gravity and higher throw spin. Debug flags default **off** (`DEBUG_BALL_PHYSICS`, `BALL_PHYSICS_DEBUG_ENABLED`). For local Studio diagnostics, set `DEBUG_BALL_PHYSICS = true` here, or `DodgeballRemotes` attribute `DEBUG_BALL_PHYSICS = true` at runtime — see [DodgeballBallPhysicsDebug.md](../DodgeballBallPhysicsDebug/DodgeballBallPhysicsDebug.md).
+
 ## Explorer
 
 | Object | Path | Type |
@@ -42,6 +44,8 @@ Paste from [DodgeballConfig.lua](./DodgeballConfig.lua).
 | `THROWER_BALL_NOCOLLIDE_SECONDS` | Grace after throw/hold roll where thrower does not collide with balls (`0` = off); see [DodgeballThrowerCollision.md](../DodgeballThrowerCollision/DodgeballThrowerCollision.md) |
 | `BALL_FOLDER_NAME`, `DODGEBALL_TAG` | Where balls live and optional tag |
 | `BALL_DIAMETER`, `BALL_COLOR`, `BALL_MATERIAL`, `BALL_PART_NAME`, `BALL_PHYSICAL_*` | Shared look/physics for arena + lobby practice ([DodgeballBallTemplate.md](../DodgeballBallTemplate/DodgeballBallTemplate.md)) |
+| `BALL_PHYSICS_TAG`, `BALL_PHYSICS_*` | Vendored [BallPhysics](../ball-physics/README.md) — magnus, knuckle, damping, anti-gravity; applied by **BallPhysicsAutoSetup** |
+| `THROW_SIDE_SPIN_RAD_PER_SEC` | Initial spin on aimed throws (pairs with Magnus) — see [DefaultThrow.md](../throw/DefaultThrow/DefaultThrow.md) |
 | `PICKUP_MAX_SPEED`, `THROW_IMPULSE`, `CARRY_OFFSET`, `PICKUP_COOLDOWN_SECONDS`, aim/hold keys | Shared pickup, throw, and carry feel (arena + lobby) |
 | `ACTIVE_THROW_PROFILE` | Module name under `ServerScriptService/throw/` (default `Default`) |
 | `REMOTES_FOLDER_NAME`, `THROW_REMOTE_NAME` | Remote folder and throw event names |
@@ -52,8 +56,9 @@ Paste from [DodgeballConfig.lua](./DodgeballConfig.lua).
 | `LOBBY_SPAWN_NAME`, `LOBBY_SPAWN_TAG` | How **LobbyService** finds the lobby pad |
 | `JOIN_NEXT_MATCH_ATTR`, `SET_JOIN_NEXT_MATCH_REMOTE_NAME` | Opt-in queue |
 | `DEBUG_ELIMINATION` | Extra **Output** when hits do not eliminate |
+| `DEBUG_BALL_PHYSICS` | `[DodgeballBallPhysicsDebug]` Output — see [DodgeballBallPhysicsDebug.md](../DodgeballBallPhysicsDebug/DodgeballBallPhysicsDebug.md) (or set `DodgeballRemotes` attribute `DEBUG_BALL_PHYSICS` at runtime) |
 | `LOBBY_BALL_*` (not `BALL_*`) | Lobby-only: spawn folder, volume/exclude tags, min/max per area, idle timeout, maintenance interval, `LOBBY_PRACTICE_BALL_ATTR` — see [LobbyPracticeBallService.md](../LobbyPracticeBallService/LobbyPracticeBallService.md) |
 
 ## Related scripts
 
-Requires nothing at load time. Required by **TeamAutoBalance**, **DodgeballBallTemplate**, **DodgeballThrowerCollision**, **DodgeballService**, **LobbyPracticeBallService**, **RoundService**, **LobbyService**, **DefaultThrow**, and indirectly by client scripts (names must stay in sync).
+Requires nothing at load time. Required by **TeamAutoBalance**, **DodgeballBallTemplate**, **DodgeballThrowerCollision**, **DodgeballService**, **LobbyPracticeBallService**, **RoundService**, **LobbyService**, **DefaultThrow**, **BallPhysicsAutoSetup**, and indirectly by client scripts (names must stay in sync).

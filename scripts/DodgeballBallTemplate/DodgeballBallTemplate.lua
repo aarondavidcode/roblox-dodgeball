@@ -4,10 +4,12 @@
 
 --!strict
 
+local CollectionService = game:GetService("CollectionService")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 local Config = require(ServerScriptService:WaitForChild("DodgeballConfig"))
 local ThrowerCollision = require(ServerScriptService:WaitForChild("DodgeballThrowerCollision"))
+local BallPhysicsDebug = require(ServerScriptService:WaitForChild("DodgeballBallPhysicsDebug"))
 
 local DodgeballBallTemplate = {}
 
@@ -17,6 +19,27 @@ local function ballDiameter(): number
 		return 2.5
 	end
 	return d
+end
+
+local function physicsTag(): string
+	local tag = Config.BALL_PHYSICS_TAG
+	if typeof(tag) ~= "string" or tag == "" then
+		return "PhysicsBall"
+	end
+	return tag
+end
+
+local function ensurePhysicsTrackingTag(part: BasePart)
+	local tag = physicsTag()
+	local hadTag = CollectionService:HasTag(part, tag)
+	if not hadTag then
+		CollectionService:AddTag(part, tag)
+	end
+	if BallPhysicsDebug.isEnabled() then
+		BallPhysicsDebug.log(
+			`tagApply ball={part.Name} tag={tag} hasTag={CollectionService:HasTag(part, tag)} addedNow={not hadTag}`
+		)
+	end
 end
 
 local function applyPhysicalProperties(part: BasePart)
@@ -46,6 +69,7 @@ function DodgeballBallTemplate.applyAppearance(part: BasePart)
 	end
 
 	applyPhysicalProperties(part)
+	ensurePhysicsTrackingTag(part)
 	ThrowerCollision.assignBallCollisionGroup(part)
 end
 
