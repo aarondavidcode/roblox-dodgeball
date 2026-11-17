@@ -9,6 +9,7 @@ local ServerScriptService = game:GetService("ServerScriptService")
 
 local Config = require(ServerScriptService:WaitForChild("DodgeballConfig"))
 local ThrowerCollision = require(ServerScriptService:WaitForChild("DodgeballThrowerCollision"))
+local BallPhysicsDebug = require(ServerScriptService:WaitForChild("DodgeballBallPhysicsDebug"))
 
 local DodgeballBallTemplate = {}
 
@@ -30,8 +31,14 @@ end
 
 local function ensurePhysicsTrackingTag(part: BasePart)
 	local tag = physicsTag()
-	if not CollectionService:HasTag(part, tag) then
+	local hadTag = CollectionService:HasTag(part, tag)
+	if not hadTag then
 		CollectionService:AddTag(part, tag)
+	end
+	if BallPhysicsDebug.isEnabled() then
+		BallPhysicsDebug.log(
+			`tagApply ball={part.Name} tag={tag} hasTag={CollectionService:HasTag(part, tag)} addedNow={not hadTag}`
+		)
 	end
 end
 

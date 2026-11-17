@@ -9,8 +9,15 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 local DodgeballConfig = require(ServerScriptService:WaitForChild("DodgeballConfig"))
+local BallPhysicsDebug = require(ServerScriptService:WaitForChild("DodgeballBallPhysicsDebug"))
 
-local ballPhysicsModule = ReplicatedStorage:WaitForChild("BallPhysics")
+local ballPhysicsModule = ReplicatedStorage:FindFirstChild("BallPhysics")
+if not ballPhysicsModule then
+	if BallPhysicsDebug.isEnabled() then
+		BallPhysicsDebug.warn("BallPhysics module missing under ReplicatedStorage — paste vendored tree")
+	end
+	ballPhysicsModule = ReplicatedStorage:WaitForChild("BallPhysics")
+end
 local BallPhysics = require(ballPhysicsModule)
 local PhysicsConfig = require(ballPhysicsModule:WaitForChild("Config"))
 
@@ -83,6 +90,22 @@ end
 
 applyDodgeballTuning()
 
+if BallPhysicsDebug.isEnabled() then
+	BallPhysicsDebug.log("AutoSetup running")
+	BallPhysicsDebug.log(
+		`configEffects magnus={PhysicsConfig.magnus.enabled} knuckle={PhysicsConfig.knuckleball.enabled} antiGravity={PhysicsConfig.antiGravity.enabled} angularDamping={PhysicsConfig.angularDamping.enabled} ballTag={PhysicsConfig.ballTag}`
+	)
+	local starterPlayer = game:GetService("StarterPlayer")
+	local starterScripts = starterPlayer:FindFirstChild("StarterPlayerScripts")
+	if not starterScripts or not starterScripts:FindFirstChild("BallPhysicsClient") then
+		BallPhysicsDebug.warn("BallPhysicsClient LocalScript missing under StarterPlayerScripts")
+	end
+	local autoSetupSelf = ServerScriptService:FindFirstChild("BallPhysicsAutoSetup")
+	if not autoSetupSelf or not autoSetupSelf:IsA("Script") then
+		BallPhysicsDebug.warn("BallPhysicsAutoSetup Script missing under ServerScriptService")
+	end
+end
+
 local handlers: { [BasePart]: ServerHandle } = {}
 
 local function track(instance: Instance)
@@ -97,11 +120,19 @@ local function track(instance: Instance)
 		return
 	end
 
+	local tagName = physicsTag()
+	local hasTag = CollectionService:HasTag(ball, tagName)
+	if BallPhysicsDebug.isEnabled() and not hasTag then
+		BallPhysicsDebug.warn(`track ball={ball:GetFullName()} missing tag={tagName} — handler may never run`)
+	end
+
 	local success, result = pcall(BallPhysics.new, ball)
 	if success then
 		handlers[ball] = result :: ServerHandle
+		BallPhysicsDebug.log(`handler created ball={ball.Name} hasTag={hasTag}`)
 	else
 		warn("[BallPhysicsAutoSetup] failed to track", ball, "-", result)
+		BallPhysicsDebug.warn(`handler failed ball={ball.Name} err={tostring(result)}`)
 	end
 end
 
@@ -114,6 +145,7 @@ local function untrack(instance: Instance)
 	if handler then
 		handler:Destroy()
 		handlers[ball] = nil
+		BallPhysicsDebug.log(`handler destroyed ball={ball.Name}`)
 	end
 end
 

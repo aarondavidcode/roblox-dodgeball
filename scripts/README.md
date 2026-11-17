@@ -33,3 +33,4 @@ Explorer **instance names** must match the root README table. `require()` in Lua
 | [ball-physics/](ball-physics/README.md) | Vendored **BallPhysics** v1.0.0 module tree → `ReplicatedStorage/BallPhysics` |
 | [BallPhysicsAutoSetup/](BallPhysicsAutoSetup/BallPhysicsAutoSetup.md) | [BallPhysicsAutoSetup.md](BallPhysicsAutoSetup/BallPhysicsAutoSetup.md) |
 | [BallPhysicsClient/](BallPhysicsClient/BallPhysicsClient.md) | [BallPhysicsClient.md](BallPhysicsClient/BallPhysicsClient.md) |
+| [DodgeballBallPhysicsDebug/](DodgeballBallPhysicsDebug/DodgeballBallPhysicsDebug.md) | [DodgeballBallPhysicsDebug.md](DodgeballBallPhysicsDebug/DodgeballBallPhysicsDebug.md) |

@@ -54,6 +54,7 @@ Paste from [DodgeballConfig.lua](./DodgeballConfig.lua).
 | `LOBBY_SPAWN_NAME`, `LOBBY_SPAWN_TAG` | How **LobbyService** finds the lobby pad |
 | `JOIN_NEXT_MATCH_ATTR`, `SET_JOIN_NEXT_MATCH_REMOTE_NAME` | Opt-in queue |
 | `DEBUG_ELIMINATION` | Extra **Output** when hits do not eliminate |
+| `DEBUG_BALL_PHYSICS` | `[DodgeballBallPhysicsDebug]` Output — see [DodgeballBallPhysicsDebug.md](../DodgeballBallPhysicsDebug/DodgeballBallPhysicsDebug.md) (or set `DodgeballRemotes` attribute `DEBUG_BALL_PHYSICS` at runtime) |
 | `LOBBY_BALL_*` (not `BALL_*`) | Lobby-only: spawn folder, volume/exclude tags, min/max per area, idle timeout, maintenance interval, `LOBBY_PRACTICE_BALL_ATTR` — see [LobbyPracticeBallService.md](../LobbyPracticeBallService/LobbyPracticeBallService.md) |
 
 ## Related scripts

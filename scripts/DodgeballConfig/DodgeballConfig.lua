@@ -113,6 +113,9 @@ local DodgeballConfig = {
 	-- When true, warn in Output why a throw hit did not eliminate someone (for debugging).
 	DEBUG_ELIMINATION = false,
 
+	-- Temporary: tagged Output lines for BallPhysics wiring (see DodgeballBallPhysicsDebug.md).
+	DEBUG_BALL_PHYSICS = false,
+
 	-- === Round reset — change these to tune between-round pacing ===
 
 	-- Team names must match Explorer → Teams (same as TeamAutoBalance).
