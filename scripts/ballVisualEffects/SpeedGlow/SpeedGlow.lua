@@ -40,18 +40,48 @@ local stateByBall: { [BasePart]: State } = {}
 
 local Registry = require(script.Parent:WaitForChild("BallVisualEffectRegistry"))
 local BallVisualEffectColors = require(script.Parent:WaitForChild("BallVisualEffectColors"))
+local RemoteDefaults = require(script.Parent:WaitForChild("BallVisualEffectRemoteDefaults"))
+
+local function resolveSpeedGlow(context: Registry.EffectContext): Registry.SpeedGlowTunables
+	local sg = context.speedGlow
+	local fillT = RemoteDefaults.SPEED_GLOW_FILL_TRANSPARENCY
+	local outlineT = RemoteDefaults.SPEED_GLOW_OUTLINE_TRANSPARENCY
+	local minLum = RemoteDefaults.SPEED_GLOW_MIN_OUTLINE_LUMINANCE
+	local paleOutline = RemoteDefaults.SPEED_GLOW_SPECTATOR_OUTLINE_COLOR
+	if sg then
+		if typeof(sg.fillTransparency) == "number" then
+			fillT = sg.fillTransparency
+		end
+		if typeof(sg.outlineTransparency) == "number" then
+			outlineT = sg.outlineTransparency
+		end
+		if typeof(sg.minOutlineLuminance) == "number" then
+			minLum = sg.minOutlineLuminance
+		end
+		if typeof(sg.spectatorOutlineColor) == "Color3" then
+			paleOutline = sg.spectatorOutlineColor
+		end
+	end
+	return {
+		fillTransparency = fillT,
+		outlineTransparency = outlineT,
+		minOutlineLuminance = minLum,
+		spectatorOutlineColor = paleOutline,
+	}
+end
 
 local function applyColors(state: State, context: Registry.EffectContext, glowing: boolean)
+	local speedGlow = resolveSpeedGlow(context)
 	local glowOpts: BallVisualEffectColors.GlowColorOptions = {
-		minOutlineLuminance = context.speedGlow.minOutlineLuminance,
-		paleOutline = context.speedGlow.spectatorOutlineColor,
+		minOutlineLuminance = speedGlow.minOutlineLuminance,
+		paleOutline = speedGlow.spectatorOutlineColor,
 	}
 	local fill, outline = BallVisualEffectColors.colorsForGlow(context.effectColor, glowOpts)
 	state.highlight.FillColor = fill
 	state.highlight.OutlineColor = outline
 	if glowing then
-		state.highlight.FillTransparency = context.speedGlow.fillTransparency
-		state.highlight.OutlineTransparency = context.speedGlow.outlineTransparency
+		state.highlight.FillTransparency = speedGlow.fillTransparency
+		state.highlight.OutlineTransparency = speedGlow.outlineTransparency
 	end
 end
 
@@ -177,8 +207,12 @@ function SpeedGlow.getDebugSnapshot(ball: BasePart, context: Registry.EffectCont
 		adorneeName = state.adornee.Name,
 		shellExists = shellPart ~= nil and shellPart.Parent ~= nil,
 		shellSize = shellSize,
-		fillTransparency = state.highlight.FillTransparency,
-		outlineTransparency = state.highlight.OutlineTransparency,
+		fillTransparency = if typeof(state.highlight.FillTransparency) == "number"
+			then state.highlight.FillTransparency
+			else 1,
+		outlineTransparency = if typeof(state.highlight.OutlineTransparency) == "number"
+			then state.highlight.OutlineTransparency
+			else 1,
 		depthMode = tostring(state.highlight.DepthMode),
 	}
 end

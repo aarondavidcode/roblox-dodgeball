@@ -20,6 +20,7 @@ Child modules (required):
 | `ballVisualEffects/BallVisualEffectColors` | [BallVisualEffectColors.md](../ballVisualEffects/BallVisualEffectColors/BallVisualEffectColors.md) |
 | `ballVisualEffects/BallVisualEffectShell` | [BallVisualEffectShell.md](../ballVisualEffects/BallVisualEffectShell/BallVisualEffectShell.md) |
 | `ballVisualEffects/DodgeballBallVisualEffectsDebug` | [DodgeballBallVisualEffectsDebug.md](../DodgeballBallVisualEffectsDebug/DodgeballBallVisualEffectsDebug.md) |
+| `ballVisualEffects/BallVisualEffectRemoteDefaults` | [BallVisualEffectRemoteDefaults.md](../ballVisualEffects/BallVisualEffectRemoteDefaults/BallVisualEffectRemoteDefaults.md) |
 
 ## Depends on (auto-created)
 

@@ -25,6 +25,17 @@ Paste from [DodgeballBallVisualEffectsConfig.lua](./DodgeballBallVisualEffectsCo
 
 **Future shell scales:** add `BALL_VISUAL_EFFECT_<EFFECTID>_SHELL_DIAMETER_SCALE` in this module, mirror in **DodgeballService** `publishClientTunables`, read in **DodgeballBallVisualEffectsClient**.
 
+## Checklist after editing this file
+
+1. Re-paste **`ServerScriptService/DodgeballBallVisualEffectsConfig`** (this module).
+2. Re-paste **`ServerScriptService/DodgeballService`** so `publishClientTunables` mirrors new keys on **DodgeballRemotes**.
+3. If defaults changed, update **`ballVisualEffects/BallVisualEffectRemoteDefaults`** on the client (same numbers).
+4. **Play** (or re-publish) so the server runs the updated service once.
+
+## Remotes attributes mirrored (SpeedGlow)
+
+`DEFAULT_BALL_VISUAL_EFFECT`, `SPEED_GLOW_HYSTERESIS_FRACTION`, `SPEED_GLOW_SHELL_DIAMETER_SCALE`, `SPEED_GLOW_FILL_TRANSPARENCY`, `SPEED_GLOW_OUTLINE_TRANSPARENCY`, `SPEED_GLOW_MIN_OUTLINE_LUMINANCE`, `SPEED_GLOW_SPECTATOR_OUTLINE_COLOR`, `BALL_VISUAL_EFFECT_SPECTATOR_COLOR`, `BALL_VISUAL_EFFECT_BALL_ATTR`, `BALL_VISUAL_EFFECT_PLAYER_ATTR`
+
 ## Related
 
 | Script | Role |

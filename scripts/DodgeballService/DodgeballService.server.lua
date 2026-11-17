@@ -211,18 +211,13 @@ local function publishClientTunables()
 	folder:SetAttribute("DEBUG_BALL_VISUAL_EFFECTS", DebugConfig.DEBUG_BALL_VISUAL_EFFECTS == true)
 	folder:SetAttribute("HIT_MIN_SPEED", Config.HIT_MIN_SPEED)
 	folder:SetAttribute("DEFAULT_BALL_VISUAL_EFFECT", VisualEffectsConfig.DEFAULT_BALL_VISUAL_EFFECT)
+	-- SpeedGlow + VFX (full mirror from DodgeballBallVisualEffectsConfig — re-paste this script when that module changes)
 	folder:SetAttribute("SPEED_GLOW_HYSTERESIS_FRACTION", VisualEffectsConfig.SPEED_GLOW_HYSTERESIS_FRACTION)
-	local speedGlowShellScale = VisualEffectsConfig.SPEED_GLOW_SHELL_DIAMETER_SCALE
-	if typeof(speedGlowShellScale) == "number" and speedGlowShellScale > 0 then
-		folder:SetAttribute("SPEED_GLOW_SHELL_DIAMETER_SCALE", speedGlowShellScale)
-	end
+	folder:SetAttribute("SPEED_GLOW_SHELL_DIAMETER_SCALE", VisualEffectsConfig.SPEED_GLOW_SHELL_DIAMETER_SCALE)
 	folder:SetAttribute("SPEED_GLOW_FILL_TRANSPARENCY", VisualEffectsConfig.SPEED_GLOW_FILL_TRANSPARENCY)
 	folder:SetAttribute("SPEED_GLOW_OUTLINE_TRANSPARENCY", VisualEffectsConfig.SPEED_GLOW_OUTLINE_TRANSPARENCY)
 	folder:SetAttribute("SPEED_GLOW_MIN_OUTLINE_LUMINANCE", VisualEffectsConfig.SPEED_GLOW_MIN_OUTLINE_LUMINANCE)
-	local spectatorOutline = VisualEffectsConfig.SPEED_GLOW_SPECTATOR_OUTLINE_COLOR
-	if typeof(spectatorOutline) == "Color3" then
-		folder:SetAttribute("SPEED_GLOW_SPECTATOR_OUTLINE_COLOR", spectatorOutline)
-	end
+	folder:SetAttribute("SPEED_GLOW_SPECTATOR_OUTLINE_COLOR", VisualEffectsConfig.SPEED_GLOW_SPECTATOR_OUTLINE_COLOR)
 	folder:SetAttribute("DODGEBALL_TAG", Config.DODGEBALL_TAG)
 	local physicsTag = Config.BALL_PHYSICS_TAG
 	if typeof(physicsTag) == "string" and physicsTag ~= "" then

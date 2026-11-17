@@ -42,6 +42,8 @@ On first run the service can create an **empty** `Dodgeballs` folder and warn in
 
 **LobbyPracticeBallService** also listens on `RequestThrow` / `StartAiming` for players holding lobby practice balls (see [LobbyPracticeBallService.md](../LobbyPracticeBallService/LobbyPracticeBallService.md)). Arena ball logic in this script is unchanged.
 
+**VFX config:** After you change **DodgeballBallVisualEffectsConfig**, you **must re-paste this script** (or restart play with updated source) so **DodgeballRemotes** gets all `SPEED_GLOW_*` and related attributes. Clients fall back to **BallVisualEffectRemoteDefaults** when attrs are missing, but a stale service paste is the usual cause of `nil` tunables in Output.
+
 ## Config knobs (most used)
 
 | Key | Role |

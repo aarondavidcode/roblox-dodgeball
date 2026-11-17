@@ -15,6 +15,7 @@ local effectsFolder = script.Parent:WaitForChild("ballVisualEffects")
 local Registry = require(effectsFolder:WaitForChild("BallVisualEffectRegistry"))
 local BallVisualEffectColors = require(effectsFolder:WaitForChild("BallVisualEffectColors"))
 local VisualEffectsDebug = require(effectsFolder:WaitForChild("DodgeballBallVisualEffectsDebug"))
+local RemoteDefaults = require(effectsFolder:WaitForChild("BallVisualEffectRemoteDefaults"))
 local SpeedGlow = require(effectsFolder:WaitForChild("SpeedGlow"))
 
 Registry.register(SpeedGlow)
@@ -31,19 +32,19 @@ local throwDebugWired: { [BasePart]: boolean } = {}
 local lastThrowSampleTime: { [BasePart]: number } = {}
 
 local hitMinSpeed = 25
-local speedGlowHysteresisFraction = 0.92
-local defaultEffectId = "SpeedGlow"
+local speedGlowHysteresisFraction = RemoteDefaults.SPEED_GLOW_HYSTERESIS_FRACTION
+local defaultEffectId = RemoteDefaults.DEFAULT_BALL_VISUAL_EFFECT
 local dodgeballTag = "Dodgeball"
 local lobbyPracticeTag = "LobbyPracticeBall"
 local physicsBallTag = "PhysicsBall"
 local ballEffectAttr = "BallVisualEffectId"
 local playerEffectAttr = "BallVisualEffect"
-local spectatorColor = Color3.fromRGB(255, 255, 255)
-local speedGlowShellDiameterScale = 1.4
-local speedGlowFillTransparency = 0.55
-local speedGlowOutlineTransparency = 0.12
-local speedGlowMinOutlineLuminance = 0.4
-local speedGlowSpectatorOutlineColor = Color3.fromRGB(200, 220, 255)
+local spectatorColor = RemoteDefaults.BALL_VISUAL_EFFECT_SPECTATOR_COLOR
+local speedGlowShellDiameterScale = RemoteDefaults.SPEED_GLOW_SHELL_DIAMETER_SCALE
+local speedGlowFillTransparency = RemoteDefaults.SPEED_GLOW_FILL_TRANSPARENCY
+local speedGlowOutlineTransparency = RemoteDefaults.SPEED_GLOW_OUTLINE_TRANSPARENCY
+local speedGlowMinOutlineLuminance = RemoteDefaults.SPEED_GLOW_MIN_OUTLINE_LUMINANCE
+local speedGlowSpectatorOutlineColor = RemoteDefaults.SPEED_GLOW_SPECTATOR_OUTLINE_COLOR
 
 local remotes: Folder? = nil
 
@@ -226,10 +227,13 @@ local function makeContext(ball: BasePart, effectId: string): Registry.EffectCon
 			diameterScale = shellScale,
 		},
 		speedGlow = {
-			fillTransparency = speedGlowFillTransparency,
-			outlineTransparency = speedGlowOutlineTransparency,
-			minOutlineLuminance = speedGlowMinOutlineLuminance,
-			spectatorOutlineColor = speedGlowSpectatorOutlineColor,
+			fillTransparency = readOpacityAttr("SPEED_GLOW_FILL_TRANSPARENCY", speedGlowFillTransparency),
+			outlineTransparency = readOpacityAttr("SPEED_GLOW_OUTLINE_TRANSPARENCY", speedGlowOutlineTransparency),
+			minOutlineLuminance = readOpacityAttr("SPEED_GLOW_MIN_OUTLINE_LUMINANCE", speedGlowMinOutlineLuminance),
+			spectatorOutlineColor = readColor3Attr(
+				"SPEED_GLOW_SPECTATOR_OUTLINE_COLOR",
+				speedGlowSpectatorOutlineColor
+			),
 		},
 	}
 end
@@ -262,6 +266,13 @@ local function resolveEffectId(ball: BasePart): string
 	return defaultEffectId
 end
 
+local function formatNum(value: number?, fallback: number): string
+	if typeof(value) == "number" then
+		return string.format("%.2f", value)
+	end
+	return string.format("%.2f", fallback)
+end
+
 logThrowSample = function(ball: BasePart, label: string)
 	if not VisualEffectsDebug.isEnabled() then
 		return
@@ -278,15 +289,16 @@ logThrowSample = function(ball: BasePart, label: string)
 	local glowLine = if snap
 		then (function()
 			if snap.shouldGlow or snap.highlightEnabled then
-				renderLine = ` fillTrans={string.format("%.2f", snap.fillTransparency)} outlineTrans={string.format(
-					"%.2f",
-					snap.outlineTransparency
-				)} depthMode={snap.depthMode}`
+				renderLine =
+					` fillTrans={formatNum(snap.fillTransparency, speedGlowFillTransparency)} outlineTrans={formatNum(
+						snap.outlineTransparency,
+						speedGlowOutlineTransparency
+					)} depthMode={snap.depthMode}`
 			end
-			return `speed={string.format("%.2f", snap.speed)} shouldGlow={snap.shouldGlow} hiEnabled={snap.highlightEnabled} adornee={snap.adorneeName} shell={snap.shellExists} shellSize={snap.shellSize} hitMin={snap.hitMinSpeed} offAt={string.format(
-				"%.2f",
-				snap.offThreshold
-			)}{renderLine}`
+			return `speed={formatNum(snap.speed, 0)} shouldGlow={snap.shouldGlow} hiEnabled={snap.highlightEnabled} adornee={snap.adorneeName} shell={snap.shellExists} shellSize={snap.shellSize} hitMin={formatNum(
+				snap.hitMinSpeed,
+				hitMinSpeed
+			)} offAt={formatNum(snap.offThreshold, hitMinSpeed)}{renderLine}`
 		end)()
 		else "SpeedGlow state=nil (not attached)"
 	VisualEffectsDebug.log(

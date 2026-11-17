@@ -10,6 +10,8 @@ local PREFIX = "[DodgeballBallVisualEffectsDebug]"
 
 local DodgeballBallVisualEffectsDebug = {}
 
+local warnedMissingRemoteAttr: { [string]: boolean } = {}
+
 local function readServerConfigFlag(): boolean
 	local configModule = ServerScriptService:FindFirstChild("DodgeballDebugConfig")
 	if not configModule or not configModule:IsA("ModuleScript") then
@@ -79,8 +81,11 @@ function DodgeballBallVisualEffectsDebug.snapshotRemotesAttrs(folder: Folder): s
 		else
 			text = tostring(value)
 		end
-		if value == nil then
-			DodgeballBallVisualEffectsDebug.warn(`remotes missing attr {name}`)
+		if value == nil and not warnedMissingRemoteAttr[name] then
+			warnedMissingRemoteAttr[name] = true
+			DodgeballBallVisualEffectsDebug.warn(
+				`remotes missing attr {name} — client uses BallVisualEffectRemoteDefaults; re-paste DodgeballService`
+			)
 		end
 		table.insert(parts, `{name}={text}`)
 	end
