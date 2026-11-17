@@ -10,16 +10,38 @@ local ServerScriptService = game:GetService("ServerScriptService")
 
 local DodgeballConfig = require(ServerScriptService:WaitForChild("DodgeballConfig"))
 local BallPhysicsDebug = require(ServerScriptService:WaitForChild("DodgeballBallPhysicsDebug"))
+local BallPhysicsResolver = require(ReplicatedStorage:WaitForChild("BallPhysicsResolver"))
 
-local ballPhysicsModule = ReplicatedStorage:FindFirstChild("BallPhysics")
-if not ballPhysicsModule then
-	if BallPhysicsDebug.isEnabled() then
-		BallPhysicsDebug.warn("BallPhysics module missing under ReplicatedStorage — paste vendored tree")
+local function loadBallPhysics(): (any?, ModuleScript?)
+	local resolved = BallPhysicsResolver.resolve(ReplicatedStorage)
+	if not resolved.module then
+		BallPhysicsDebug.warn(
+			`BallPhysics require failed layout={resolved.layout} — {BallPhysicsResolver.describeExpected()}`
+		)
+		return nil, nil
 	end
-	ballPhysicsModule = ReplicatedStorage:WaitForChild("BallPhysics")
+	if not resolved.module:IsA("ModuleScript") then
+		BallPhysicsDebug.warn(`BallPhysics entry is {resolved.module.ClassName}, expected ModuleScript`)
+		return nil, nil
+	end
+	local ok, ballPhysics = pcall(require, resolved.module)
+	if not ok then
+		BallPhysicsDebug.warn(`BallPhysics require error layout={resolved.layout} err={ballPhysics}`)
+		return nil, resolved.module
+	end
+	BallPhysicsDebug.log(`BallPhysics library loaded layout={resolved.layout}`)
+	return ballPhysics, resolved.module
 end
-local BallPhysics = require(ballPhysicsModule)
-local PhysicsConfig = require(ballPhysicsModule:WaitForChild("Config"))
+
+local BallPhysics, ballPhysicsEntry = loadBallPhysics()
+if not BallPhysics or not ballPhysicsEntry then
+	if BallPhysicsDebug.isEnabled() then
+		BallPhysicsDebug.warn("BallPhysicsAutoSetup stopped — fix Explorer layout (see ball-physics/README.md)")
+	end
+	return
+end
+
+local PhysicsConfig = require(ballPhysicsEntry:WaitForChild("Config"))
 
 type ServerHandle = { Destroy: (self: ServerHandle) -> () }
 
@@ -129,7 +151,7 @@ local function track(instance: Instance)
 	local success, result = pcall(BallPhysics.new, ball)
 	if success then
 		handlers[ball] = result :: ServerHandle
-		BallPhysicsDebug.log(`handler created ball={ball.Name} hasTag={hasTag}`)
+		BallPhysicsDebug.log(`handler created ball={ball.Name} hasTag={hasTag} BallPhysics.new=ok`)
 	else
 		warn("[BallPhysicsAutoSetup] failed to track", ball, "-", result)
 		BallPhysicsDebug.warn(`handler failed ball={ball.Name} err={tostring(result)}`)

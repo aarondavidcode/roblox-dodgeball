@@ -6,7 +6,8 @@
 
 | Object | Path | Type |
 |--------|------|------|
-| `BallPhysics` | `ReplicatedStorage/BallPhysics` | Module tree — [ball-physics README](../ball-physics/README.md) |
+| `BallPhysicsResolver` | `ReplicatedStorage/BallPhysicsResolver` | **ModuleScript** |
+| `BallPhysics` | `ReplicatedStorage/BallPhysics` | **ModuleScript** entry — [ball-physics README](../ball-physics/README.md) |
 | `BallPhysicsClient` | `StarterPlayer/StarterPlayerScripts/BallPhysicsClient` | **LocalScript** |
 
 Paste from [BallPhysicsClient.local.lua](./BallPhysicsClient.local.lua).

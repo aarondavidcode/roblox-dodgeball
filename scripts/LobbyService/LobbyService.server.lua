@@ -354,11 +354,6 @@ local function applyDefaultJoinNextMatchOnPlayerAdded(player: Player)
 	player:SetAttribute(ATTR_JOIN_NEXT_MATCH, true)
 end
 
-local function afterLobbyPopulationChange()
-	publishMatchStatus()
-	applyLobbyCountdownAfterOptInChange()
-end
-
 local function applyLobbyCountdownAfterOptInChange()
 	if matchPhase ~= PHASE_LOBBY then
 		return
@@ -375,6 +370,11 @@ local function applyLobbyCountdownAfterOptInChange()
 		return
 	end
 	ensureLobbyCountdownRunning()
+end
+
+local function afterLobbyPopulationChange()
+	publishMatchStatus()
+	applyLobbyCountdownAfterOptInChange()
 end
 
 local function setPlayerJoinNextMatch(player: Player, wantsIn: boolean)

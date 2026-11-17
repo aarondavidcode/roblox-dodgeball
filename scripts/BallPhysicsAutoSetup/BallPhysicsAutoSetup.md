@@ -6,7 +6,8 @@
 
 | Object | Path | Type |
 |--------|------|------|
-| `BallPhysics` | `ReplicatedStorage/BallPhysics` | Module tree — see [ball-physics README](../ball-physics/README.md) |
+| `BallPhysicsResolver` | `ReplicatedStorage/BallPhysicsResolver` | **ModuleScript** (required) |
+| `BallPhysics` | `ReplicatedStorage/BallPhysics` | **ModuleScript** entry (children Config/Effects/Runtime) — **not a Folder** — see [ball-physics README](../ball-physics/README.md) |
 | `BallPhysicsAutoSetup` | `ServerScriptService/BallPhysicsAutoSetup` | **Script** |
 | `DodgeballConfig` | `ServerScriptService/DodgeballConfig` | **ModuleScript** (tuning + tag name) |
 

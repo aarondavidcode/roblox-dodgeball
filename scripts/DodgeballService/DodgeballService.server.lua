@@ -672,18 +672,19 @@ local function throwBall(player: Player, lookDirection: Vector3, powerMultiplier
 			released
 		)}`
 	)
-	local ballPhysicsRoot = ReplicatedStorage:FindFirstChild("BallPhysics")
-	if ballPhysicsRoot and ballPhysicsRoot:IsA("ModuleScript") then
-		local ok, bp = pcall(require, ballPhysicsRoot)
-		if ok and typeof(bp.isEffectEnabled) == "function" then
-			BallPhysicsDebug.log(
-				`effects magnus={bp.isEffectEnabled("MagnusForce")} knuckle={bp.isEffectEnabled("KnuckleBall")} antiGravity={bp.isEffectEnabled(
-					"AntiGravity"
-				)} angularDamping={bp.isEffectEnabled("AngularDamping")}`
-			)
+	local resolverScript = ReplicatedStorage:FindFirstChild("BallPhysicsResolver")
+	if resolverScript and resolverScript:IsA("ModuleScript") then
+		local resolved = require(resolverScript).resolve(ReplicatedStorage)
+		if resolved.module then
+			local ok, bp = pcall(require, resolved.module)
+			if ok and typeof(bp.isEffectEnabled) == "function" then
+				BallPhysicsDebug.log(
+					`effects magnus={bp.isEffectEnabled("MagnusForce")} knuckle={bp.isEffectEnabled("KnuckleBall")} antiGravity={bp.isEffectEnabled(
+						"AntiGravity"
+					)} angularDamping={bp.isEffectEnabled("AngularDamping")}`
+				)
+			end
 		end
-	elseif BallPhysicsDebug.isEnabled() then
-		BallPhysicsDebug.warn("BallPhysics module missing under ReplicatedStorage — paste vendored tree")
 	end
 	local sampledBall = released
 	task.delay(2, function()

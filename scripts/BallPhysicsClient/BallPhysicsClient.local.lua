@@ -30,20 +30,28 @@ local function debugWarn(message: string)
 	warn(`{PREFIX} {message}`)
 end
 
-local ballPhysicsRoot = ReplicatedStorage:FindFirstChild("BallPhysics")
-if not ballPhysicsRoot then
-	if debugEnabled() then
-		debugWarn("BallPhysics module missing under ReplicatedStorage — client sim disabled")
-	end
+local resolverScript = ReplicatedStorage:WaitForChild("BallPhysicsResolver", 30)
+if not resolverScript or not resolverScript:IsA("ModuleScript") then
+	debugWarn("BallPhysicsResolver ModuleScript missing under ReplicatedStorage — paste from repo")
 	return
 end
 
-local BallPhysics = require(ballPhysicsRoot)
-BallPhysics.new()
+local BallPhysicsResolver = require(resolverScript)
+local resolved = BallPhysicsResolver.resolve(ReplicatedStorage)
 
-if debugEnabled() then
-	debugLog("BallPhysicsClient singleton started")
+if not resolved.module or not resolved.module:IsA("ModuleScript") then
+	debugWarn(`BallPhysics client require failed layout={resolved.layout} — {BallPhysicsResolver.describeExpected()}`)
+	return
 end
+
+local ok, BallPhysics = pcall(require, resolved.module)
+if not ok or typeof(BallPhysics) ~= "table" or typeof(BallPhysics.new) ~= "function" then
+	debugWarn(`BallPhysics client require error layout={resolved.layout} err={tostring(BallPhysics)}`)
+	return
+end
+
+BallPhysics.new()
+debugLog(`BallPhysicsClient singleton started layout={resolved.layout}`)
 
 local physicsTag = "PhysicsBall"
 local lastSampledThrowTime: { [BasePart]: number } = {}
@@ -112,12 +120,13 @@ if debugEnabled() then
 	end)
 end
 
-ReplicatedStorage:WaitForChild("DodgeballRemotes", 60)
-local remotes = ReplicatedStorage:FindFirstChild("DodgeballRemotes")
-if remotes and remotes:IsA("Folder") then
-	remotes:GetAttributeChangedSignal("DEBUG_BALL_PHYSICS"):Connect(function()
-		if debugEnabled() then
-			debugLog("client debug enabled via DodgeballRemotes attribute")
-		end
-	end)
-end
+task.spawn(function()
+	local remotes = ReplicatedStorage:WaitForChild("DodgeballRemotes", 60)
+	if remotes and remotes:IsA("Folder") then
+		remotes:GetAttributeChangedSignal("DEBUG_BALL_PHYSICS"):Connect(function()
+			if debugEnabled() then
+				debugLog("client debug enabled via DodgeballRemotes attribute")
+			end
+		end)
+	end
+end)
