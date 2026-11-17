@@ -413,27 +413,33 @@ end)
 
 RunService.Heartbeat:Connect(function()
 	for ball, entry in tracked do
-		if not ball.Parent then
-			detachEffect(ball)
-			continue
-		end
-
-		local desiredId = resolveEffectId(ball)
-		local context = makeContext(ball, desiredId)
-
-		if desiredId ~= entry.effectId then
-			entry.module.detach(ball)
-			local module = Registry.resolve(desiredId, defaultEffectId)
-			if not module then
+		local ok, err = pcall(function()
+			if not ball.Parent then
 				detachEffect(ball)
-				continue
+				return
 			end
-			module.attach(ball, context)
-			tracked[ball] = { effectId = desiredId, module = module }
-			entry = tracked[ball]
-		end
 
-		entry.module.step(ball, context)
+			local desiredId = resolveEffectId(ball)
+			local context = makeContext(ball, desiredId)
+
+			if desiredId ~= entry.effectId then
+				entry.module.detach(ball)
+				local module = Registry.resolve(desiredId, defaultEffectId)
+				if not module then
+					detachEffect(ball)
+					return
+				end
+				module.attach(ball, context)
+				tracked[ball] = { effectId = desiredId, module = module }
+				entry = tracked[ball]
+			end
+
+			entry.module.step(ball, context)
+		end)
+		if not ok then
+			warn(`[DodgeballBallVisualEffectsClient] step failed ball={ball.Name} err={err}`)
+			detachEffect(ball)
+		end
 	end
 end)
 

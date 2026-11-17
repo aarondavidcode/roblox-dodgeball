@@ -461,6 +461,15 @@ local function attachBallToPlayer(player: Player, ball: BasePart)
 	-- Lobby practice: no match hold timer / roll-away penalty.
 end
 
+local function forceServerNetworkOwnership(ball: BasePart)
+	if not ball:CanSetNetworkOwnership() then
+		return
+	end
+	pcall(function()
+		ball:SetNetworkOwner(nil)
+	end)
+end
+
 local function releaseBallForThrow(player: Player): BasePart?
 	local ball = heldByPlayer[player]
 	if not ball then
@@ -477,11 +486,7 @@ local function releaseBallForThrow(player: Player): BasePart?
 	ball:SetAttribute("HolderUserId", nil)
 	heldByPlayer[player] = nil
 	local ownerBefore = BallPhysicsDebug.formatNetworkOwner(ball)
-	if ball:CanSetNetworkOwnership() then
-		pcall(function()
-			ball:SetNetworkOwner(nil)
-		end)
-	end
+	forceServerNetworkOwnership(ball)
 	local ownerAfter = BallPhysicsDebug.formatNetworkOwner(ball)
 	local physicsTag = Config.BALL_PHYSICS_TAG
 	if typeof(physicsTag) ~= "string" or physicsTag == "" then
@@ -601,6 +606,8 @@ local function throwLobbyBall(player: Player, lookDirection: Vector3, powerMulti
 	if not released then
 		return
 	end
+	RunService.Heartbeat:Wait()
+	forceServerNetworkOwnership(released)
 
 	DefaultThrow:onThrowStarted({
 		ball = released,
@@ -614,6 +621,7 @@ local function throwLobbyBall(player: Player, lookDirection: Vector3, powerMulti
 		direction = lookDirection,
 		powerMultiplier = powerMultiplier,
 	})
+	forceServerNetworkOwnership(released)
 
 	released:SetAttribute("LobbyIdleSince", nil)
 

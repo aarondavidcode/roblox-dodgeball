@@ -2,6 +2,8 @@
 
 **Purpose:** Debug and diagnostics flags. Defaults are **off** for published games.
 
+**Gameplay:** Every flag here is **diagnostics only**. Throws, pickups, eliminations, and BallPhysics/VFX behavior must be identical whether these are `true` or `false`. If toggling a debug flag changes gameplay, that is a bug — fix the throw/physics path, not by leaving debug on.
+
 ## Explorer
 
 | Object | Path | Type |

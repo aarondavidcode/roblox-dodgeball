@@ -584,6 +584,16 @@ local function attachBallToPlayer(player: Player, ball: BasePart)
 	)
 end
 
+-- Welded carry leaves the ball on the holding client; server impulses need server ownership first.
+local function forceServerNetworkOwnership(ball: BasePart)
+	if not ball:CanSetNetworkOwnership() then
+		return
+	end
+	pcall(function()
+		ball:SetNetworkOwner(nil)
+	end)
+end
+
 local function releaseBallForThrow(player: Player): BasePart?
 	local ball = heldByPlayer[player]
 	if not ball then
@@ -600,12 +610,7 @@ local function releaseBallForThrow(player: Player): BasePart?
 	ball:SetAttribute("HolderUserId", nil)
 	heldByPlayer[player] = nil
 	local ownerBefore = BallPhysicsDebug.formatNetworkOwner(ball)
-	-- Welded carry often assigns the ball to the client; server impulses only apply with server ownership.
-	if ball:CanSetNetworkOwnership() then
-		pcall(function()
-			ball:SetNetworkOwner(nil)
-		end)
-	end
+	forceServerNetworkOwnership(ball)
 	local ownerAfter = BallPhysicsDebug.formatNetworkOwner(ball)
 	local physicsTag = Config.BALL_PHYSICS_TAG
 	if typeof(physicsTag) ~= "string" or physicsTag == "" then
@@ -633,6 +638,8 @@ rollBallFromMaxHold = function(player: Player)
 	if not released then
 		return
 	end
+	RunService.Heartbeat:Wait()
+	forceServerNetworkOwnership(released)
 
 	released:SetAttribute("LastThrowTime", 0)
 	released:SetAttribute("LastThrowerUserId", nil)
@@ -673,6 +680,10 @@ local function throwBall(player: Player, lookDirection: Vector3, powerMultiplier
 	if not released then
 		return
 	end
+	-- One frame so SetNetworkOwner(nil) from release wins over client weld ownership before impulse.
+	RunService.Heartbeat:Wait()
+	forceServerNetworkOwnership(released)
+
 	ACTIVE_PROFILE:onThrowStarted({
 		ball = released,
 		thrower = player,
@@ -688,6 +699,7 @@ local function throwBall(player: Player, lookDirection: Vector3, powerMultiplier
 
 	released.CanTouch = true
 	released.CanCollide = true
+	forceServerNetworkOwnership(released)
 
 	local impulseMag = Config.THROW_IMPULSE * released.AssemblyMass * power
 	local spinRate = Config.THROW_SIDE_SPIN_RAD_PER_SEC

@@ -30,28 +30,32 @@ local function debugWarn(message: string)
 	warn(`{PREFIX} {message}`)
 end
 
+local function startupWarn(message: string)
+	warn(`{PREFIX} {message}`)
+end
+
 local LAYOUT_HINT = "ReplicatedStorage/BallPhysics must be a ModuleScript with Config child — not a Folder"
 local entry = ReplicatedStorage:FindFirstChild("BallPhysics")
 if not entry then
-	debugWarn(`BallPhysics missing — {LAYOUT_HINT}`)
+	startupWarn(`BallPhysics missing — {LAYOUT_HINT}`)
 	entry = ReplicatedStorage:WaitForChild("BallPhysics", 120)
 end
 if entry:IsA("Folder") then
-	debugWarn(`BallPhysics is a Folder (cannot require) — {LAYOUT_HINT}`)
+	startupWarn(`BallPhysics is a Folder (cannot require) — {LAYOUT_HINT}`)
 	return
 end
 if not entry:IsA("ModuleScript") then
-	debugWarn(`BallPhysics is a {entry.ClassName}, expected ModuleScript — {LAYOUT_HINT}`)
+	startupWarn(`BallPhysics is a {entry.ClassName}, expected ModuleScript — {LAYOUT_HINT}`)
 	return
 end
 if not entry:FindFirstChild("Config") then
-	debugWarn(`BallPhysics has no Config child — {LAYOUT_HINT}`)
+	startupWarn(`BallPhysics has no Config child — {LAYOUT_HINT}`)
 	return
 end
 
 local ok, BallPhysics = pcall(require, entry)
 if not ok or typeof(BallPhysics) ~= "table" or typeof(BallPhysics.new) ~= "function" then
-	debugWarn(`BallPhysics client require failed err={tostring(BallPhysics)}`)
+	startupWarn(`BallPhysics client require failed err={tostring(BallPhysics)}`)
 	return
 end
 
@@ -112,18 +116,16 @@ local function watchBallThrowSample(ball: BasePart)
 	end)
 end
 
-if debugEnabled() then
-	for _, inst in CollectionService:GetTagged(physicsTag) do
-		if inst:IsA("BasePart") then
-			watchBallThrowSample(inst)
-		end
+for _, inst in CollectionService:GetTagged(physicsTag) do
+	if inst:IsA("BasePart") then
+		watchBallThrowSample(inst)
 	end
-	CollectionService:GetInstanceAddedSignal(physicsTag):Connect(function(inst: Instance)
-		if inst:IsA("BasePart") then
-			watchBallThrowSample(inst)
-		end
-	end)
 end
+CollectionService:GetInstanceAddedSignal(physicsTag):Connect(function(inst: Instance)
+	if inst:IsA("BasePart") then
+		watchBallThrowSample(inst)
+	end
+end)
 
 task.spawn(function()
 	local remotes = ReplicatedStorage:WaitForChild("DodgeballRemotes", 60)
