@@ -2,6 +2,8 @@
 
 **Purpose:** One shared table of numbers and names for dodgeball, rounds, and lobby flow. Every server script and the throw module `require` this ModuleScript. Change tuning here instead of editing multiple scripts.
 
+**Repo defaults:** lighter foam-style flight — e.g. `PICKUP_MAX_SPEED` 15, `THROW_IMPULSE` 150, `AIM_POWER_CHARGE_SECONDS` 1, `BALL_MAX_HOLD_SECONDS` 10, `BALL_PHYSICAL_DENSITY` 0.3, stronger Magnus / anti-gravity and higher throw spin. Set `DEBUG_BALL_PHYSICS` / `BALL_PHYSICS_DEBUG_ENABLED` to `false` before publishing.
+
 ## Explorer
 
 | Object | Path | Type |

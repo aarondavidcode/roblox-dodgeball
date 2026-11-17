@@ -1,12 +1,13 @@
 -- Studio setup: DodgeballConfig.md
 -- Paste this as a ModuleScript named DodgeballConfig under ServerScriptService.
 -- Change the numbers below to tune how dodgeball feels.
+-- Defaults below target lighter "foam" flight: softer mass, stronger throw, Magnus + anti-gravity.
 
 --!strict
 
 local DodgeballConfig = {
 	-- Pickup: if the ball is moving slower than this (studs per second), touching it picks it up.
-	PICKUP_MAX_SPEED = 8,
+	PICKUP_MAX_SPEED = 15,
 
 	-- Out: a thrown ball must be at least this fast when it hits someone.
 	HIT_MIN_SPEED = 25,
@@ -16,12 +17,12 @@ local DodgeballConfig = {
 
 	-- Throw strength (impulse) at 100% power. Bigger = faster throws.
 	-- DefaultThrow multiplies this by the aim power bar (0–1) from the client.
-	THROW_IMPULSE = 80,
+	THROW_IMPULSE = 150,
 
 	-- === Aim + power charge (hold throw button while aiming) ===
 
 	-- Seconds to charge from 0% to 100% power while you hold aim.
-	AIM_POWER_CHARGE_SECONDS = 1.25,
+	AIM_POWER_CHARGE_SECONDS = 1,
 
 	-- Longest you can aim before the ball auto-throws at your crosshair + current power.
 	AIM_MAX_SECONDS = 4,
@@ -29,7 +30,7 @@ local DodgeballConfig = {
 	-- === Ball hold before you start aiming ===
 
 	-- After pickup, you must start aiming within this many seconds or the ball rolls away (not a throw).
-	BALL_MAX_HOLD_SECONDS = 5,
+	BALL_MAX_HOLD_SECONDS = 10,
 
 	-- Penalty when max hold expires: cannot pick up balls for this long.
 	HOLD_PENALTY_PICKUP_COOLDOWN_SECONDS = 3,
@@ -65,7 +66,7 @@ local DodgeballConfig = {
 	BALL_MATERIAL = Enum.Material.Plastic,
 
 	-- Optional custom mass/feel (nil or omit → Roblox default). All three must be numbers to apply.
-	BALL_PHYSICAL_DENSITY = 0.7,
+	BALL_PHYSICAL_DENSITY = 0.3,
 	BALL_PHYSICAL_FRICTION = 0.4,
 	BALL_PHYSICAL_ELASTICITY = 0.75,
 
@@ -75,7 +76,7 @@ local DodgeballConfig = {
 	BALL_PHYSICS_TAG = "PhysicsBall",
 
 	BALL_PHYSICS_MAGNUS_ENABLED = true,
-	BALL_PHYSICS_MAGNUS_STRENGTH = 0.85,
+	BALL_PHYSICS_MAGNUS_STRENGTH = 1.5,
 	BALL_PHYSICS_MAGNUS_DEFAULT_DENSITY = 0.7,
 
 	BALL_PHYSICS_KNUCKLE_ENABLED = true,
@@ -87,13 +88,13 @@ local DodgeballConfig = {
 	BALL_PHYSICS_ANGULAR_DAMPING_GROUND_RATE = 1,
 
 	BALL_PHYSICS_ANTIGRAVITY_ENABLED = true,
-	BALL_PHYSICS_ANTIGRAVITY_FRACTION = 0.35,
+	BALL_PHYSICS_ANTIGRAVITY_FRACTION = 0.62,
 
-	-- Upstream F3/F4 debug scripts are not bundled; keep false for published places.
-	BALL_PHYSICS_DEBUG_ENABLED = false,
+	-- Upstream F3/F4 overlay scripts are not bundled; library debug flag only when upstream ships dev tools.
+	BALL_PHYSICS_DEBUG_ENABLED = true,
 
 	-- Side spin (rad/s) on aimed throws so Magnus can curve; scaled by throw power (0–1).
-	THROW_SIDE_SPIN_RAD_PER_SEC = 12,
+	THROW_SIDE_SPIN_RAD_PER_SEC = 22,
 
 	-- Which throw module to use from ServerScriptService/throw/ (more abilities later).
 	ACTIVE_THROW_PROFILE = "Default",
@@ -114,7 +115,7 @@ local DodgeballConfig = {
 	DEBUG_ELIMINATION = false,
 
 	-- Temporary: tagged Output lines for BallPhysics wiring (see DodgeballBallPhysicsDebug.md).
-	DEBUG_BALL_PHYSICS = false,
+	DEBUG_BALL_PHYSICS = true,
 
 	-- === Round reset — change these to tune between-round pacing ===
 
