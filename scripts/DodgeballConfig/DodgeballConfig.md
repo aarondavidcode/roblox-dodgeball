@@ -39,6 +39,7 @@ Paste from [DodgeballConfig.lua](./DodgeballConfig.lua).
 | `THROW_IMPULSE` | Max throw strength at 100% power |
 | `AIM_POWER_CHARGE_SECONDS`, `AIM_MAX_SECONDS`, `BALL_MAX_HOLD_SECONDS` | Aim UI timing (mirrored on remotes as attributes for clients) |
 | `HOLD_PENALTY_*`, `HOLD_ROLL_IMPULSE` | Penalty when you hold a ball too long without aiming |
+| `THROWER_BALL_NOCOLLIDE_SECONDS` | Grace after throw/hold roll where thrower does not collide with balls (`0` = off); see [DodgeballThrowerCollision.md](../DodgeballThrowerCollision/DodgeballThrowerCollision.md) |
 | `BALL_FOLDER_NAME`, `DODGEBALL_TAG` | Where balls live and optional tag |
 | `BALL_DIAMETER`, `BALL_COLOR`, `BALL_MATERIAL`, `BALL_PART_NAME`, `BALL_PHYSICAL_*` | Shared look/physics for arena + lobby practice ([DodgeballBallTemplate.md](../DodgeballBallTemplate/DodgeballBallTemplate.md)) |
 | `PICKUP_MAX_SPEED`, `THROW_IMPULSE`, `CARRY_OFFSET`, `PICKUP_COOLDOWN_SECONDS`, aim/hold keys | Shared pickup, throw, and carry feel (arena + lobby) |
@@ -55,4 +56,4 @@ Paste from [DodgeballConfig.lua](./DodgeballConfig.lua).
 
 ## Related scripts
 
-Requires nothing at load time. Required by **TeamAutoBalance**, **DodgeballBallTemplate**, **DodgeballService**, **LobbyPracticeBallService**, **RoundService**, **LobbyService**, **DefaultThrow**, and indirectly by client scripts (names must stay in sync).
+Requires nothing at load time. Required by **TeamAutoBalance**, **DodgeballBallTemplate**, **DodgeballThrowerCollision**, **DodgeballService**, **LobbyPracticeBallService**, **RoundService**, **LobbyService**, **DefaultThrow**, and indirectly by client scripts (names must stay in sync).

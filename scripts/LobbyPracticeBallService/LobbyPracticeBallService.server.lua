@@ -13,6 +13,7 @@ local Workspace = game:GetService("Workspace")
 
 local Config = require(ServerScriptService:WaitForChild("DodgeballConfig"))
 local BallTemplate = require(ServerScriptService:WaitForChild("DodgeballBallTemplate"))
+local ThrowerCollision = require(ServerScriptService:WaitForChild("DodgeballThrowerCollision"))
 
 local throwFolder = ServerScriptService:WaitForChild("throw")
 local DefaultThrow = require(throwFolder:WaitForChild("DefaultThrow"))
@@ -454,6 +455,7 @@ local function releaseBallForThrow(player: Player): BasePart?
 	ball.Parent = ensureBallFolder()
 	ball:SetAttribute("HolderUserId", nil)
 	heldByPlayer[player] = nil
+	ThrowerCollision.beginThrowerGrace(player, ball)
 	return ball
 end
 
