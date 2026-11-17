@@ -10,7 +10,7 @@
 | `CountdownLabel` | `StarterGui/RoundStatus/CountdownLabel` | **TextLabel** |
 | `RoundStatusClient` | `StarterGui/RoundStatus/RoundStatusClient` | **LocalScript** |
 
-Paste from [RoundStatusClient.local.lua](./RoundStatusClient.local.lua).
+Paste from [RoundStatusClient.client.lua](./RoundStatusClient.client.lua).
 
 **Repo:** GitHub folder `scripts/<Name>/` is for organization only. Paste by **Explorer path** in the table (instance **name** must match). ModuleScripts use `require()` by instance name — not repo paths.
 

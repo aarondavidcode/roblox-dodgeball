@@ -1,0 +1,14 @@
+# Local Roblox places (arena, teams, spawns — not synced via Rojo)
+*.rbxl
+*.rbxlx
+/*.rbxl
+/*.rbxlx
+
+# Rojo build artifacts
+/build/
+*.rbxlx.lock
+*.rbxl.lock
+
+# OS / editor
+.DS_Store
+Thumbs.db

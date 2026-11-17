@@ -1,6 +1,6 @@
 # Cursor Cloud agents — roblox-dodgeball
 
-Luau sources + colocated Studio docs per script. The game runs in **Roblox Studio**, not in this repo. No **Rojo** — humans paste from `scripts/<Name>/` into Explorer by **instance name**.
+Luau sources + colocated Studio docs per script. The game runs in **Roblox Studio**, not in this repo. Humans paste from `scripts/<Name>/` into Explorer by **instance name**, or sync the same files with **Rojo** via [`default.project.json`](../default.project.json) (see [docs/rojo-studio-sync.md](../docs/rojo-studio-sync.md)).
 
 ## Agent playbook
 
@@ -22,9 +22,11 @@ Luau sources + colocated Studio docs per script. The game runs in **Roblox Studi
 
 GitHub uses nested folders for agents; Studio stays **flat by Explorer name** (`ServerScriptService/DodgeballConfig`, `ServerScriptService/throw/DefaultThrow`). Luau in this repo uses `WaitForChild("DodgeballConfig")` and `throw:WaitForChild("DefaultThrow")` — those names must match what humans paste. Do not switch to `script.Parent` repo-style requires unless Studio docs change too.
 
-### Paste targets
+### Paste and Rojo targets
 
 Follow the scripts table in `README.md` (e.g. `ServerScriptService/DodgeballService` = **Script**, `StarterPlayerScripts/DodgeballThrowInput` = **LocalScript**, `ServerScriptService/throw/DefaultThrow` = **ModuleScript**). Object **names** must match the repo.
+
+**Rojo:** Edit files under `scripts/` as mapped in `default.project.json` — do not add a parallel `src/` tree. Client scripts use `*.client.lua`; server scripts use `*.server.lua`; modules use plain `*.lua` / vendored `*.luau`. Paste workflow and Rojo share the same paths.
 
 ### Do not hand-build (scripts create these)
 
@@ -72,6 +74,8 @@ If tools are missing: `bash .cursor/install-tools.sh`, then from repo root:
 ```bash
 stylua scripts/
 selene scripts/ 2>/dev/null || true
+rojo build default.project.json -o /tmp/rojo-test.rbxlx
+rojo sourcemap default.project.json -o /tmp/sourcemap.json
 ```
 
 Play test remains **F5** / multi-client in Studio — not in the cloud VM.

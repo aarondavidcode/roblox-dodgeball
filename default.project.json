@@ -1,0 +1,118 @@
+{
+  "name": "roblox-dodgeball",
+  "globIgnorePaths": [
+    "scripts/**/README.md",
+    "scripts/**/*.md",
+    "scripts/ball-physics/README.md",
+    "scripts/ball-physics/LICENSE",
+    "scripts/ball-physics/SOURCE_COMMIT",
+    "scripts/ball-physics/VERSION"
+  ],
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "$ignoreUnknownInstances": true,
+      "BallPhysics": {
+        "$path": "scripts/ball-physics/src"
+      }
+    },
+    "ServerScriptService": {
+      "$className": "ServerScriptService",
+      "$ignoreUnknownInstances": true,
+      "DodgeballConfig": {
+        "$path": "scripts/DodgeballConfig/DodgeballConfig.lua"
+      },
+      "DodgeballDebugConfig": {
+        "$path": "scripts/DodgeballDebugConfig/DodgeballDebugConfig.lua"
+      },
+      "DodgeballBallTemplate": {
+        "$path": "scripts/DodgeballBallTemplate/DodgeballBallTemplate.lua"
+      },
+      "DodgeballThrowerCollision": {
+        "$path": "scripts/DodgeballThrowerCollision/DodgeballThrowerCollision.lua"
+      },
+      "DodgeballBallPhysicsDebug": {
+        "$path": "scripts/DodgeballBallPhysicsDebug/DodgeballBallPhysicsDebug.lua"
+      },
+      "DodgeballBallVisualEffectsConfig": {
+        "$path": "scripts/DodgeballBallVisualEffectsConfig/DodgeballBallVisualEffectsConfig.lua"
+      },
+      "TeamAutoBalance": {
+        "$path": "scripts/TeamAutoBalance/TeamAutoBalance.server.lua"
+      },
+      "DodgeballService": {
+        "$path": "scripts/DodgeballService/DodgeballService.server.lua"
+      },
+      "RoundService": {
+        "$path": "scripts/RoundService/RoundService.server.lua"
+      },
+      "LobbyService": {
+        "$path": "scripts/LobbyService/LobbyService.server.lua"
+      },
+      "LobbyPracticeBallService": {
+        "$path": "scripts/LobbyPracticeBallService/LobbyPracticeBallService.server.lua"
+      },
+      "BallPhysicsAutoSetup": {
+        "$path": "scripts/BallPhysicsAutoSetup/BallPhysicsAutoSetup.server.lua"
+      },
+      "throw": {
+        "$className": "Folder",
+        "DefaultThrow": {
+          "$path": "scripts/throw/DefaultThrow/DefaultThrow.lua"
+        }
+      }
+    },
+    "StarterPlayer": {
+      "$className": "StarterPlayer",
+      "StarterPlayerScripts": {
+        "$className": "StarterPlayerScripts",
+        "$ignoreUnknownInstances": true,
+        "DodgeballThrowInput": {
+          "$path": "scripts/DodgeballThrowInput/DodgeballThrowInput.client.lua"
+        },
+        "LobbyJoinNextMatchClient": {
+          "$path": "scripts/LobbyJoinNextMatchClient/LobbyJoinNextMatchClient.client.lua"
+        },
+        "BallPhysicsClient": {
+          "$path": "scripts/BallPhysicsClient/BallPhysicsClient.client.lua"
+        },
+        "DodgeballBallVisualEffectsClient": {
+          "$path": "scripts/DodgeballBallVisualEffectsClient/DodgeballBallVisualEffectsClient.client.lua"
+        },
+        "ballVisualEffects": {
+          "$className": "Folder",
+          "BallVisualEffectRegistry": {
+            "$path": "scripts/ballVisualEffects/BallVisualEffectRegistry/BallVisualEffectRegistry.lua"
+          },
+          "BallVisualEffectColors": {
+            "$path": "scripts/ballVisualEffects/BallVisualEffectColors/BallVisualEffectColors.lua"
+          },
+          "BallVisualEffectRemoteDefaults": {
+            "$path": "scripts/ballVisualEffects/BallVisualEffectRemoteDefaults/BallVisualEffectRemoteDefaults.lua"
+          },
+          "BallVisualEffectShell": {
+            "$path": "scripts/ballVisualEffects/BallVisualEffectShell/BallVisualEffectShell.lua"
+          },
+          "SpeedGlow": {
+            "$path": "scripts/ballVisualEffects/SpeedGlow/SpeedGlow.lua"
+          },
+          "DodgeballBallVisualEffectsDebug": {
+            "$path": "scripts/ballVisualEffects/DodgeballBallVisualEffectsDebug/DodgeballBallVisualEffectsDebug.lua"
+          }
+        }
+      }
+    },
+    "StarterGui": {
+      "$className": "StarterGui",
+      "$ignoreUnknownInstances": true,
+      "RoundStatus": {
+        "$className": "ScreenGui",
+        "$ignoreUnknownInstances": true,
+        "RoundStatusClient": {
+          "$path": "scripts/RoundStatusClient/RoundStatusClient.client.lua"
+        }
+      }
+    }
+  }
+}

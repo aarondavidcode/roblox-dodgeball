@@ -2,7 +2,7 @@
 
 Luau sources to paste into **Roblox Studio**. Each script has a folder here with its `.lua` file(s) and colocated setup markdown.
 
-**Start here:** [README.md](../README.md) (scripts table and paste steps).
+**Start here:** [README.md](../README.md) (scripts table and paste steps). **Rojo sync:** [docs/rojo-studio-sync.md](../docs/rojo-studio-sync.md) + [default.project.json](../default.project.json).
 
 ## Repo layout vs Studio
 

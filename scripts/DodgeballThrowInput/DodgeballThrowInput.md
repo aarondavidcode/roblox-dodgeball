@@ -8,7 +8,7 @@
 |--------|------|------|
 | `DodgeballThrowInput` | `StarterPlayer/StarterPlayerScripts/DodgeballThrowInput` | **LocalScript** |
 
-Paste from [DodgeballThrowInput.local.lua](./DodgeballThrowInput.local.lua).
+Paste from [DodgeballThrowInput.client.lua](./DodgeballThrowInput.client.lua).
 
 **Repo:** This folder on GitHub is not the Studio hierarchy — paste by **Explorer path** in the table below. `require()` uses instance names (`that module name and Explorer path), not repo folders.
 
