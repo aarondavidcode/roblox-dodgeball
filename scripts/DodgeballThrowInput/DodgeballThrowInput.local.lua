@@ -163,6 +163,7 @@ crosshair.Size = UDim2.fromOffset(32, 32)
 crosshair.BackgroundTransparency = 1
 crosshair.Visible = false
 crosshair.ZIndex = 10
+crosshair.Active = false
 crosshair.Parent = screenGui
 
 local crosshairH = Instance.new("Frame")
@@ -279,13 +280,23 @@ local function shouldUseFreeCursorAim(inputObject: InputObject): boolean
 	return UserInputService.MouseEnabled
 end
 
+local function updateFreeCursorScopeCrosshair()
+	local mouse = UserInputService:GetMouseLocation()
+	crosshair.Position = UDim2.fromOffset(mouse.X, mouse.Y)
+end
+
+local function resetScopeCrosshairToCenter()
+	crosshair.Position = UDim2.fromScale(0.5, 0.5)
+end
+
 -- PlayerModule / shift lock can steer rotation and mouse lock toward the cursor; re-apply each aim frame.
 local function applyFreeCursorCameraIndependence()
 	UserGameSettings.RotationType = Enum.RotationType.MovementRelative
-	UserInputService.MouseIconEnabled = true
+	UserInputService.MouseIconEnabled = false
 	if not rightMouseHeld then
 		UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 	end
+	updateFreeCursorScopeCrosshair()
 end
 
 local function saveRotationTypeForAim()
@@ -522,8 +533,10 @@ local function endAimUi()
 	aiming = false
 	aimUsesFreeCursor = false
 	crosshair.Visible = false
+	resetScopeCrosshairToCenter()
 	powerBarBack.Visible = false
 	restoreRotationTypeAfterAim()
+	UserInputService.MouseIconEnabled = true
 	UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 	stopAimHeartbeat()
 end
@@ -582,13 +595,15 @@ local function beginAim(inputObject: InputObject)
 	holdBallSince = nil
 	holdBarBack.Visible = false
 
-	crosshair.Visible = not aimUsesFreeCursor
+	crosshair.Visible = true
 	powerBarBack.Visible = true
 	setPowerUi(0)
 	if aimUsesFreeCursor then
 		saveRotationTypeForAim()
 		applyFreeCursorCameraIndependence()
 	else
+		resetScopeCrosshairToCenter()
+		UserInputService.MouseIconEnabled = true
 		UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
 	end
 

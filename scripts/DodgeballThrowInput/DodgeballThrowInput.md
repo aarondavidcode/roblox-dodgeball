@@ -49,7 +49,7 @@ Same LocalScript for arena and lobby practice throws.
 
 | Input | While aiming | Aim direction |
 |--------|----------------|---------------|
-| **Mouse + keyboard** (PC: hold **F** or **left click**) | Normal mouse cursor; **third-person camera unchanged** (look around with RMB) | Throw uses a ray through the cursor only; `RotationType` stays movement-relative during aim so PlayerModule does not lock the view to the cursor; **LMB** hold uses `UserInputService` for begin/end |
+| **Mouse + keyboard** (PC: hold **F** or **left click**) | Free mouse + yellow **Crosshair** follows the pointer (hides default arrow); **third-person camera unchanged** (look around with RMB) | Throw ray through pointer; scope UI is script-built only — no Studio cursor asset |
 | **Touch** (phone/tablet) | Center-locked cursor + on-screen crosshair | Ray through screen center (unchanged) |
 | **Gamepad** (hold **R2**) | Center lock + crosshair | Ray through screen center (unchanged) |
 
