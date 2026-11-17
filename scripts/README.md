@@ -19,6 +19,8 @@ Explorer **instance names** must match the root README table. `require()` in Lua
 | Folder | Doc |
 |--------|-----|
 | [DodgeballConfig/](DodgeballConfig/DodgeballConfig.md) | [DodgeballConfig.md](DodgeballConfig/DodgeballConfig.md) |
+| [DodgeballBallVisualEffectsConfig/](DodgeballBallVisualEffectsConfig/DodgeballBallVisualEffectsConfig.md) | Client ball VFX tunables (server mirrors to remotes) |
+| [DodgeballDebugConfig/](DodgeballDebugConfig/DodgeballDebugConfig.md) | Debug / diagnostics flags |
 | [DodgeballBallTemplate/](DodgeballBallTemplate/DodgeballBallTemplate.md) | [DodgeballBallTemplate.md](DodgeballBallTemplate/DodgeballBallTemplate.md) |
 | [DodgeballThrowerCollision/](DodgeballThrowerCollision/DodgeballThrowerCollision.md) | [DodgeballThrowerCollision.md](DodgeballThrowerCollision/DodgeballThrowerCollision.md) |
 | [TeamAutoBalance/](TeamAutoBalance/TeamAutoBalance.md) | [TeamAutoBalance.md](TeamAutoBalance/TeamAutoBalance.md) |

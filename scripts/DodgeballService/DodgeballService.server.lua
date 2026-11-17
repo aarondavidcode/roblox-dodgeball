@@ -17,6 +17,8 @@ local Teams = game:GetService("Teams")
 local Workspace = game:GetService("Workspace")
 
 local Config = require(ServerScriptService:WaitForChild("DodgeballConfig"))
+local VisualEffectsConfig = require(ServerScriptService:WaitForChild("DodgeballBallVisualEffectsConfig"))
+local DebugConfig = require(ServerScriptService:WaitForChild("DodgeballDebugConfig"))
 local BallTemplate = require(ServerScriptService:WaitForChild("DodgeballBallTemplate"))
 local ThrowerCollision = require(ServerScriptService:WaitForChild("DodgeballThrowerCollision"))
 local BallPhysicsDebug = require(ServerScriptService:WaitForChild("DodgeballBallPhysicsDebug"))
@@ -53,7 +55,7 @@ local holdWatchToken: { [Player]: number } = {}
 local holdPenaltySlowToken: { [Player]: number } = {}
 
 local function debugElimination(message: string)
-	if Config.DEBUG_ELIMINATION then
+	if DebugConfig.DEBUG_ELIMINATION then
 		warn(`[DodgeballService] {message}`)
 	end
 end
@@ -205,11 +207,11 @@ local function publishClientTunables()
 	if typeof(practiceTag) == "string" and practiceTag ~= "" then
 		folder:SetAttribute("LOBBY_PRACTICE_BALL_TAG", practiceTag)
 	end
-	folder:SetAttribute("DEBUG_BALL_PHYSICS", Config.DEBUG_BALL_PHYSICS == true)
+	folder:SetAttribute("DEBUG_BALL_PHYSICS", DebugConfig.DEBUG_BALL_PHYSICS == true)
 	folder:SetAttribute("HIT_MIN_SPEED", Config.HIT_MIN_SPEED)
-	folder:SetAttribute("DEFAULT_BALL_VISUAL_EFFECT", Config.DEFAULT_BALL_VISUAL_EFFECT)
-	folder:SetAttribute("SPEED_GLOW_HYSTERESIS_FRACTION", Config.SPEED_GLOW_HYSTERESIS_FRACTION)
-	local speedGlowShellScale = Config.SPEED_GLOW_SHELL_DIAMETER_SCALE
+	folder:SetAttribute("DEFAULT_BALL_VISUAL_EFFECT", VisualEffectsConfig.DEFAULT_BALL_VISUAL_EFFECT)
+	folder:SetAttribute("SPEED_GLOW_HYSTERESIS_FRACTION", VisualEffectsConfig.SPEED_GLOW_HYSTERESIS_FRACTION)
+	local speedGlowShellScale = VisualEffectsConfig.SPEED_GLOW_SHELL_DIAMETER_SCALE
 	if typeof(speedGlowShellScale) == "number" and speedGlowShellScale > 0 then
 		folder:SetAttribute("SPEED_GLOW_SHELL_DIAMETER_SCALE", speedGlowShellScale)
 	end
@@ -218,20 +220,20 @@ local function publishClientTunables()
 	if typeof(physicsTag) == "string" and physicsTag ~= "" then
 		folder:SetAttribute("BALL_PHYSICS_TAG", physicsTag)
 	end
-	local ballEffectAttr = Config.BALL_VISUAL_EFFECT_BALL_ATTR
+	local ballEffectAttr = VisualEffectsConfig.BALL_VISUAL_EFFECT_BALL_ATTR
 	if typeof(ballEffectAttr) == "string" and ballEffectAttr ~= "" then
 		folder:SetAttribute("BALL_VISUAL_EFFECT_BALL_ATTR", ballEffectAttr)
 	end
-	local playerEffectAttr = Config.BALL_VISUAL_EFFECT_PLAYER_ATTR
+	local playerEffectAttr = VisualEffectsConfig.BALL_VISUAL_EFFECT_PLAYER_ATTR
 	if typeof(playerEffectAttr) == "string" and playerEffectAttr ~= "" then
 		folder:SetAttribute("BALL_VISUAL_EFFECT_PLAYER_ATTR", playerEffectAttr)
 	end
-	local spectatorVfx = Config.BALL_VISUAL_EFFECT_SPECTATOR_COLOR
+	local spectatorVfx = VisualEffectsConfig.BALL_VISUAL_EFFECT_SPECTATOR_COLOR
 	if typeof(spectatorVfx) == "Color3" then
 		folder:SetAttribute("BALL_VISUAL_EFFECT_SPECTATOR_COLOR", spectatorVfx)
 	end
-	-- Future: create RemoteFunction Config.SET_BALL_VISUAL_EFFECT_REMOTE_NAME to set
-	-- player:GetAttribute(BALL_VISUAL_EFFECT_PLAYER_ATTR) after validating against a server allow-list.
+	-- Future: create RemoteFunction VisualEffectsConfig.SET_BALL_VISUAL_EFFECT_REMOTE_NAME to set
+	-- player:GetAttribute(VisualEffectsConfig.BALL_VISUAL_EFFECT_PLAYER_ATTR) after validating allow-list.
 end
 
 local throwRemote = getThrowRemote()

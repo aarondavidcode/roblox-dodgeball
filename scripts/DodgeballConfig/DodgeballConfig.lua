@@ -90,36 +90,10 @@ local DodgeballConfig = {
 	BALL_PHYSICS_ANTIGRAVITY_ENABLED = true,
 	BALL_PHYSICS_ANTIGRAVITY_FRACTION = 0.62,
 
-	-- Upstream F3/F4 overlay scripts are not bundled; library debug flag only when upstream ships dev tools.
-	BALL_PHYSICS_DEBUG_ENABLED = false,
+	-- Ball VFX tuning: ServerScriptService/DodgeballBallVisualEffectsConfig. Debug flags: DodgeballDebugConfig.
 
 	-- Side spin (rad/s) on aimed throws so Magnus can curve; scaled by throw power (0–1).
 	THROW_SIDE_SPIN_RAD_PER_SEC = 22,
-
-	-- === Ball visual effects (client DodgeballBallVisualEffectsClient) ===
-
-	-- Registry id for balls with no per-ball / per-thrower override.
-	DEFAULT_BALL_VISUAL_EFFECT = "SpeedGlow",
-
-	-- Future player cosmetics: attribute on Player (settings UI not wired yet).
-	BALL_VISUAL_EFFECT_PLAYER_ATTR = "BallVisualEffect",
-
-	-- Optional override on the ball Part (e.g. copied from thrower when released).
-	BALL_VISUAL_EFFECT_BALL_ATTR = "BallVisualEffectId",
-
-	-- Future RemoteFunction under DodgeballRemotes (server stub not created yet).
-	SET_BALL_VISUAL_EFFECT_REMOTE_NAME = "SetBallVisualEffect",
-
-	-- SpeedGlow disables below HIT_MIN_SPEED * this (reduces threshold flicker).
-	SPEED_GLOW_HYSTERESIS_FRACTION = 0.92,
-
-	-- SpeedGlow client shell: Highlight adorns a welded transparent sphere sized ballDiameter × this (spheres only).
-	SPEED_GLOW_SHELL_DIAMETER_SCALE = 1.4,
-
-	-- Ball VFX when no thrower, thrower left, or thrower has no Team (lobby spectator practice).
-	BALL_VISUAL_EFFECT_SPECTATOR_COLOR = Color3.fromRGB(255, 255, 255),
-
-	-- Future per-effect shell scale: BALL_VISUAL_EFFECT_<EFFECTID>_SHELL_DIAMETER_SCALE (mirrored on DodgeballRemotes).
 
 	-- Which throw module to use from ServerScriptService/throw/ (more abilities later).
 	ACTIVE_THROW_PROFILE = "Default",
@@ -135,12 +109,6 @@ local DodgeballConfig = {
 
 	-- After you throw, wait this long before you can pick up again (studs/s spam guard).
 	PICKUP_COOLDOWN_SECONDS = 0.15,
-
-	-- When true, warn in Output why a throw hit did not eliminate someone (for debugging).
-	DEBUG_ELIMINATION = false,
-
-	-- Temporary: tagged Output lines for BallPhysics wiring (see DodgeballBallPhysicsDebug.md).
-	DEBUG_BALL_PHYSICS = false,
 
 	-- === Round reset — change these to tune between-round pacing ===
 

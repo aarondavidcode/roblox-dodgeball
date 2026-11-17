@@ -18,4 +18,4 @@ Paste from [BallVisualEffectRegistry.lua](./BallVisualEffectRegistry.lua).
 3. In **DodgeballBallVisualEffectsClient**, `require` the module and call `Registry.register(...)`.
 4. In `attach` / `step`, use **`context.effectColor`** (team thrower color or spectator fallback). See [BallVisualEffectColors.md](../BallVisualEffectColors/BallVisualEffectColors.md) — do not duplicate team lookup in the effect.
 4b. Optional larger halo: **`context.shell.diameterScale`** + [BallVisualEffectShell.md](../BallVisualEffectShell/BallVisualEffectShell.md).
-5. Optionally set `DEFAULT_BALL_VISUAL_EFFECT` in **DodgeballConfig** or set player/ball attributes (see [DodgeballBallVisualEffectsClient.md](../../DodgeballBallVisualEffectsClient/DodgeballBallVisualEffectsClient.md)).
+5. Optionally set `DEFAULT_BALL_VISUAL_EFFECT` in **DodgeballBallVisualEffectsConfig** or set player/ball attributes (see [DodgeballBallVisualEffectsClient.md](../../DodgeballBallVisualEffectsClient/DodgeballBallVisualEffectsClient.md)).

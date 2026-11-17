@@ -9,6 +9,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 local DodgeballConfig = require(ServerScriptService:WaitForChild("DodgeballConfig"))
+local DodgeballDebugConfig = require(ServerScriptService:WaitForChild("DodgeballDebugConfig"))
 local BallPhysicsDebug = require(ServerScriptService:WaitForChild("DodgeballBallPhysicsDebug"))
 
 local BALL_PHYSICS_LAYOUT_HINT =
@@ -111,7 +112,7 @@ local function applyDodgeballTuning()
 		PhysicsConfig.antiGravity.fraction = antiFrac
 	end
 
-	local debugOn = DodgeballConfig.BALL_PHYSICS_DEBUG_ENABLED
+	local debugOn = DodgeballDebugConfig.BALL_PHYSICS_DEBUG_ENABLED
 	if typeof(debugOn) == "boolean" then
 		PhysicsConfig.debug.enabled = debugOn
 	end

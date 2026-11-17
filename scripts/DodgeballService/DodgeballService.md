@@ -8,6 +8,8 @@
 |--------|------|------|
 | `DodgeballService` | `ServerScriptService/DodgeballService` | **Script** |
 | `DodgeballConfig` | `ServerScriptService/DodgeballConfig` | **ModuleScript** (required) |
+| `DodgeballBallVisualEffectsConfig` | `ServerScriptService/DodgeballBallVisualEffectsConfig` | **ModuleScript** (required) |
+| `DodgeballDebugConfig` | `ServerScriptService/DodgeballDebugConfig` | **ModuleScript** (required) |
 | `DodgeballBallTemplate` | `ServerScriptService/DodgeballBallTemplate` | **ModuleScript** (required) |
 | `DodgeballThrowerCollision` | `ServerScriptService/DodgeballThrowerCollision` | **ModuleScript** (required) |
 | `throw` | `ServerScriptService/throw` | **Folder** |
@@ -45,7 +47,7 @@ On first run the service can create an **empty** `Dodgeballs` folder and warn in
 | Key | Role |
 |-----|------|
 | `PICKUP_MAX_SPEED`, `PICKUP_COOLDOWN_SECONDS` | Pickup rules |
-| `HIT_MIN_SPEED`, `THROW_OUT_WINDOW_SECONDS`, `DEBUG_ELIMINATION` | OUT detection |
+| `HIT_MIN_SPEED`, `THROW_OUT_WINDOW_SECONDS` | OUT detection (`DEBUG_ELIMINATION` in [DodgeballDebugConfig.md](../DodgeballDebugConfig/DodgeballDebugConfig.md)) |
 | `THROW_IMPULSE`, `ACTIVE_THROW_PROFILE` | Throw strength and module |
 | `BALL_MAX_HOLD_SECONDS`, `HOLD_*`, `AIM_*` | Hold and aim server enforcement |
 | `THROWER_BALL_NOCOLLIDE_SECONDS` | Thrower–ball no-collide grace on release ([DodgeballThrowerCollision.md](../DodgeballThrowerCollision/DodgeballThrowerCollision.md)) |

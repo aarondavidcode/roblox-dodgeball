@@ -59,4 +59,4 @@ The library tracks parts tagged with **`DODGEBALL_BALL_PHYSICS_TAG`** in Dodgeba
 
 ## Debug (off in production)
 
-Upstream supports F3/F4 debug in `dev/` only (not vendored here). **`BALL_PHYSICS_DEBUG_ENABLED`** in DodgeballConfig stays `false` by default. Use **`DEBUG_BALL_PHYSICS`** in dodgeball config for integration Output — see [DodgeballBallPhysicsDebug.md](../DodgeballBallPhysicsDebug/DodgeballBallPhysicsDebug.md).
+Upstream supports F3/F4 debug in `dev/` only (not vendored here). **`BALL_PHYSICS_DEBUG_ENABLED`** in [DodgeballDebugConfig.md](../DodgeballDebugConfig/DodgeballDebugConfig.md) stays `false` by default. Use **`DEBUG_BALL_PHYSICS`** there for integration Output — see [DodgeballBallPhysicsDebug.md](../DodgeballBallPhysicsDebug/DodgeballBallPhysicsDebug.md).

@@ -19,7 +19,7 @@ export type EffectContext = {
 	spectatorColor: Color3,
 	throwerUserId: number?,
 	teamName: string?,
-	-- Per-effect shell scale for the active effect on this ball (see DodgeballConfig BALL_VISUAL_EFFECT_*_SHELL_*).
+	-- Per-effect shell scale for the active effect on this ball (see DodgeballBallVisualEffectsConfig).
 	shell: EffectShellTunables,
 }
 

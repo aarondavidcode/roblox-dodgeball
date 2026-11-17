@@ -280,5 +280,5 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
--- Extension: server may add RemoteFunction SET_BALL_VISUAL_EFFECT_REMOTE_NAME (DodgeballConfig)
+-- Extension: server may add RemoteFunction SET_BALL_VISUAL_EFFECT_REMOTE_NAME (DodgeballBallVisualEffectsConfig)
 -- to validate player-chosen effect ids and set BALL_VISUAL_EFFECT_PLAYER_ATTR — not wired yet.

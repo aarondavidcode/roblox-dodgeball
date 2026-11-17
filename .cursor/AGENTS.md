@@ -47,7 +47,7 @@ Duplicating them in docs or Studio instructions is wrong.
 
 Extend existing systems — **no parallel game framework:**
 
-- **LobbyService**, **DodgeballService**, **LobbyPracticeBallService**, **RoundService**, **TeamAutoBalance**, **DodgeballThrowerCollision**, shared **DodgeballConfig**, vendored **ReplicatedStorage/BallPhysics** + **BallPhysicsAutoSetup** / **BallPhysicsClient**, client LocalScripts under **StarterPlayerScripts** or **StarterGui** as documented.
+- **LobbyService**, **DodgeballService**, **LobbyPracticeBallService**, **RoundService**, **TeamAutoBalance**, **DodgeballThrowerCollision**, shared **DodgeballConfig** (+ **DodgeballBallVisualEffectsConfig**, **DodgeballDebugConfig**), vendored **ReplicatedStorage/BallPhysics** + **BallPhysicsAutoSetup** / **BallPhysicsClient**, client LocalScripts under **StarterPlayerScripts** or **StarterGui** as documented.
 
 **Semantics (do not confuse):**
 

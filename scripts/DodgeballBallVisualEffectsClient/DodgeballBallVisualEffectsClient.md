@@ -64,4 +64,4 @@ Works for any team names in Explorer — not tied to `TEAM_NAMES`. Re-throws upd
 
 `EffectContext.shell.diameterScale` is set per active effect id (`shellDiameterScaleForEffect` in the LocalScript). **SpeedGlow** uses **BallVisualEffectShell** and adorns the shell with **Highlight**. Sphere dodgeballs only; non-spheres fall back to highlighting the ball Part.
 
-**Another effect / scale:** add `BALL_VISUAL_EFFECT_<EFFECTID>_SHELL_DIAMETER_SCALE` in **DodgeballConfig**, mirror on remotes, extend `shellDiameterScaleForEffect`, and call `BallVisualEffectShell.create(ball, effectId, context.shell.diameterScale)` in the effect module.
+**Another effect / scale:** add `BALL_VISUAL_EFFECT_<EFFECTID>_SHELL_DIAMETER_SCALE` in **DodgeballBallVisualEffectsConfig**, mirror on remotes, extend `shellDiameterScaleForEffect`, and call `BallVisualEffectShell.create(ball, effectId, context.shell.diameterScale)` in the effect module.

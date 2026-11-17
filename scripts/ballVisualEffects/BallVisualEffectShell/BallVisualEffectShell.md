@@ -32,6 +32,6 @@ Returns **`nil`** if the ball is not a **Ball** shape (falls back to adorning th
 
 ## Scale tunables
 
-Diameter = ball diameter × **`context.shell.diameterScale`**. Scale comes from **DodgeballConfig** per effect (mirrored on **DodgeballRemotes**) — see **SpeedGlow** `SPEED_GLOW_SHELL_DIAMETER_SCALE`.
+Diameter = ball diameter × **`context.shell.diameterScale`**. Scale comes from **DodgeballBallVisualEffectsConfig** per effect (mirrored on **DodgeballRemotes**) — see **SpeedGlow** `SPEED_GLOW_SHELL_DIAMETER_SCALE`.
 
-**Future effects:** add `BALL_VISUAL_EFFECT_<EFFECTID>_SHELL_DIAMETER_SCALE` in config (e.g. `BALL_VISUAL_EFFECT_TRAILBURST_SHELL_DIAMETER_SCALE`), mirror on remotes, and read it in **DodgeballBallVisualEffectsClient** when building `EffectContext.shell` for that effect id.
+**Future effects:** add `BALL_VISUAL_EFFECT_<EFFECTID>_SHELL_DIAMETER_SCALE` in **DodgeballBallVisualEffectsConfig** (e.g. `BALL_VISUAL_EFFECT_TRAILBURST_SHELL_DIAMETER_SCALE`), mirror on remotes, and read it in **DodgeballBallVisualEffectsClient** when building `EffectContext.shell` for that effect id.

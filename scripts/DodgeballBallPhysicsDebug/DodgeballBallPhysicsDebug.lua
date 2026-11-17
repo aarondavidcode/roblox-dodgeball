@@ -9,7 +9,7 @@ local DodgeballBallPhysicsDebug = {}
 
 local function readConfigFlag(): boolean
 	local ServerScriptService = game:GetService("ServerScriptService")
-	local configModule = ServerScriptService:FindFirstChild("DodgeballConfig")
+	local configModule = ServerScriptService:FindFirstChild("DodgeballDebugConfig")
 	if not configModule or not configModule:IsA("ModuleScript") then
 		return false
 	end
