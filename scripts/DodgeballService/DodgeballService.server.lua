@@ -216,6 +216,13 @@ local function publishClientTunables()
 	if typeof(speedGlowShellScale) == "number" and speedGlowShellScale > 0 then
 		folder:SetAttribute("SPEED_GLOW_SHELL_DIAMETER_SCALE", speedGlowShellScale)
 	end
+	folder:SetAttribute("SPEED_GLOW_FILL_TRANSPARENCY", VisualEffectsConfig.SPEED_GLOW_FILL_TRANSPARENCY)
+	folder:SetAttribute("SPEED_GLOW_OUTLINE_TRANSPARENCY", VisualEffectsConfig.SPEED_GLOW_OUTLINE_TRANSPARENCY)
+	folder:SetAttribute("SPEED_GLOW_MIN_OUTLINE_LUMINANCE", VisualEffectsConfig.SPEED_GLOW_MIN_OUTLINE_LUMINANCE)
+	local spectatorOutline = VisualEffectsConfig.SPEED_GLOW_SPECTATOR_OUTLINE_COLOR
+	if typeof(spectatorOutline) == "Color3" then
+		folder:SetAttribute("SPEED_GLOW_SPECTATOR_OUTLINE_COLOR", spectatorOutline)
+	end
 	folder:SetAttribute("DODGEBALL_TAG", Config.DODGEBALL_TAG)
 	local physicsTag = Config.BALL_PHYSICS_TAG
 	if typeof(physicsTag) == "string" and physicsTag ~= "" then

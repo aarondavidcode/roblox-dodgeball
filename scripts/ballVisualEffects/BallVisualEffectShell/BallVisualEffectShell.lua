@@ -8,6 +8,7 @@ local BallVisualEffectShell = {}
 export type ShellHandle = {
 	part: BasePart,
 	setDiameterScale: (scale: number) -> (),
+	setGlowActive: (active: boolean) -> (),
 	destroy: () -> (),
 }
 
@@ -34,8 +35,7 @@ function BallVisualEffectShell.create(ball: BasePart, effectLabel: string, diame
 	shell.Shape = Enum.PartType.Ball
 	shell.Material = Enum.Material.SmoothPlastic
 	shell.Color = ball.Color
-	-- Not fully 1 — some Highlight paths treat adornee at 1.0 as invisible.
-	shell.Transparency = 0.995
+	shell.Transparency = 1
 	shell.Anchored = false
 	shell.Massless = true
 	shell.CanCollide = false
@@ -63,6 +63,18 @@ function BallVisualEffectShell.create(ball: BasePart, effectLabel: string, diame
 				scale = 1
 			end
 			applyShellSize(shell, ball, scale)
+		end,
+		setGlowActive = function(active: boolean)
+			if destroyed then
+				return
+			end
+			if active then
+				shell.Material = Enum.Material.ForceField
+				shell.Transparency = 0.88
+			else
+				shell.Material = Enum.Material.SmoothPlastic
+				shell.Transparency = 1
+			end
 		end,
 		destroy = function()
 			if destroyed then

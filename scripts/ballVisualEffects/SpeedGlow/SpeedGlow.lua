@@ -22,6 +22,9 @@ export type DebugSnapshot = {
 	adorneeName: string,
 	shellExists: boolean,
 	shellSize: string,
+	fillTransparency: number,
+	outlineTransparency: number,
+	depthMode: string,
 }
 
 type State = {
@@ -38,23 +41,33 @@ local stateByBall: { [BasePart]: State } = {}
 local Registry = require(script.Parent:WaitForChild("BallVisualEffectRegistry"))
 local BallVisualEffectColors = require(script.Parent:WaitForChild("BallVisualEffectColors"))
 
-local function applyColors(state: State, context: Registry.EffectContext)
-	state.highlight.FillColor = context.effectColor
-	state.highlight.OutlineColor = BallVisualEffectColors.outlineFromFill(context.effectColor)
+local function applyColors(state: State, context: Registry.EffectContext, glowing: boolean)
+	local glowOpts: BallVisualEffectColors.GlowColorOptions = {
+		minOutlineLuminance = context.speedGlow.minOutlineLuminance,
+		paleOutline = context.speedGlow.spectatorOutlineColor,
+	}
+	local fill, outline = BallVisualEffectColors.colorsForGlow(context.effectColor, glowOpts)
+	state.highlight.FillColor = fill
+	state.highlight.OutlineColor = outline
+	if glowing then
+		state.highlight.FillTransparency = context.speedGlow.fillTransparency
+		state.highlight.OutlineTransparency = context.speedGlow.outlineTransparency
+	end
 end
 
-local function ensureHighlightOnAdornee(state: State, ball: BasePart, adornee: BasePart)
-	state.highlight.Adornee = adornee
+local function ensureHighlightOnBall(state: State, ball: BasePart)
+	state.highlight.Adornee = ball
 	state.highlight.Parent = ball
-	state.adornee = adornee
+	state.adornee = ball
 end
 
-local function syncShell(state: State, ball: BasePart, context: Registry.EffectContext)
+local function syncShell(state: State, ball: BasePart, context: Registry.EffectContext, glowing: boolean)
 	local scale = context.shell.diameterScale
 	local shell = state.shell
 	if shell and shell.part.Parent then
 		shell.setDiameterScale(scale)
-		ensureHighlightOnAdornee(state, ball, shell.part)
+		shell.setGlowActive(glowing)
+		ensureHighlightOnBall(state, ball)
 		return
 	end
 
@@ -66,10 +79,9 @@ local function syncShell(state: State, ball: BasePart, context: Registry.EffectC
 	local created = BallVisualEffectShell.create(ball, SpeedGlow.id, scale)
 	if created then
 		state.shell = created
-		ensureHighlightOnAdornee(state, ball, created.part)
-	else
-		ensureHighlightOnAdornee(state, ball, ball)
+		created.setGlowActive(glowing)
 	end
+	ensureHighlightOnBall(state, ball)
 end
 
 local function createState(ball: BasePart, context: Registry.EffectContext): State
@@ -77,8 +89,8 @@ local function createState(ball: BasePart, context: Registry.EffectContext): Sta
 	highlight.Name = "SpeedGlow"
 	highlight.FillColor = Color3.new(1, 1, 1)
 	highlight.OutlineColor = Color3.new(1, 1, 1)
-	highlight.FillTransparency = 0.82
-	highlight.OutlineTransparency = 0.45
+	highlight.FillTransparency = 1
+	highlight.OutlineTransparency = 1
 	highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 	highlight.Enabled = false
 
@@ -90,16 +102,16 @@ local function createState(ball: BasePart, context: Registry.EffectContext): Sta
 		lastShouldGlow = false,
 		lastSpeed = 0,
 	}
-	syncShell(state, ball, context)
-	applyColors(state, context)
+	syncShell(state, ball, context, false)
+	applyColors(state, context, false)
 	return state
 end
 
 function SpeedGlow.attach(ball: BasePart, context: Registry.EffectContext)
 	local existing = stateByBall[ball]
 	if existing then
-		syncShell(existing, ball, context)
-		applyColors(existing, context)
+		syncShell(existing, ball, context, existing.glowing)
+		applyColors(existing, context, existing.glowing)
 		return
 	end
 	stateByBall[ball] = createState(ball, context)
@@ -127,8 +139,6 @@ function SpeedGlow.step(ball: BasePart, context: Registry.EffectContext)
 		return
 	end
 
-	syncShell(state, ball, context)
-
 	local speed = ball.AssemblyLinearVelocity.Magnitude
 	local onThreshold = context.hitMinSpeed
 	local offThreshold = onThreshold * context.speedGlowHysteresisFraction
@@ -140,7 +150,8 @@ function SpeedGlow.step(ball: BasePart, context: Registry.EffectContext)
 		shouldGlow = speed >= onThreshold
 	end
 
-	applyColors(state, context)
+	syncShell(state, ball, context, shouldGlow)
+	applyColors(state, context, shouldGlow)
 	state.glowing = shouldGlow
 	state.lastShouldGlow = shouldGlow
 	state.lastSpeed = speed
@@ -166,6 +177,9 @@ function SpeedGlow.getDebugSnapshot(ball: BasePart, context: Registry.EffectCont
 		adorneeName = state.adornee.Name,
 		shellExists = shellPart ~= nil and shellPart.Parent ~= nil,
 		shellSize = shellSize,
+		fillTransparency = state.highlight.FillTransparency,
+		outlineTransparency = state.highlight.OutlineTransparency,
+		depthMode = tostring(state.highlight.DepthMode),
 	}
 end
 

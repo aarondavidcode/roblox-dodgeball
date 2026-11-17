@@ -40,6 +40,10 @@ local ballEffectAttr = "BallVisualEffectId"
 local playerEffectAttr = "BallVisualEffect"
 local spectatorColor = Color3.fromRGB(255, 255, 255)
 local speedGlowShellDiameterScale = 1.4
+local speedGlowFillTransparency = 0.55
+local speedGlowOutlineTransparency = 0.12
+local speedGlowMinOutlineLuminance = 0.4
+local speedGlowSpectatorOutlineColor = Color3.fromRGB(200, 220, 255)
 
 local remotes: Folder? = nil
 
@@ -57,6 +61,16 @@ local function readFractionAttr(name: string, fallback: number): number
 	if remotes then
 		local value = remotes:GetAttribute(name)
 		if typeof(value) == "number" and value > 0 and value <= 1 then
+			return value
+		end
+	end
+	return fallback
+end
+
+local function readOpacityAttr(name: string, fallback: number): number
+	if remotes then
+		local value = remotes:GetAttribute(name)
+		if typeof(value) == "number" and value >= 0 and value <= 1 then
 			return value
 		end
 	end
@@ -153,6 +167,11 @@ local function hookRemoteTunables(folder: Folder)
 		playerEffectAttr = readStringAttr("BALL_VISUAL_EFFECT_PLAYER_ATTR", playerEffectAttr)
 		spectatorColor = readColor3Attr("BALL_VISUAL_EFFECT_SPECTATOR_COLOR", spectatorColor)
 		speedGlowShellDiameterScale = readNumberAttr("SPEED_GLOW_SHELL_DIAMETER_SCALE", speedGlowShellDiameterScale)
+		speedGlowFillTransparency = readOpacityAttr("SPEED_GLOW_FILL_TRANSPARENCY", speedGlowFillTransparency)
+		speedGlowOutlineTransparency = readOpacityAttr("SPEED_GLOW_OUTLINE_TRANSPARENCY", speedGlowOutlineTransparency)
+		speedGlowMinOutlineLuminance = readOpacityAttr("SPEED_GLOW_MIN_OUTLINE_LUMINANCE", speedGlowMinOutlineLuminance)
+		speedGlowSpectatorOutlineColor =
+			readColor3Attr("SPEED_GLOW_SPECTATOR_OUTLINE_COLOR", speedGlowSpectatorOutlineColor)
 	end
 	for _, name in
 		{
@@ -166,6 +185,10 @@ local function hookRemoteTunables(folder: Folder)
 			"BALL_VISUAL_EFFECT_PLAYER_ATTR",
 			"BALL_VISUAL_EFFECT_SPECTATOR_COLOR",
 			"SPEED_GLOW_SHELL_DIAMETER_SCALE",
+			"SPEED_GLOW_FILL_TRANSPARENCY",
+			"SPEED_GLOW_OUTLINE_TRANSPARENCY",
+			"SPEED_GLOW_MIN_OUTLINE_LUMINANCE",
+			"SPEED_GLOW_SPECTATOR_OUTLINE_COLOR",
 			"DEBUG_BALL_VISUAL_EFFECTS",
 		}
 	do
@@ -201,6 +224,12 @@ local function makeContext(ball: BasePart, effectId: string): Registry.EffectCon
 		teamName = colorRes.teamName,
 		shell = {
 			diameterScale = shellScale,
+		},
+		speedGlow = {
+			fillTransparency = speedGlowFillTransparency,
+			outlineTransparency = speedGlowOutlineTransparency,
+			minOutlineLuminance = speedGlowMinOutlineLuminance,
+			spectatorOutlineColor = speedGlowSpectatorOutlineColor,
 		},
 	}
 end
@@ -245,11 +274,20 @@ logThrowSample = function(ball: BasePart, label: string)
 	local teamLine = if colorRes.teamName
 		then `team={colorRes.teamName} color={VisualEffectsDebug.formatColor3(colorRes.effectColor)}`
 		else `spectator color={VisualEffectsDebug.formatColor3(colorRes.effectColor)}`
+	local renderLine = ""
 	local glowLine = if snap
-		then `speed={string.format("%.2f", snap.speed)} shouldGlow={snap.shouldGlow} hiEnabled={snap.highlightEnabled} adornee={snap.adorneeName} shell={snap.shellExists} shellSize={snap.shellSize} hitMin={snap.hitMinSpeed} offAt={string.format(
-			"%.2f",
-			snap.offThreshold
-		)}`
+		then (function()
+			if snap.shouldGlow or snap.highlightEnabled then
+				renderLine = ` fillTrans={string.format("%.2f", snap.fillTransparency)} outlineTrans={string.format(
+					"%.2f",
+					snap.outlineTransparency
+				)} depthMode={snap.depthMode}`
+			end
+			return `speed={string.format("%.2f", snap.speed)} shouldGlow={snap.shouldGlow} hiEnabled={snap.highlightEnabled} adornee={snap.adorneeName} shell={snap.shellExists} shellSize={snap.shellSize} hitMin={snap.hitMinSpeed} offAt={string.format(
+				"%.2f",
+				snap.offThreshold
+			)}{renderLine}`
+		end)()
 		else "SpeedGlow state=nil (not attached)"
 	VisualEffectsDebug.log(
 		`throw sample {label} ball={ball.Name} tracked={entry ~= nil} tags={ballTagsSummary(ball)} effectId={effectId} tunables hitMin={hitMinSpeed} hysteresis={speedGlowHysteresisFraction} shellScale={speedGlowShellDiameterScale} {teamLine} {glowLine}`

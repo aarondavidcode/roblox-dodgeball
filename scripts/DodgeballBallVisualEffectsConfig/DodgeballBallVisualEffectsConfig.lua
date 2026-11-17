@@ -23,6 +23,15 @@ local DodgeballBallVisualEffectsConfig = {
 	-- SpeedGlow client shell: Highlight adorns a welded transparent sphere sized ballDiameter × this (spheres only).
 	SPEED_GLOW_SHELL_DIAMETER_SCALE = 1.4,
 
+	-- SpeedGlow Highlight strength while glowing (0 = opaque, 1 = invisible).
+	SPEED_GLOW_FILL_TRANSPARENCY = 0.55,
+	SPEED_GLOW_OUTLINE_TRANSPARENCY = 0.12,
+
+	-- When fill is near-white on a pale ball, outline uses this rim color instead of fill+brighten.
+	SPEED_GLOW_SPECTATOR_OUTLINE_COLOR = Color3.fromRGB(200, 220, 255),
+	-- Relative luminance floor for outline (0–1). Boosts dark team colors on outline.
+	SPEED_GLOW_MIN_OUTLINE_LUMINANCE = 0.4,
+
 	-- Ball VFX when no thrower, thrower left, or thrower has no Team (lobby spectator practice).
 	BALL_VISUAL_EFFECT_SPECTATOR_COLOR = Color3.fromRGB(255, 255, 255),
 

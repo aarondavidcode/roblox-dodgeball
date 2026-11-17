@@ -11,6 +11,13 @@ export type EffectShellTunables = {
 	diameterScale: number,
 }
 
+export type SpeedGlowTunables = {
+	fillTransparency: number,
+	outlineTransparency: number,
+	minOutlineLuminance: number,
+	spectatorOutlineColor: Color3,
+}
+
 export type EffectContext = {
 	hitMinSpeed: number,
 	speedGlowHysteresisFraction: number,
@@ -21,6 +28,7 @@ export type EffectContext = {
 	teamName: string?,
 	-- Per-effect shell scale for the active effect on this ball (see DodgeballBallVisualEffectsConfig).
 	shell: EffectShellTunables,
+	speedGlow: SpeedGlowTunables,
 }
 
 export type BallVisualEffectModule = {
