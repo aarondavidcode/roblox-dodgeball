@@ -91,7 +91,7 @@ local DodgeballConfig = {
 	BALL_PHYSICS_ANTIGRAVITY_FRACTION = 0.62,
 
 	-- Upstream F3/F4 overlay scripts are not bundled; library debug flag only when upstream ships dev tools.
-	BALL_PHYSICS_DEBUG_ENABLED = true,
+	BALL_PHYSICS_DEBUG_ENABLED = false,
 
 	-- Side spin (rad/s) on aimed throws so Magnus can curve; scaled by throw power (0–1).
 	THROW_SIDE_SPIN_RAD_PER_SEC = 22,
@@ -115,7 +115,7 @@ local DodgeballConfig = {
 	DEBUG_ELIMINATION = false,
 
 	-- Temporary: tagged Output lines for BallPhysics wiring (see DodgeballBallPhysicsDebug.md).
-	DEBUG_BALL_PHYSICS = true,
+	DEBUG_BALL_PHYSICS = false,
 
 	-- === Round reset — change these to tune between-round pacing ===
 
