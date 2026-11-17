@@ -23,4 +23,4 @@ Paste from [BallVisualEffectColors.lua](./BallVisualEffectColors.lua).
 
 ## For new effects
 
-Read **`context.effectColor`** (and optional `context.teamName`) from [BallVisualEffectRegistry](../BallVisualEffectRegistry/BallVisualEffectRegistry.md) `EffectContext`. Use `BallVisualEffectColors.outlineFromFill` if you need a lighter outline in the same hue — do not re-implement team lookup in the effect module.
+Read **`context.effectColor`** (and optional `context.teamName`) from [BallVisualEffectRegistry](../BallVisualEffectRegistry/BallVisualEffectRegistry.md) `EffectContext`. **SpeedGlow** uses `colorsForGlow` for pale/white fills (cyan rim from `SPEED_GLOW_SPECTATOR_OUTLINE_COLOR`) — do not re-implement team lookup in the effect module.
