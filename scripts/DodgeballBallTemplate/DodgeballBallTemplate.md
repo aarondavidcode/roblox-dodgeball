@@ -8,6 +8,7 @@
 |--------|------|------|
 | `DodgeballBallTemplate` | `ServerScriptService/DodgeballBallTemplate` | **ModuleScript** |
 | `DodgeballConfig` | `ServerScriptService/DodgeballConfig` | **ModuleScript** (required) |
+| `DodgeballThrowerCollision` | `ServerScriptService/DodgeballThrowerCollision` | **ModuleScript** (required) |
 
 Paste from [DodgeballBallTemplate.lua](./DodgeballBallTemplate.lua).
 

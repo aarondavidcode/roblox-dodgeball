@@ -12,7 +12,7 @@ The playable game is always your **Roblox place** (arena, teams, spawns). GitHub
 |--------|----------------|----------------|---------------|
 | Teams | `TeamAutoBalance`, `LobbyService` | — | `DodgeballConfig` |
 | Lobby and matches | `LobbyService`, `LobbyPracticeBallService` | `LobbyJoinNextMatchClient` | `DodgeballConfig` |
-| Dodgeballs | `DodgeballService`, `DodgeballBallTemplate` | `DodgeballThrowInput` | `DodgeballConfig`, `throw/DefaultThrow` |
+| Dodgeballs | `DodgeballService`, `DodgeballBallTemplate`, `DodgeballThrowerCollision` | `DodgeballThrowInput` | `DodgeballConfig`, `throw/DefaultThrow` |
 | Rounds | `RoundService` | `RoundStatusClient` (optional UI) | `DodgeballConfig` |
 
 **Typical flow:** Players wait on a **lobby spawn** → opt in to the next match → countdown → Red/Blue on arena pads → rounds until one team is all OUT → first to **3** round wins wins the match → back to lobby.
@@ -27,6 +27,7 @@ Copy from the `.lua` file in each folder under [scripts/](scripts/) on GitHub (*
 |-----------|---------------|---------------|------------------|
 | [scripts/DodgeballConfig/DodgeballConfig.lua](scripts/DodgeballConfig/DodgeballConfig.lua) | `ServerScriptService/DodgeballConfig` | ModuleScript | [DodgeballConfig.md](scripts/DodgeballConfig/DodgeballConfig.md) |
 | [scripts/DodgeballBallTemplate/DodgeballBallTemplate.lua](scripts/DodgeballBallTemplate/DodgeballBallTemplate.lua) | `ServerScriptService/DodgeballBallTemplate` | ModuleScript | [DodgeballBallTemplate.md](scripts/DodgeballBallTemplate/DodgeballBallTemplate.md) |
+| [scripts/DodgeballThrowerCollision/DodgeballThrowerCollision.lua](scripts/DodgeballThrowerCollision/DodgeballThrowerCollision.lua) | `ServerScriptService/DodgeballThrowerCollision` | ModuleScript | [DodgeballThrowerCollision.md](scripts/DodgeballThrowerCollision/DodgeballThrowerCollision.md) |
 | [scripts/TeamAutoBalance/TeamAutoBalance.server.lua](scripts/TeamAutoBalance/TeamAutoBalance.server.lua) | `ServerScriptService/TeamAutoBalance` | Script | [TeamAutoBalance.md](scripts/TeamAutoBalance/TeamAutoBalance.md) |
 | [scripts/DodgeballService/DodgeballService.server.lua](scripts/DodgeballService/DodgeballService.server.lua) | `ServerScriptService/DodgeballService` | Script | [DodgeballService.md](scripts/DodgeballService/DodgeballService.md) |
 | [scripts/throw/DefaultThrow/DefaultThrow.lua](scripts/throw/DefaultThrow/DefaultThrow.lua) | `ServerScriptService/throw/DefaultThrow` | ModuleScript | [DefaultThrow.md](scripts/throw/DefaultThrow/DefaultThrow.md) |

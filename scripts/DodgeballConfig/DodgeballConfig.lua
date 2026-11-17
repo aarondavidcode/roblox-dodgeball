@@ -43,6 +43,10 @@ local DodgeballConfig = {
 	-- Gentle roll speed when max hold forces a drop (cannot eliminate anyone).
 	HOLD_ROLL_IMPULSE = 12,
 
+	-- After releasing a throw or hold roll, thrower character parts skip ball collision this long (seconds).
+	-- Uses PhysicsService collision groups (see DodgeballThrowerCollision). 0 disables.
+	THROWER_BALL_NOCOLLIDE_SECONDS = 0.35,
+
 	-- Where ball Parts live in Workspace (you build this folder).
 	BALL_FOLDER_NAME = "Dodgeballs",
 

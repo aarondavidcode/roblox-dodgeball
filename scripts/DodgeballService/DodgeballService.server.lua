@@ -18,6 +18,7 @@ local Workspace = game:GetService("Workspace")
 
 local Config = require(ServerScriptService:WaitForChild("DodgeballConfig"))
 local BallTemplate = require(ServerScriptService:WaitForChild("DodgeballBallTemplate"))
+local ThrowerCollision = require(ServerScriptService:WaitForChild("DodgeballThrowerCollision"))
 
 -- Roblox only documents Players.CharacterAutoLoads (global). When false, the engine does not
 -- auto-call LoadCharacter after death; RespawnTime (default 5s) applies only while global is true.
@@ -556,6 +557,7 @@ local function releaseBallForThrow(player: Player): BasePart?
 	ball.Parent = Workspace:FindFirstChild(Config.BALL_FOLDER_NAME) or Workspace
 	ball:SetAttribute("HolderUserId", nil)
 	heldByPlayer[player] = nil
+	ThrowerCollision.beginThrowerGrace(player, ball)
 	return ball
 end
 

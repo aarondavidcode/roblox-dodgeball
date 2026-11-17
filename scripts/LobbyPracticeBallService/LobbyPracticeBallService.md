@@ -9,6 +9,7 @@
 | `LobbyPracticeBallService` | `ServerScriptService/LobbyPracticeBallService` | **Script** |
 | `DodgeballConfig` | `ServerScriptService/DodgeballConfig` | **ModuleScript** (required) |
 | `DodgeballBallTemplate` | `ServerScriptService/DodgeballBallTemplate` | **ModuleScript** (required) |
+| `DodgeballThrowerCollision` | `ServerScriptService/DodgeballThrowerCollision` | **ModuleScript** (required) |
 | `DefaultThrow` | `ServerScriptService/throw/DefaultThrow` | **ModuleScript** (required) |
 
 Paste from [LobbyPracticeBallService.server.lua](./LobbyPracticeBallService.server.lua).
@@ -64,7 +65,7 @@ Match players in the arena use arena balls only; this script drops lobby balls i
 
 ## Config knobs
 
-**Shared ball look/throw:** `BALL_*` plus pickup/throw keys in [DodgeballConfig.md](../DodgeballConfig/DodgeballConfig.md) — applied via [DodgeballBallTemplate.md](../DodgeballBallTemplate/DodgeballBallTemplate.md) (same as arena balls).
+**Shared ball look/throw:** `BALL_*` plus pickup/throw keys in [DodgeballConfig.md](../DodgeballConfig/DodgeballConfig.md) — applied via [DodgeballBallTemplate.md](../DodgeballBallTemplate/DodgeballBallTemplate.md) (same as arena balls). Throw release uses the same thrower no-collide grace as arena (`THROWER_BALL_NOCOLLIDE_SECONDS`, [DodgeballThrowerCollision.md](../DodgeballThrowerCollision/DodgeballThrowerCollision.md)).
 
 **Lobby-only:** `LOBBY_BALL_*` spawn folder, volume/exclude tags, min/max per area, idle timeout, maintenance interval, `LOBBY_PRACTICE_BALL_ATTR`. No **match** hold timer or hold-penalty roll while carrying a practice ball.
 

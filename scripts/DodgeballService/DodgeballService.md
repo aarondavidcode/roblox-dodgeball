@@ -9,6 +9,7 @@
 | `DodgeballService` | `ServerScriptService/DodgeballService` | **Script** |
 | `DodgeballConfig` | `ServerScriptService/DodgeballConfig` | **ModuleScript** (required) |
 | `DodgeballBallTemplate` | `ServerScriptService/DodgeballBallTemplate` | **ModuleScript** (required) |
+| `DodgeballThrowerCollision` | `ServerScriptService/DodgeballThrowerCollision` | **ModuleScript** (required) |
 | `throw` | `ServerScriptService/throw` | **Folder** |
 | `DefaultThrow` | `ServerScriptService/throw/DefaultThrow` | **ModuleScript** (required) |
 
@@ -47,6 +48,7 @@ On first run the service can create an **empty** `Dodgeballs` folder and warn in
 | `HIT_MIN_SPEED`, `THROW_OUT_WINDOW_SECONDS`, `DEBUG_ELIMINATION` | OUT detection |
 | `THROW_IMPULSE`, `ACTIVE_THROW_PROFILE` | Throw strength and module |
 | `BALL_MAX_HOLD_SECONDS`, `HOLD_*`, `AIM_*` | Hold and aim server enforcement |
+| `THROWER_BALL_NOCOLLIDE_SECONDS` | Thrower–ball no-collide grace on release ([DodgeballThrowerCollision.md](../DodgeballThrowerCollision/DodgeballThrowerCollision.md)) |
 | `BALL_FOLDER_NAME`, `DODGEBALL_TAG` | Finding balls |
 | `DEFAULT_WALK_SPEED`, `DEFAULT_JUMP_POWER`, `OUT_STRAY_RESPAWN_FALLBACK` | OUT / movement |
 
