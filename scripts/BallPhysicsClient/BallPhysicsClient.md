@@ -6,7 +6,6 @@
 
 | Object | Path | Type |
 |--------|------|------|
-| `BallPhysicsResolver` | `ReplicatedStorage/BallPhysicsResolver` | **ModuleScript** |
 | `BallPhysics` | `ReplicatedStorage/BallPhysics` | **ModuleScript** entry — [ball-physics README](../ball-physics/README.md) |
 | `BallPhysicsClient` | `StarterPlayer/StarterPlayerScripts/BallPhysicsClient` | **LocalScript** |
 

@@ -31,7 +31,6 @@ Explorer **instance names** must match the root README table. `require()` in Lua
 | [LobbyPracticeBallService/](LobbyPracticeBallService/LobbyPracticeBallService.md) | [LobbyPracticeBallService.md](LobbyPracticeBallService/LobbyPracticeBallService.md) |
 | [LobbyJoinNextMatchClient/](LobbyJoinNextMatchClient/LobbyJoinNextMatchClient.md) | [LobbyJoinNextMatchClient.md](LobbyJoinNextMatchClient/LobbyJoinNextMatchClient.md) |
 | [ball-physics/](ball-physics/README.md) | Vendored **BallPhysics** v1.0.0 → `ReplicatedStorage/BallPhysics` **ModuleScript** tree |
-| [BallPhysicsResolver/](BallPhysicsResolver/BallPhysicsResolver.md) | [BallPhysicsResolver.md](BallPhysicsResolver/BallPhysicsResolver.md) |
 | [BallPhysicsAutoSetup/](BallPhysicsAutoSetup/BallPhysicsAutoSetup.md) | [BallPhysicsAutoSetup.md](BallPhysicsAutoSetup/BallPhysicsAutoSetup.md) |
 | [BallPhysicsClient/](BallPhysicsClient/BallPhysicsClient.md) | [BallPhysicsClient.md](BallPhysicsClient/BallPhysicsClient.md) |
 | [DodgeballBallPhysicsDebug/](DodgeballBallPhysicsDebug/DodgeballBallPhysicsDebug.md) | [DodgeballBallPhysicsDebug.md](DodgeballBallPhysicsDebug/DodgeballBallPhysicsDebug.md) |

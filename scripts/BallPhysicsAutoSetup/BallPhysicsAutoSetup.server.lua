@@ -10,36 +10,43 @@ local ServerScriptService = game:GetService("ServerScriptService")
 
 local DodgeballConfig = require(ServerScriptService:WaitForChild("DodgeballConfig"))
 local BallPhysicsDebug = require(ServerScriptService:WaitForChild("DodgeballBallPhysicsDebug"))
-local BallPhysicsResolver = require(ReplicatedStorage:WaitForChild("BallPhysicsResolver"))
 
-local function loadBallPhysics(): (any?, ModuleScript?)
-	local resolved = BallPhysicsResolver.resolve(ReplicatedStorage)
-	if not resolved.module then
-		BallPhysicsDebug.warn(
-			`BallPhysics require failed layout={resolved.layout} — {BallPhysicsResolver.describeExpected()}`
-		)
-		return nil, nil
+local BALL_PHYSICS_LAYOUT_HINT =
+	"ReplicatedStorage/BallPhysics must be a ModuleScript (paste init.luau) with Config child — not a Folder"
+
+local function getBallPhysicsEntry(): ModuleScript?
+	local inst = ReplicatedStorage:FindFirstChild("BallPhysics")
+	if not inst then
+		BallPhysicsDebug.warn(`BallPhysics missing under ReplicatedStorage — {BALL_PHYSICS_LAYOUT_HINT}`)
+		inst = ReplicatedStorage:WaitForChild("BallPhysics", 120)
 	end
-	if not resolved.module:IsA("ModuleScript") then
-		BallPhysicsDebug.warn(`BallPhysics entry is {resolved.module.ClassName}, expected ModuleScript`)
-		return nil, nil
+	if inst:IsA("Folder") then
+		BallPhysicsDebug.warn(`BallPhysics is a Folder (cannot require) — {BALL_PHYSICS_LAYOUT_HINT}`)
+		return nil
 	end
-	local ok, ballPhysics = pcall(require, resolved.module)
-	if not ok then
-		BallPhysicsDebug.warn(`BallPhysics require error layout={resolved.layout} err={ballPhysics}`)
-		return nil, resolved.module
+	if not inst:IsA("ModuleScript") then
+		BallPhysicsDebug.warn(`BallPhysics is a {inst.ClassName}, expected ModuleScript — {BALL_PHYSICS_LAYOUT_HINT}`)
+		return nil
 	end
-	BallPhysicsDebug.log(`BallPhysics library loaded layout={resolved.layout}`)
-	return ballPhysics, resolved.module
+	if not inst:FindFirstChild("Config") then
+		BallPhysicsDebug.warn(`BallPhysics ModuleScript has no Config child — {BALL_PHYSICS_LAYOUT_HINT}`)
+		return nil
+	end
+	return inst
 end
 
-local BallPhysics, ballPhysicsEntry = loadBallPhysics()
-if not BallPhysics or not ballPhysicsEntry then
-	if BallPhysicsDebug.isEnabled() then
-		BallPhysicsDebug.warn("BallPhysicsAutoSetup stopped — fix Explorer layout (see ball-physics/README.md)")
-	end
+local ballPhysicsEntry = getBallPhysicsEntry()
+if not ballPhysicsEntry then
+	BallPhysicsDebug.warn("BallPhysicsAutoSetup stopped — fix Explorer layout (see ball-physics/README.md)")
 	return
 end
+
+local okLoad, BallPhysics = pcall(require, ballPhysicsEntry)
+if not okLoad or typeof(BallPhysics) ~= "table" or typeof(BallPhysics.new) ~= "function" then
+	BallPhysicsDebug.warn(`BallPhysics require failed err={tostring(BallPhysics)} — {BALL_PHYSICS_LAYOUT_HINT}`)
+	return
+end
+BallPhysicsDebug.log("BallPhysics library loaded (ModuleScript root)")
 
 local PhysicsConfig = require(ballPhysicsEntry:WaitForChild("Config"))
 

@@ -12,11 +12,8 @@ Game tuning lives in **DodgeballConfig** (`BALL_PHYSICS_*`); **BallPhysicsAutoSe
 **`ReplicatedStorage/BallPhysics` must be a ModuleScript** (library entry).  
 Do **not** insert a **Folder** named `BallPhysics` and `require()` it — Roblox will error (`Attempted to call require with invalid argument(s)`).
 
-Also paste **`ReplicatedStorage/BallPhysicsResolver`** ModuleScript from [BallPhysicsResolver.md](../BallPhysicsResolver/BallPhysicsResolver.md) so **BallPhysicsAutoSetup** and **BallPhysicsClient** find the entry module.
-
 ```
 ReplicatedStorage
-├── BallPhysicsResolver          [ModuleScript]  ← repo scripts/BallPhysicsResolver/BallPhysicsResolver.lua
 └── BallPhysics                  [ModuleScript]  ← paste scripts/ball-physics/src/init.luau HERE (not a Folder)
     ├── Config                   [ModuleScript]  ← src/Config.luau
     ├── Types                    [ModuleScript]  ← src/Types.luau

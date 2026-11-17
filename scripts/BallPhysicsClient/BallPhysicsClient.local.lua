@@ -30,28 +30,33 @@ local function debugWarn(message: string)
 	warn(`{PREFIX} {message}`)
 end
 
-local resolverScript = ReplicatedStorage:WaitForChild("BallPhysicsResolver", 30)
-if not resolverScript or not resolverScript:IsA("ModuleScript") then
-	debugWarn("BallPhysicsResolver ModuleScript missing under ReplicatedStorage — paste from repo")
+local LAYOUT_HINT = "ReplicatedStorage/BallPhysics must be a ModuleScript with Config child — not a Folder"
+local entry = ReplicatedStorage:FindFirstChild("BallPhysics")
+if not entry then
+	debugWarn(`BallPhysics missing — {LAYOUT_HINT}`)
+	entry = ReplicatedStorage:WaitForChild("BallPhysics", 120)
+end
+if entry:IsA("Folder") then
+	debugWarn(`BallPhysics is a Folder (cannot require) — {LAYOUT_HINT}`)
+	return
+end
+if not entry:IsA("ModuleScript") then
+	debugWarn(`BallPhysics is a {entry.ClassName}, expected ModuleScript — {LAYOUT_HINT}`)
+	return
+end
+if not entry:FindFirstChild("Config") then
+	debugWarn(`BallPhysics has no Config child — {LAYOUT_HINT}`)
 	return
 end
 
-local BallPhysicsResolver = require(resolverScript)
-local resolved = BallPhysicsResolver.resolve(ReplicatedStorage)
-
-if not resolved.module or not resolved.module:IsA("ModuleScript") then
-	debugWarn(`BallPhysics client require failed layout={resolved.layout} — {BallPhysicsResolver.describeExpected()}`)
-	return
-end
-
-local ok, BallPhysics = pcall(require, resolved.module)
+local ok, BallPhysics = pcall(require, entry)
 if not ok or typeof(BallPhysics) ~= "table" or typeof(BallPhysics.new) ~= "function" then
-	debugWarn(`BallPhysics client require error layout={resolved.layout} err={tostring(BallPhysics)}`)
+	debugWarn(`BallPhysics client require failed err={tostring(BallPhysics)}`)
 	return
 end
 
 BallPhysics.new()
-debugLog(`BallPhysicsClient singleton started layout={resolved.layout}`)
+debugLog("BallPhysicsClient singleton started (ModuleScript root)")
 
 local physicsTag = "PhysicsBall"
 local lastSampledThrowTime: { [BasePart]: number } = {}
