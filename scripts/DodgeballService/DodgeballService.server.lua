@@ -206,6 +206,24 @@ local function publishClientTunables()
 		folder:SetAttribute("LOBBY_PRACTICE_BALL_TAG", practiceTag)
 	end
 	folder:SetAttribute("DEBUG_BALL_PHYSICS", Config.DEBUG_BALL_PHYSICS == true)
+	folder:SetAttribute("HIT_MIN_SPEED", Config.HIT_MIN_SPEED)
+	folder:SetAttribute("DEFAULT_BALL_VISUAL_EFFECT", Config.DEFAULT_BALL_VISUAL_EFFECT)
+	folder:SetAttribute("SPEED_GLOW_HYSTERESIS_FRACTION", Config.SPEED_GLOW_HYSTERESIS_FRACTION)
+	folder:SetAttribute("DODGEBALL_TAG", Config.DODGEBALL_TAG)
+	local physicsTag = Config.BALL_PHYSICS_TAG
+	if typeof(physicsTag) == "string" and physicsTag ~= "" then
+		folder:SetAttribute("BALL_PHYSICS_TAG", physicsTag)
+	end
+	local ballEffectAttr = Config.BALL_VISUAL_EFFECT_BALL_ATTR
+	if typeof(ballEffectAttr) == "string" and ballEffectAttr ~= "" then
+		folder:SetAttribute("BALL_VISUAL_EFFECT_BALL_ATTR", ballEffectAttr)
+	end
+	local playerEffectAttr = Config.BALL_VISUAL_EFFECT_PLAYER_ATTR
+	if typeof(playerEffectAttr) == "string" and playerEffectAttr ~= "" then
+		folder:SetAttribute("BALL_VISUAL_EFFECT_PLAYER_ATTR", playerEffectAttr)
+	end
+	-- Future: create RemoteFunction Config.SET_BALL_VISUAL_EFFECT_REMOTE_NAME to set
+	-- player:GetAttribute(BALL_VISUAL_EFFECT_PLAYER_ATTR) after validating against a server allow-list.
 end
 
 local throwRemote = getThrowRemote()

@@ -12,7 +12,7 @@ The playable game is always your **Roblox place** (arena, teams, spawns). GitHub
 |--------|----------------|----------------|---------------|
 | Teams | `TeamAutoBalance`, `LobbyService` | — | `DodgeballConfig` |
 | Lobby and matches | `LobbyService`, `LobbyPracticeBallService` | `LobbyJoinNextMatchClient` | `DodgeballConfig` |
-| Dodgeballs | `DodgeballService`, `DodgeballBallTemplate`, `DodgeballThrowerCollision`, `BallPhysicsAutoSetup` | `DodgeballThrowInput`, `BallPhysicsClient` | `DodgeballConfig`, `throw/DefaultThrow`, `ReplicatedStorage/BallPhysics` |
+| Dodgeballs | `DodgeballService`, `DodgeballBallTemplate`, `DodgeballThrowerCollision`, `BallPhysicsAutoSetup` | `DodgeballThrowInput`, `BallPhysicsClient`, `DodgeballBallVisualEffectsClient` | `DodgeballConfig`, `throw/DefaultThrow`, `ReplicatedStorage/BallPhysics` |
 | Rounds | `RoundService` | `RoundStatusClient` (optional UI) | `DodgeballConfig` |
 
 **Typical flow:** Players wait on a **lobby spawn** → opt in to the next match → countdown → Red/Blue on arena pads → rounds until one team is all OUT → first to **3** round wins wins the match → back to lobby.
@@ -40,6 +40,9 @@ Copy from the `.lua` file in each folder under [scripts/](scripts/) on GitHub (*
 | [scripts/ball-physics/src/](scripts/ball-physics/) (v1.0.0) | `ReplicatedStorage/BallPhysics` (**ModuleScript** root + children) | Module tree | [ball-physics/README.md](scripts/ball-physics/README.md) |
 | [scripts/BallPhysicsAutoSetup/BallPhysicsAutoSetup.server.lua](scripts/BallPhysicsAutoSetup/BallPhysicsAutoSetup.server.lua) | `ServerScriptService/BallPhysicsAutoSetup` | Script | [BallPhysicsAutoSetup.md](scripts/BallPhysicsAutoSetup/BallPhysicsAutoSetup.md) |
 | [scripts/BallPhysicsClient/BallPhysicsClient.local.lua](scripts/BallPhysicsClient/BallPhysicsClient.local.lua) | `StarterPlayer/StarterPlayerScripts/BallPhysicsClient` | LocalScript | [BallPhysicsClient.md](scripts/BallPhysicsClient/BallPhysicsClient.md) |
+| [scripts/DodgeballBallVisualEffectsClient/DodgeballBallVisualEffectsClient.local.lua](scripts/DodgeballBallVisualEffectsClient/DodgeballBallVisualEffectsClient.local.lua) | `StarterPlayer/StarterPlayerScripts/DodgeballBallVisualEffectsClient` | LocalScript | [DodgeballBallVisualEffectsClient.md](scripts/DodgeballBallVisualEffectsClient/DodgeballBallVisualEffectsClient.md) |
+| [scripts/ballVisualEffects/BallVisualEffectRegistry/BallVisualEffectRegistry.lua](scripts/ballVisualEffects/BallVisualEffectRegistry/BallVisualEffectRegistry.lua) | `StarterPlayer/StarterPlayerScripts/ballVisualEffects/BallVisualEffectRegistry` | ModuleScript | [BallVisualEffectRegistry.md](scripts/ballVisualEffects/BallVisualEffectRegistry/BallVisualEffectRegistry.md) |
+| [scripts/ballVisualEffects/SpeedGlow/SpeedGlow.lua](scripts/ballVisualEffects/SpeedGlow/SpeedGlow.lua) | `StarterPlayer/StarterPlayerScripts/ballVisualEffects/SpeedGlow` | ModuleScript | [SpeedGlow.md](scripts/ballVisualEffects/SpeedGlow/SpeedGlow.md) |
 
 **Third-party:** [thaalish/ball-physics](https://github.com/thaalish/ball-physics) v1.0.0 (MIT) — vendored under `scripts/ball-physics/`.
 
