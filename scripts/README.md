@@ -41,3 +41,4 @@ Explorer **instance names** must match the root README table. `require()` in Lua
 | [ballVisualEffects/SpeedGlow/](ballVisualEffects/SpeedGlow/SpeedGlow.md) | Default speed-threshold glow effect |
 | [ballVisualEffects/BallVisualEffectColors/](ballVisualEffects/BallVisualEffectColors/BallVisualEffectColors.md) | Team / spectator color resolution for VFX context |
 | [ballVisualEffects/BallVisualEffectShell/](ballVisualEffects/BallVisualEffectShell/BallVisualEffectShell.md) | Non-colliding welded halo Part for highlights |
+| [DodgeballBallVisualEffectsDebug/](DodgeballBallVisualEffectsDebug/DodgeballBallVisualEffectsDebug.md) | VFX throw/glow Output (`DEBUG_BALL_VISUAL_EFFECTS`) |

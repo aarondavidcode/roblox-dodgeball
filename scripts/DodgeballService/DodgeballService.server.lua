@@ -208,6 +208,7 @@ local function publishClientTunables()
 		folder:SetAttribute("LOBBY_PRACTICE_BALL_TAG", practiceTag)
 	end
 	folder:SetAttribute("DEBUG_BALL_PHYSICS", DebugConfig.DEBUG_BALL_PHYSICS == true)
+	folder:SetAttribute("DEBUG_BALL_VISUAL_EFFECTS", DebugConfig.DEBUG_BALL_VISUAL_EFFECTS == true)
 	folder:SetAttribute("HIT_MIN_SPEED", Config.HIT_MIN_SPEED)
 	folder:SetAttribute("DEFAULT_BALL_VISUAL_EFFECT", VisualEffectsConfig.DEFAULT_BALL_VISUAL_EFFECT)
 	folder:SetAttribute("SPEED_GLOW_HYSTERESIS_FRACTION", VisualEffectsConfig.SPEED_GLOW_HYSTERESIS_FRACTION)

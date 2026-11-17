@@ -34,7 +34,8 @@ function BallVisualEffectShell.create(ball: BasePart, effectLabel: string, diame
 	shell.Shape = Enum.PartType.Ball
 	shell.Material = Enum.Material.SmoothPlastic
 	shell.Color = ball.Color
-	shell.Transparency = 1
+	-- Not fully 1 — some Highlight paths treat adornee at 1.0 as invisible.
+	shell.Transparency = 0.995
 	shell.Anchored = false
 	shell.Massless = true
 	shell.CanCollide = false

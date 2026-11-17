@@ -19,6 +19,7 @@ Child modules (required):
 | `ballVisualEffects/SpeedGlow` | [SpeedGlow.md](../ballVisualEffects/SpeedGlow/SpeedGlow.md) |
 | `ballVisualEffects/BallVisualEffectColors` | [BallVisualEffectColors.md](../ballVisualEffects/BallVisualEffectColors/BallVisualEffectColors.md) |
 | `ballVisualEffects/BallVisualEffectShell` | [BallVisualEffectShell.md](../ballVisualEffects/BallVisualEffectShell/BallVisualEffectShell.md) |
+| `ballVisualEffects/DodgeballBallVisualEffectsDebug` | [DodgeballBallVisualEffectsDebug.md](../DodgeballBallVisualEffectsDebug/DodgeballBallVisualEffectsDebug.md) |
 
 ## Depends on (auto-created)
 

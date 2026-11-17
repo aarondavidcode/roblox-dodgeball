@@ -12,46 +12,63 @@ local BallVisualEffectShell = require(script.Parent:WaitForChild("BallVisualEffe
 
 type ShellHandle = BallVisualEffectShell.ShellHandle
 
+export type DebugSnapshot = {
+	glowing: boolean,
+	shouldGlow: boolean,
+	speed: number,
+	hitMinSpeed: number,
+	offThreshold: number,
+	highlightEnabled: boolean,
+	adorneeName: string,
+	shellExists: boolean,
+	shellSize: string,
+}
+
 type State = {
 	highlight: Highlight,
 	adornee: BasePart,
 	shell: ShellHandle?,
 	glowing: boolean,
+	lastShouldGlow: boolean,
+	lastSpeed: number,
 }
 
 local stateByBall: { [BasePart]: State } = {}
 
 local Registry = require(script.Parent:WaitForChild("BallVisualEffectRegistry"))
 local BallVisualEffectColors = require(script.Parent:WaitForChild("BallVisualEffectColors"))
+
 local function applyColors(state: State, context: Registry.EffectContext)
 	state.highlight.FillColor = context.effectColor
 	state.highlight.OutlineColor = BallVisualEffectColors.outlineFromFill(context.effectColor)
 end
 
-local function ensureHighlightOnAdornee(state: State, adornee: BasePart)
-	if state.highlight.Adornee == adornee and state.highlight.Parent == adornee then
-		return
-	end
+local function ensureHighlightOnAdornee(state: State, ball: BasePart, adornee: BasePart)
 	state.highlight.Adornee = adornee
-	state.highlight.Parent = adornee
+	state.highlight.Parent = ball
 	state.adornee = adornee
 end
 
 local function syncShell(state: State, ball: BasePart, context: Registry.EffectContext)
 	local scale = context.shell.diameterScale
 	local shell = state.shell
-	if shell then
+	if shell and shell.part.Parent then
 		shell.setDiameterScale(scale)
-		ensureHighlightOnAdornee(state, shell.part)
+		ensureHighlightOnAdornee(state, ball, shell.part)
 		return
+	end
+
+	if shell then
+		shell.destroy()
+		state.shell = nil
 	end
 
 	local created = BallVisualEffectShell.create(ball, SpeedGlow.id, scale)
 	if created then
 		state.shell = created
-		ensureHighlightOnAdornee(state, created.part)
+		ensureHighlightOnAdornee(state, ball, created.part)
 	else
-		ensureHighlightOnAdornee(state, ball)
+		ensureHighlightOnAdornee(state, ball, ball)
 	end
 end
 
@@ -62,7 +79,7 @@ local function createState(ball: BasePart, context: Registry.EffectContext): Sta
 	highlight.OutlineColor = Color3.new(1, 1, 1)
 	highlight.FillTransparency = 0.82
 	highlight.OutlineTransparency = 0.45
-	highlight.DepthMode = Enum.HighlightDepthMode.Occluded
+	highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 	highlight.Enabled = false
 
 	local state: State = {
@@ -70,6 +87,8 @@ local function createState(ball: BasePart, context: Registry.EffectContext): Sta
 		adornee = ball,
 		shell = nil,
 		glowing = false,
+		lastShouldGlow = false,
+		lastSpeed = 0,
 	}
 	syncShell(state, ball, context)
 	applyColors(state, context)
@@ -123,7 +142,31 @@ function SpeedGlow.step(ball: BasePart, context: Registry.EffectContext)
 
 	applyColors(state, context)
 	state.glowing = shouldGlow
+	state.lastShouldGlow = shouldGlow
+	state.lastSpeed = speed
 	state.highlight.Enabled = shouldGlow
+end
+
+function SpeedGlow.getDebugSnapshot(ball: BasePart, context: Registry.EffectContext): DebugSnapshot?
+	local state = stateByBall[ball]
+	if not state then
+		return nil
+	end
+	local onThreshold = context.hitMinSpeed
+	local offThreshold = onThreshold * context.speedGlowHysteresisFraction
+	local shellPart = state.shell and state.shell.part
+	local shellSize = if shellPart then tostring(shellPart.Size) else "none"
+	return {
+		glowing = state.glowing,
+		shouldGlow = state.lastShouldGlow,
+		speed = state.lastSpeed,
+		hitMinSpeed = onThreshold,
+		offThreshold = offThreshold,
+		highlightEnabled = state.highlight.Enabled,
+		adorneeName = state.adornee.Name,
+		shellExists = shellPart ~= nil and shellPart.Parent ~= nil,
+		shellSize = shellSize,
+	}
 end
 
 return SpeedGlow

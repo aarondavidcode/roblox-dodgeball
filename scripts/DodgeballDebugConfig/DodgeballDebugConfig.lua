@@ -13,6 +13,9 @@ local DodgeballDebugConfig = {
 
 	-- Enables BallPhysics library Config.debug (upstream dev overlays not vendored here).
 	BALL_PHYSICS_DEBUG_ENABLED = false,
+
+	-- [DodgeballBallVisualEffectsDebug] throw samples for SpeedGlow / client VFX; mirrored on DodgeballRemotes.
+	DEBUG_BALL_VISUAL_EFFECTS = false,
 }
 
 return DodgeballDebugConfig

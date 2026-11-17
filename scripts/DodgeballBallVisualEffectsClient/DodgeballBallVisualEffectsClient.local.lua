@@ -9,9 +9,12 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local player = Players.LocalPlayer
+
 local effectsFolder = script.Parent:WaitForChild("ballVisualEffects")
 local Registry = require(effectsFolder:WaitForChild("BallVisualEffectRegistry"))
 local BallVisualEffectColors = require(effectsFolder:WaitForChild("BallVisualEffectColors"))
+local VisualEffectsDebug = require(effectsFolder:WaitForChild("DodgeballBallVisualEffectsDebug"))
 local SpeedGlow = require(effectsFolder:WaitForChild("SpeedGlow"))
 
 Registry.register(SpeedGlow)
@@ -24,6 +27,8 @@ type TrackedEntry = {
 }
 
 local tracked: { [BasePart]: TrackedEntry } = {}
+local throwDebugWired: { [BasePart]: boolean } = {}
+local lastThrowSampleTime: { [BasePart]: number } = {}
 
 local hitMinSpeed = 25
 local speedGlowHysteresisFraction = 0.92
@@ -42,6 +47,16 @@ local function readNumberAttr(name: string, fallback: number): number
 	if remotes then
 		local value = remotes:GetAttribute(name)
 		if typeof(value) == "number" and value > 0 then
+			return value
+		end
+	end
+	return fallback
+end
+
+local function readFractionAttr(name: string, fallback: number): number
+	if remotes then
+		local value = remotes:GetAttribute(name)
+		if typeof(value) == "number" and value > 0 and value <= 1 then
 			return value
 		end
 	end
@@ -68,11 +83,68 @@ local function readColor3Attr(name: string, fallback: Color3): Color3
 	return fallback
 end
 
+local function ballTagsSummary(ball: BasePart): string
+	return `dodgeball={CollectionService:HasTag(ball, dodgeballTag)} lobby={CollectionService:HasTag(
+		ball,
+		lobbyPracticeTag
+	)} physics={CollectionService:HasTag(ball, physicsBallTag)}`
+end
+
+local logThrowSample: (BasePart, string) -> () = function() end
+
+local function ensureThrowDebugWatch(ball: BasePart)
+	if throwDebugWired[ball] then
+		return
+	end
+	throwDebugWired[ball] = true
+	ball:GetAttributeChangedSignal("LastThrowTime"):Connect(function()
+		if not VisualEffectsDebug.isEnabled() then
+			return
+		end
+		local throwTime = ball:GetAttribute("LastThrowTime")
+		local throwerId = ball:GetAttribute("LastThrowerUserId")
+		if typeof(throwTime) ~= "number" or throwTime <= 0 then
+			return
+		end
+		if typeof(throwerId) ~= "number" or throwerId ~= player.UserId then
+			return
+		end
+		if lastThrowSampleTime[ball] == throwTime then
+			return
+		end
+		lastThrowSampleTime[ball] = throwTime
+		logThrowSample(ball, "+0s")
+		task.delay(0.35, function()
+			if ball.Parent then
+				logThrowSample(ball, "+0.35s")
+			end
+		end)
+		task.delay(1, function()
+			if ball.Parent then
+				logThrowSample(ball, "+1s")
+			end
+		end)
+	end)
+end
+
+local function logClientStart()
+	if not VisualEffectsDebug.isEnabled() then
+		return
+	end
+	local ids = table.concat(Registry.allIds(), ",")
+	VisualEffectsDebug.log(`client start registry=[{ids}]`)
+	if remotes then
+		VisualEffectsDebug.log(`remotes {VisualEffectsDebug.snapshotRemotesAttrs(remotes)}`)
+	else
+		VisualEffectsDebug.warn("remotes folder missing at client start")
+	end
+end
+
 local function hookRemoteTunables(folder: Folder)
 	remotes = folder
 	local function refresh()
 		hitMinSpeed = readNumberAttr("HIT_MIN_SPEED", hitMinSpeed)
-		speedGlowHysteresisFraction = readNumberAttr("SPEED_GLOW_HYSTERESIS_FRACTION", speedGlowHysteresisFraction)
+		speedGlowHysteresisFraction = readFractionAttr("SPEED_GLOW_HYSTERESIS_FRACTION", speedGlowHysteresisFraction)
 		defaultEffectId = readStringAttr("DEFAULT_BALL_VISUAL_EFFECT", defaultEffectId)
 		dodgeballTag = readStringAttr("DODGEBALL_TAG", dodgeballTag)
 		lobbyPracticeTag = readStringAttr("LOBBY_PRACTICE_BALL_TAG", lobbyPracticeTag)
@@ -94,10 +166,16 @@ local function hookRemoteTunables(folder: Folder)
 			"BALL_VISUAL_EFFECT_PLAYER_ATTR",
 			"BALL_VISUAL_EFFECT_SPECTATOR_COLOR",
 			"SPEED_GLOW_SHELL_DIAMETER_SCALE",
+			"DEBUG_BALL_VISUAL_EFFECTS",
 		}
 	do
 		folder:GetAttributeChangedSignal(name):Connect(refresh)
 	end
+	folder:GetAttributeChangedSignal("DEBUG_BALL_VISUAL_EFFECTS"):Connect(function()
+		if VisualEffectsDebug.isEnabled() then
+			logClientStart()
+		end
+	end)
 	refresh()
 end
 
@@ -105,12 +183,15 @@ local function shellDiameterScaleForEffect(effectId: string): number
 	if effectId == "SpeedGlow" then
 		return speedGlowShellDiameterScale
 	end
-	-- Future: elseif effectId == "TrailBurst" then return readNumberAttr("BALL_VISUAL_EFFECT_TRAILBURST_SHELL_DIAMETER_SCALE", 1.25)
 	return 1
 end
 
 local function makeContext(ball: BasePart, effectId: string): Registry.EffectContext
 	local colorRes = BallVisualEffectColors.resolveForBall(ball, spectatorColor)
+	local shellScale = shellDiameterScaleForEffect(effectId)
+	if shellScale <= 0 then
+		shellScale = 1.4
+	end
 	return {
 		hitMinSpeed = hitMinSpeed,
 		speedGlowHysteresisFraction = speedGlowHysteresisFraction,
@@ -119,7 +200,7 @@ local function makeContext(ball: BasePart, effectId: string): Registry.EffectCon
 		throwerUserId = colorRes.throwerUserId,
 		teamName = colorRes.teamName,
 		shell = {
-			diameterScale = shellDiameterScaleForEffect(effectId),
+			diameterScale = shellScale,
 		},
 	}
 end
@@ -152,6 +233,29 @@ local function resolveEffectId(ball: BasePart): string
 	return defaultEffectId
 end
 
+logThrowSample = function(ball: BasePart, label: string)
+	if not VisualEffectsDebug.isEnabled() then
+		return
+	end
+	local entry = tracked[ball]
+	local effectId = if entry then entry.effectId else resolveEffectId(ball)
+	local context = makeContext(ball, effectId)
+	local snap = SpeedGlow.getDebugSnapshot(ball, context)
+	local colorRes = BallVisualEffectColors.resolveForBall(ball, spectatorColor)
+	local teamLine = if colorRes.teamName
+		then `team={colorRes.teamName} color={VisualEffectsDebug.formatColor3(colorRes.effectColor)}`
+		else `spectator color={VisualEffectsDebug.formatColor3(colorRes.effectColor)}`
+	local glowLine = if snap
+		then `speed={string.format("%.2f", snap.speed)} shouldGlow={snap.shouldGlow} hiEnabled={snap.highlightEnabled} adornee={snap.adorneeName} shell={snap.shellExists} shellSize={snap.shellSize} hitMin={snap.hitMinSpeed} offAt={string.format(
+			"%.2f",
+			snap.offThreshold
+		)}`
+		else "SpeedGlow state=nil (not attached)"
+	VisualEffectsDebug.log(
+		`throw sample {label} ball={ball.Name} tracked={entry ~= nil} tags={ballTagsSummary(ball)} effectId={effectId} tunables hitMin={hitMinSpeed} hysteresis={speedGlowHysteresisFraction} shellScale={speedGlowShellDiameterScale} {teamLine} {glowLine}`
+	)
+end
+
 local function attachEffect(ball: BasePart)
 	if tracked[ball] then
 		return
@@ -166,6 +270,7 @@ local function attachEffect(ball: BasePart)
 		effectId = effectId,
 		module = module,
 	}
+	ensureThrowDebugWatch(ball)
 end
 
 local function detachEffect(ball: BasePart)
@@ -249,8 +354,11 @@ task.spawn(function()
 		folder:GetAttributeChangedSignal("DODGEBALL_TAG"):Connect(onTunablesChanged)
 		folder:GetAttributeChangedSignal("LOBBY_PRACTICE_BALL_TAG"):Connect(onTunablesChanged)
 		folder:GetAttributeChangedSignal("BALL_PHYSICS_TAG"):Connect(onTunablesChanged)
+		onTunablesChanged()
+	else
+		bindTagSignals()
 	end
-	bindTagSignals()
+	logClientStart()
 end)
 
 RunService.Heartbeat:Connect(function()
@@ -275,7 +383,6 @@ RunService.Heartbeat:Connect(function()
 			entry = tracked[ball]
 		end
 
-		-- effectColor / teamName refresh every frame when LastThrowerUserId or Team changes.
 		entry.module.step(ball, context)
 	end
 end)

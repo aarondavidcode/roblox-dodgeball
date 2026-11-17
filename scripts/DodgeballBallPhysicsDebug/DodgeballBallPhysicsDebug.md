@@ -4,7 +4,7 @@
 
 ## Enable (no full repaste hunt)
 
-Set **`DEBUG_BALL_PHYSICS = true`** in **DodgeballDebugConfig**, **or** in Studio while running set  
+Set **`DEBUG_BALL_PHYSICS = true`** or **`DEBUG_BALL_VISUAL_EFFECTS = true`** in **DodgeballDebugConfig**, **or** in Studio while running set  
 `ReplicatedStorage.DodgeballRemotes` attribute **`DEBUG_BALL_PHYSICS`** = **true** (server mirrors config on start).
 
 Filter Output: **`[DodgeballBallPhysicsDebug]`**

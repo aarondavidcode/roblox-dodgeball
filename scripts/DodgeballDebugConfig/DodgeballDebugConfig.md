@@ -17,6 +17,7 @@ Paste from [DodgeballDebugConfig.lua](./DodgeballDebugConfig.lua).
 | `DEBUG_ELIMINATION` | **DodgeballService** warns why a hit did not eliminate |
 | `DEBUG_BALL_PHYSICS` | **[DodgeballBallPhysicsDebug](../DodgeballBallPhysicsDebug/DodgeballBallPhysicsDebug.md)** tagged Output; mirrored on **DodgeballRemotes** |
 | `BALL_PHYSICS_DEBUG_ENABLED` | Vendored BallPhysics `Config.debug.enabled` in **BallPhysicsAutoSetup** |
+| `DEBUG_BALL_VISUAL_EFFECTS` | [DodgeballBallVisualEffectsDebug](../DodgeballBallVisualEffectsDebug/DodgeballBallVisualEffectsDebug.md) throw / glow Output; mirrored on **DodgeballRemotes** |
 
 For local Studio without editing this file, you can set `DodgeballRemotes` attribute **`DEBUG_BALL_PHYSICS`** = **true** at runtime (server still mirrors config on start).
 
