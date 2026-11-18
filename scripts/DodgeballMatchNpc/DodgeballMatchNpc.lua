@@ -239,13 +239,6 @@ function DodgeballMatchNpc.setTeamName(npc: Model, teamName: string)
 		if record.model == npc then
 			record.teamName = teamName
 			npc:SetAttribute(ATTR_TEAM_NAME, teamName)
-			local team = Teams:FindFirstChild(teamName)
-			if team and team:IsA("Team") then
-				local humanoid = npc:FindFirstChildOfClass("Humanoid")
-				if humanoid then
-					humanoid.TeamColor = team.TeamColor
-				end
-			end
 			return
 		end
 	end
