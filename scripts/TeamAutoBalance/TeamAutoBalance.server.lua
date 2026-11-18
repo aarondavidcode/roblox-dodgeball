@@ -14,6 +14,7 @@ local StarterPlayer = game:GetService("StarterPlayer")
 local Teams = game:GetService("Teams")
 
 local Config = require(ServerScriptService:WaitForChild("DodgeballConfig"))
+local MatchNpc = require(ServerScriptService:WaitForChild("DodgeballMatchNpc"))
 
 local MATCH_PHASE_IN_MATCH = "InMatch"
 local ATTR_MATCH_PARTICIPANT = "MatchParticipant"
@@ -118,14 +119,14 @@ local function maybeLoadCharacter(player: Player, needsRespawn: boolean)
 	end
 end
 
--- Deterministic batch balance: sort by UserId, assign each to the smaller team count.
-local function assignAllPlayersBalanced(needsRespawn: boolean): boolean
-	if not teamsReady() then
-		return false
-	end
+type BalanceEntry = {
+	sortId: number,
+	label: string,
+	assign: (Team) -> (),
+}
 
-	local redCount = 0
-	local blueCount = 0
+local function collectBalanceEntries(): { BalanceEntry }
+	local entries: { BalanceEntry } = {}
 
 	for _, player in sortedPlayers() do
 		if matchIsLive() and player:GetAttribute(ATTR_MATCH_PARTICIPANT) == false then
@@ -136,6 +137,50 @@ local function assignAllPlayersBalanced(needsRespawn: boolean): boolean
 				continue
 			end
 		end
+		table.insert(entries, {
+			sortId = player.UserId,
+			label = player.Name,
+			assign = function(chosenTeam: Team)
+				player.Neutral = false
+				player.Team = chosenTeam
+				warn(`[TeamAutoBalance] Match teams: {player.Name} (UserId {player.UserId}) → {chosenTeam.Name}`)
+			end,
+		})
+	end
+
+	for _, record in MatchNpc.getRecords() do
+		if not record.matchParticipant or not record.model then
+			continue
+		end
+		local model = record.model
+		table.insert(entries, {
+			sortId = record.sortId,
+			label = model.Name,
+			assign = function(chosenTeam: Team)
+				MatchNpc.setTeamName(model, chosenTeam.Name)
+				warn(`[TeamAutoBalance] Match teams: {model.Name} (NpcSortId {record.sortId}) → {chosenTeam.Name}`)
+			end,
+		})
+	end
+
+	table.sort(entries, function(a: BalanceEntry, b: BalanceEntry)
+		return a.sortId < b.sortId
+	end)
+
+	return entries
+end
+
+-- Deterministic batch balance: sort by UserId / NpcSortId, assign each to the smaller team count.
+local function assignAllPlayersBalanced(needsRespawn: boolean): boolean
+	if not teamsReady() then
+		return false
+	end
+
+	local redCount = 0
+	local blueCount = 0
+	local entries = collectBalanceEntries()
+
+	for _, entry in entries do
 		local chosenTeam: Team
 		if redCount <= blueCount then
 			chosenTeam = redTeam :: Team
@@ -144,10 +189,18 @@ local function assignAllPlayersBalanced(needsRespawn: boolean): boolean
 			chosenTeam = blueTeam :: Team
 			blueCount += 1
 		end
+		entry.assign(chosenTeam)
+	end
 
-		player.Neutral = false
-		player.Team = chosenTeam
-		warn(`[TeamAutoBalance] Match teams: {player.Name} (UserId {player.UserId}) → {chosenTeam.Name}`)
+	for _, player in sortedPlayers() do
+		if matchIsLive() and player:GetAttribute(ATTR_MATCH_PARTICIPANT) == false then
+			continue
+		end
+		if matchIsLive() and not isMatchParticipant(player) then
+			if player:GetAttribute(ATTR_JOIN_NEXT_MATCH) == false then
+				continue
+			end
+		end
 		maybeLoadCharacter(player, needsRespawn)
 	end
 

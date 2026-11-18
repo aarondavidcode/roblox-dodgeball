@@ -53,6 +53,12 @@
       "LobbyPracticeBallService": {
         "$path": "scripts/LobbyPracticeBallService/LobbyPracticeBallService.server.lua"
       },
+      "DodgeballMatchNpc": {
+        "$path": "scripts/DodgeballMatchNpc/DodgeballMatchNpc.lua"
+      },
+      "DodgeballSinglePlayerTest": {
+        "$path": "scripts/DodgeballSinglePlayerTest/DodgeballSinglePlayerTest.server.lua"
+      },
       "BallPhysicsAutoSetup": {
         "$path": "scripts/BallPhysicsAutoSetup/BallPhysicsAutoSetup.server.lua"
       },

@@ -16,6 +16,9 @@ local DodgeballDebugConfig = {
 
 	-- [DodgeballBallVisualEffectsDebug] throw samples for SpeedGlow / client VFX; mirrored on DodgeballRemotes.
 	DEBUG_BALL_VISUAL_EFFECTS = false,
+
+	-- Studio: one human can start InMatch via /testmatch (DodgeballSinglePlayerTest + test NPCs). Keep false when publishing.
+	SINGLE_PLAYER_TESTING = false,
 }
 
 return DodgeballDebugConfig

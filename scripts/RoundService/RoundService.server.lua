@@ -11,6 +11,7 @@ local ServerScriptService = game:GetService("ServerScriptService")
 local Teams = game:GetService("Teams")
 
 local Config = require(ServerScriptService:WaitForChild("DodgeballConfig"))
+local MatchNpc = require(ServerScriptService:WaitForChild("DodgeballMatchNpc"))
 
 local ROUND_STATE_LOBBY_IDLE = "LobbyIdle"
 local ROUND_STATE_PLAYING = "Playing"
@@ -121,37 +122,62 @@ local function isPlayerOut(player: Player): boolean
 	return player:GetAttribute("IsOut") == true
 end
 
+local function isMatchParticipantPlayer(player: Player): boolean
+	return player:GetAttribute("MatchParticipant") == true
+end
+
 local function isTeamFullyOut(team: Team): boolean
 	local hasMember = false
 	for _, player in Players:GetPlayers() do
-		if player.Team == team then
+		if player.Team == team and isMatchParticipantPlayer(player) then
 			hasMember = true
 			if not isPlayerOut(player) then
 				return false
 			end
 		end
 	end
+	if MatchNpc.teamHasParticipant(team.Name) then
+		hasMember = true
+		if not MatchNpc.isTeamFullyOut(team.Name) then
+			return false
+		end
+	end
 	return hasMember
 end
 
-local function anyPlayerStillIn(team: Team): boolean
+local function anyParticipantStillIn(team: Team): boolean
 	for _, player in Players:GetPlayers() do
-		if player.Team == team and not isPlayerOut(player) then
+		if player.Team == team and isMatchParticipantPlayer(player) and not isPlayerOut(player) then
 			return true
 		end
+	end
+	if MatchNpc.teamHasActiveMember(team.Name) then
+		return true
 	end
 	return false
 end
 
 local function everyoneInGameIsOut(): boolean
-	local anyPlayer = false
+	local anyParticipant = false
 	for _, player in Players:GetPlayers() do
-		anyPlayer = true
+		if not isMatchParticipantPlayer(player) then
+			continue
+		end
+		anyParticipant = true
 		if not isPlayerOut(player) then
 			return false
 		end
 	end
-	return anyPlayer
+	for _, record in MatchNpc.getRecords() do
+		if not record.matchParticipant then
+			continue
+		end
+		anyParticipant = true
+		if not record.isOut then
+			return false
+		end
+	end
+	return anyParticipant
 end
 
 local function describeWinningTeam(): Team?
@@ -166,10 +192,10 @@ local function describeWinningTeam(): Team?
 		return nil
 	end
 
-	if isTeamFullyOut(teamA) and anyPlayerStillIn(teamB) then
+	if isTeamFullyOut(teamA) and anyParticipantStillIn(teamB) then
 		return teamB
 	end
-	if isTeamFullyOut(teamB) and anyPlayerStillIn(teamA) then
+	if isTeamFullyOut(teamB) and anyParticipantStillIn(teamA) then
 		return teamA
 	end
 	return nil
@@ -281,13 +307,45 @@ for _, player in Players:GetPlayers() do
 	hookPlayer(player)
 end
 
-if bridge then
-	local elim = bridge:FindFirstChild("PlayerEliminated")
-	if elim and elim:IsA("BindableEvent") then
-		elim.Event:Connect(function()
-			task.defer(evaluateWinCondition)
+local function wireWinEvaluationBridge(bridgeFolder: Folder)
+	local eliminatedHooked = false
+
+	local function hookPlayerEliminated()
+		if eliminatedHooked then
+			return
+		end
+		local elim = bridgeFolder:FindFirstChild("PlayerEliminated")
+		if elim and elim:IsA("BindableEvent") then
+			eliminatedHooked = true
+			elim.Event:Connect(function()
+				task.defer(evaluateWinCondition)
+			end)
+		end
+	end
+
+	hookPlayerEliminated()
+	if not eliminatedHooked then
+		bridgeFolder.ChildAdded:Connect(function(child: Instance)
+			if child.Name == "PlayerEliminated" and child:IsA("BindableEvent") then
+				hookPlayerEliminated()
+			end
 		end)
 	end
+
+	local evalFn = bridgeFolder:FindFirstChild("EvaluateWinCondition")
+	if not evalFn then
+		evalFn = Instance.new("BindableFunction")
+		evalFn.Name = "EvaluateWinCondition"
+		evalFn.Parent = bridgeFolder
+	end
+	(evalFn :: BindableFunction).OnInvoke = function(): boolean
+		task.defer(evaluateWinCondition)
+		return true
+	end
+end
+
+if bridge then
+	wireWinEvaluationBridge(bridge)
 
 	local beginMatch = bridge:FindFirstChild("BeginMatchRound")
 	if not beginMatch then

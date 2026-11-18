@@ -34,3 +34,5 @@ Explorer **instance names** must match the root README table. `require()` in Lua
 | [BallPhysicsAutoSetup/](BallPhysicsAutoSetup/BallPhysicsAutoSetup.md) | [BallPhysicsAutoSetup.md](BallPhysicsAutoSetup/BallPhysicsAutoSetup.md) |
 | [BallPhysicsClient/](BallPhysicsClient/BallPhysicsClient.md) | [BallPhysicsClient.md](BallPhysicsClient/BallPhysicsClient.md) |
 | [DodgeballBallPhysicsDebug/](DodgeballBallPhysicsDebug/DodgeballBallPhysicsDebug.md) | [DodgeballBallPhysicsDebug.md](DodgeballBallPhysicsDebug/DodgeballBallPhysicsDebug.md) |
+| [DodgeballMatchNpc/](DodgeballMatchNpc/DodgeballMatchNpc.md) | [DodgeballMatchNpc.md](DodgeballMatchNpc/DodgeballMatchNpc.md) |
+| [DodgeballSinglePlayerTest/](DodgeballSinglePlayerTest/DodgeballSinglePlayerTest.md) | [DodgeballSinglePlayerTest.md](DodgeballSinglePlayerTest/DodgeballSinglePlayerTest.md) |
