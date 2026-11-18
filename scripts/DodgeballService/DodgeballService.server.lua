@@ -2,9 +2,9 @@
 -- Paste as Script named DodgeballService under ServerScriptService.
 -- Needs DodgeballConfig (ModuleScript), throw/DefaultThrow (ModuleScript), and Workspace/Dodgeballs.
 --
--- Eliminations during a live throw use server Heartbeat + Spherecast sweeps between
--- frames (not .Touched). Fast throws can tunnel through avatars; Touched also fires late
--- with wrong velocity. .Touched remains only for slow rolling pickup when not throwing.
+-- Eliminations during a live throw use server physics contact: .Touched and GetTouchingParts
+-- while InThrowWindow (speed/window rules unchanged). Optional server network ownership keeps
+-- contacts authoritative. Spherecast sweeps are not used for OUT (only real overlap counts).
 
 --!strict
 
@@ -22,6 +22,7 @@ local MatchNpc = require(ServerScriptService:WaitForChild("DodgeballMatchNpc"))
 local VisualEffectsConfig = require(ServerScriptService:WaitForChild("DodgeballBallVisualEffectsConfig"))
 local BallTemplate = require(ServerScriptService:WaitForChild("DodgeballBallTemplate"))
 local ThrowerCollision = require(ServerScriptService:WaitForChild("DodgeballThrowerCollision"))
+local SpawnProtection = require(ServerScriptService:WaitForChild("DodgeballSpawnProtection"))
 local BallPhysicsDebug = require(ServerScriptService:WaitForChild("DodgeballBallPhysicsDebug"))
 
 -- Roblox only documents Players.CharacterAutoLoads (global). When false, the engine does not
@@ -47,7 +48,7 @@ end
 local heldByPlayer: { [Player]: BasePart } = {}
 local lastPickupTime: { [Player]: number } = {}
 local ballHeldConnection: { [BasePart]: RBXScriptConnection } = {}
-local throwSweepWatch: { [BasePart]: RBXScriptConnection } = {}
+local throwContactWatch: { [BasePart]: RBXScriptConnection } = {}
 
 local ATTR_HOLD_PENALTY_PICKUP_UNTIL = "HoldPenaltyPickupUntil"
 local ATTR_VOLUNTARY_DROP_BLOCK_USER_ID = "VoluntaryDropBlockUserId"
@@ -64,8 +65,24 @@ local function debugElimination(message: string)
 	end
 end
 
-local function ballCastRadius(ball: BasePart): number
-	return math.max(ball.Size.X, ball.Size.Y, ball.Size.Z) * 0.5
+local function shouldForceServerBallPhysicsDuringThrow(): boolean
+	return Config.HIT_FORCE_SERVER_PHYSICS_DURING_THROW ~= false
+end
+
+local function ensureServerOwnsLiveThrowBall(ball: BasePart)
+	if not shouldForceServerBallPhysicsDuringThrow() or not isLiveThrow(ball) then
+		return
+	end
+	if not ball:CanSetNetworkOwnership() then
+		return
+	end
+	local owner = ball:GetNetworkOwner()
+	if owner == nil then
+		return
+	end
+	pcall(function()
+		ball:SetNetworkOwner(nil)
+	end)
 end
 
 local function isLiveThrow(ball: BasePart): boolean
@@ -84,11 +101,11 @@ local function isLiveThrow(ball: BasePart): boolean
 	return ball:GetAttribute("InThrowWindow") == true
 end
 
-local function stopThrowSweep(ball: BasePart)
-	local conn = throwSweepWatch[ball]
+local function stopThrowContactWatch(ball: BasePart)
+	local conn = throwContactWatch[ball]
 	if conn then
 		conn:Disconnect()
-		throwSweepWatch[ball] = nil
+		throwContactWatch[ball] = nil
 	end
 end
 
@@ -107,69 +124,59 @@ end
 local dropBallFromPlayer: (Player) -> ()
 local tryEliminateOnHit: (BasePart, Player?, Model?, boolean) -> boolean
 
-local function startThrowSweep(ball: BasePart)
-	stopThrowSweep(ball)
-	local lastPos = ball.Position
-	local radius = ballCastRadius(ball)
+local function victimsFromContactPart(hit: BasePart): (Player?, Model?)
+	local victimPlayer = playerFromPart(hit)
+	local victimNpc = if victimPlayer then nil else MatchNpc.npcFromPart(hit)
+	return victimPlayer, victimNpc
+end
 
-	throwSweepWatch[ball] = RunService.Heartbeat:Connect(function()
+local function tryEliminateFromPhysicsPart(ball: BasePart, hit: BasePart, viaTouchEvent: boolean): boolean
+	local victimPlayer, victimNpc = victimsFromContactPart(hit)
+	if not victimPlayer and not victimNpc then
+		return false
+	end
+	local victimLabel = if victimPlayer then victimPlayer.Name else victimNpc.Name
+	if viaTouchEvent then
+		debugElimination(`Touched physics contact on {victimLabel}`)
+	else
+		debugElimination(`GetTouchingParts physics contact on {victimLabel}`)
+	end
+	return tryEliminateOnHit(ball, victimPlayer, victimNpc, true)
+end
+
+local function pollBallPhysicsContacts(ball: BasePart)
+	for _, hit in ball:GetTouchingParts() do
+		if hit:IsA("BasePart") and tryEliminateFromPhysicsPart(ball, hit, false) then
+			return
+		end
+	end
+end
+
+local function startThrowContactWatch(ball: BasePart)
+	stopThrowContactWatch(ball)
+
+	throwContactWatch[ball] = RunService.Heartbeat:Connect(function()
 		if not ball.Parent then
-			stopThrowSweep(ball)
+			stopThrowContactWatch(ball)
 			return
 		end
 		if not isLiveThrow(ball) then
 			ball:SetAttribute("InThrowWindow", false)
-			stopThrowSweep(ball)
+			stopThrowContactWatch(ball)
 			return
 		end
+
+		ensureServerOwnsLiveThrowBall(ball)
 
 		local currentSpeed = ball.AssemblyLinearVelocity.Magnitude
 		ball:SetAttribute("LastThrowSpeed", currentSpeed)
 		if currentSpeed < Config.HIT_MIN_SPEED then
 			ball:SetAttribute("InThrowWindow", false)
-			stopThrowSweep(ball)
+			stopThrowContactWatch(ball)
 			return
 		end
 
-		local currentPos = ball.Position
-		local delta = currentPos - lastPos
-		local distance = delta.Magnitude
-		if distance < 1e-4 then
-			lastPos = currentPos
-			return
-		end
-
-		local throwerId = ball:GetAttribute("LastThrowerUserId")
-		local excludeList: { Instance } = { ball }
-		if typeof(throwerId) == "number" then
-			local thrower = Players:GetPlayerByUserId(throwerId)
-			if thrower and thrower.Character then
-				table.insert(excludeList, thrower.Character)
-			end
-		end
-
-		local params = RaycastParams.new()
-		params.FilterType = Enum.RaycastFilterType.Exclude
-		params.FilterDescendantsInstances = excludeList
-
-		local result = Workspace:Spherecast(lastPos, radius, delta, params)
-		lastPos = currentPos
-
-		if not result then
-			return
-		end
-
-		local victimPlayer = playerFromPart(result.Instance)
-		local victimNpc = if victimPlayer then nil else MatchNpc.npcFromPart(result.Instance)
-		if not victimPlayer and not victimNpc then
-			return
-		end
-
-		local victimLabel = if victimPlayer then victimPlayer.Name else victimNpc.Name
-		debugElimination(`sweep hit detected on {victimLabel}`)
-		if tryEliminateOnHit(ball, victimPlayer, victimNpc, true) then
-			stopThrowSweep(ball)
-		end
+		pollBallPhysicsContacts(ball)
 	end)
 end
 
@@ -532,6 +539,7 @@ local function clearPlayerOutIfNewLife(player: Player, character: Model)
 		return
 	end
 	setPlayerCharacterAutoLoads(player, true)
+	SpawnProtection.stripCharacter(character)
 	local humanoid = character:FindFirstChildOfClass("Humanoid")
 	if humanoid then
 		humanoid.WalkSpeed = Config.DEFAULT_WALK_SPEED
@@ -543,6 +551,10 @@ dropBallFromPlayer = function(player: Player)
 	cancelHoldWatch(player)
 	local ball = heldByPlayer[player]
 	if not ball then
+		return
+	end
+	if ball.Parent == nil then
+		heldByPlayer[player] = nil
 		return
 	end
 	local weldConn = ballHeldConnection[ball]
@@ -809,7 +821,25 @@ local function throwBall(player: Player, lookDirection: Vector3, powerMultiplier
 		debugElimination(`throw started (speed ≈ {throwSpeed} studs/s)`)
 	end
 
-	startThrowSweep(released)
+	startThrowContactWatch(released)
+end
+
+local function clearStaleHeldState(player: Player)
+	local ball = heldByPlayer[player]
+	if not ball then
+		return
+	end
+	if ball.Parent == nil then
+		heldByPlayer[player] = nil
+		cancelHoldWatch(player)
+		return
+	end
+	local character = player.Character
+	if character and not ball:IsDescendantOf(character) then
+		heldByPlayer[player] = nil
+		ball:SetAttribute("HolderUserId", nil)
+		cancelHoldWatch(player)
+	end
 end
 
 local function tryPickup(player: Player, ball: BasePart)
@@ -819,6 +849,7 @@ local function tryPickup(player: Player, ball: BasePart)
 	if isPlayerOut(player) then
 		return
 	end
+	clearStaleHeldState(player)
 	if heldByPlayer[player] then
 		return
 	end
@@ -890,13 +921,13 @@ tryEliminateOnHit = function(
 	ball: BasePart,
 	victimPlayer: Player?,
 	victimNpc: Model?,
-	fromSweep: boolean
+	fromPhysicsContact: boolean
 ): boolean
 	local live = isLiveThrow(ball)
 	local speed = ball.AssemblyLinearVelocity.Magnitude
 
 	if speed < Config.HIT_MIN_SPEED then
-		if fromSweep or live then
+		if fromPhysicsContact or live then
 			debugElimination(`hit but speed {speed} < HIT_MIN_SPEED {Config.HIT_MIN_SPEED}`)
 		else
 			debugElimination("ball too slow (not a live throw)")
@@ -939,7 +970,7 @@ tryEliminateOnHit = function(
 	end
 
 	ball:SetAttribute("InThrowWindow", false)
-	stopThrowSweep(ball)
+	stopThrowContactWatch(ball)
 	local victimName = victimDisplayName(victimPlayer, victimNpc)
 	if victimPlayer then
 		setPlayerOut(victimPlayer)
@@ -975,8 +1006,8 @@ local function onBallTouched(ball: BasePart, hit: BasePart)
 		return
 	end
 
-	-- Live throws are handled by Heartbeat spherecast sweeps, not Touched.
 	if isLiveThrow(ball) then
+		tryEliminateFromPhysicsPart(ball, hit, true)
 		return
 	end
 
@@ -1043,8 +1074,18 @@ local function rememberBallSpawn(ball: BasePart)
 end
 
 local function dropEveryHeldBall()
-	for player, _ in heldByPlayer do
+	local holders: { Player } = {}
+	for player in heldByPlayer do
+		table.insert(holders, player)
+	end
+	for _, player in holders do
 		dropBallFromPlayer(player)
+	end
+	for player in holders do
+		if heldByPlayer[player] then
+			heldByPlayer[player] = nil
+			cancelHoldWatch(player)
+		end
 	end
 end
 
@@ -1064,9 +1105,36 @@ local function hookOutRespawnGate(player: Player)
 	end)
 end
 
-local function resetEveryBallToSpawn()
+local function gatherBallsForRoundReset(): { BasePart }
+	local seen: { [BasePart]: boolean } = {}
+	local list: { BasePart } = {}
+	local function add(part: BasePart)
+		if part.Parent == nil then
+			return
+		end
+		if not seen[part] then
+			seen[part] = true
+			table.insert(list, part)
+		end
+	end
 	for _, ball in gatherBalls() do
-		stopThrowSweep(ball)
+		add(ball)
+	end
+	for _, ball in heldByPlayer do
+		add(ball)
+	end
+	return list
+end
+
+local function resetEveryBallToSpawn()
+	dropEveryHeldBall()
+	for _, ball in gatherBallsForRoundReset() do
+		stopThrowContactWatch(ball)
+		for _, child in ball:GetChildren() do
+			if child:IsA("WeldConstraint") and child.Name == "DodgeballHoldWeld" then
+				child:Destroy()
+			end
+		end
 		local spawnCf = ball:GetAttribute("SpawnCFrame")
 		if typeof(spawnCf) == "CFrame" then
 			ball.CFrame = spawnCf
@@ -1075,13 +1143,19 @@ local function resetEveryBallToSpawn()
 		ball.AssemblyAngularVelocity = Vector3.zero
 		ball.Anchored = false
 		ball.CanCollide = true
+		ball.Massless = false
 		ball:SetAttribute("HolderUserId", nil)
 		ball:SetAttribute("LastThrowerUserId", nil)
 		ball:SetAttribute("LastThrowTime", 0)
 		ball:SetAttribute("InThrowWindow", false)
 		ball:SetAttribute("LastThrowSpeed", 0)
+		ball:SetAttribute(ATTR_VOLUNTARY_DROP_PICKUP_UNTIL, nil)
+		ball:SetAttribute(ATTR_VOLUNTARY_DROP_BLOCK_USER_ID, nil)
+		local folder = Workspace:FindFirstChild(Config.BALL_FOLDER_NAME) or Workspace
+		if not ball:IsDescendantOf(folder) then
+			ball.Parent = folder
+		end
 	end
-	dropEveryHeldBall()
 end
 
 local function ensureRoundBridge(): Folder
@@ -1219,6 +1293,7 @@ end)
 Players.PlayerAdded:Connect(function(player)
 	hookOutRespawnGate(player)
 	player.CharacterAdded:Connect(function(character)
+		clearStaleHeldState(player)
 		clearPlayerOutIfNewLife(player, character)
 	end)
 end)
@@ -1233,6 +1308,7 @@ end)
 for _, player in Players:GetPlayers() do
 	hookOutRespawnGate(player)
 	player.CharacterAdded:Connect(function(character)
+		clearStaleHeldState(player)
 		clearPlayerOutIfNewLife(player, character)
 	end)
 end

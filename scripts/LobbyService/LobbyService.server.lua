@@ -14,12 +14,14 @@ local Workspace = game:GetService("Workspace")
 local Config = require(ServerScriptService:WaitForChild("DodgeballConfig"))
 local DebugConfig = require(ServerScriptService:WaitForChild("DodgeballDebugConfig"))
 local MatchNpc = require(ServerScriptService:WaitForChild("DodgeballMatchNpc"))
+require(ServerScriptService:WaitForChild("DodgeballSpawnProtection"))
 
 local PHASE_LOBBY = "Lobby"
 local PHASE_IN_MATCH = "InMatch"
 
 local ATTR_MATCH_PARTICIPANT = "MatchParticipant"
 local ATTR_JOIN_NEXT_MATCH = Config.JOIN_NEXT_MATCH_ATTR
+local ATTR_SINGLE_PLAYER_TEST_REQUESTER = "SinglePlayerTestRequesterUserId"
 
 local matchPhase: string = PHASE_LOBBY
 local matchScores: { [string]: number } = {}
@@ -431,6 +433,7 @@ end
 local function enterLobbyPhase(reason: string)
 	matchPhase = PHASE_LOBBY
 	singlePlayerTestActive = false
+	roundStatus:SetAttribute(ATTR_SINGLE_PLAYER_TEST_REQUESTER, nil)
 	MatchNpc.destroyAll()
 	clearAllMatchParticipants()
 	initMatchScores()
@@ -489,6 +492,8 @@ local function startMatchFromLobby()
 	if not invokeBridge("AssignMatchTeams") then
 		warn("[LobbyService] Match start aborted — could not assign teams (is TeamAutoBalance running?).")
 		matchPhase = PHASE_LOBBY
+		singlePlayerTestActive = false
+		roundStatus:SetAttribute(ATTR_SINGLE_PLAYER_TEST_REQUESTER, nil)
 		publishMatchStatus()
 		task.defer(ensureLobbyCountdownRunning)
 		return
@@ -543,11 +548,23 @@ local function startSinglePlayerTestMatch(requestingPlayer: Player, npcCount: nu
 	end
 	MatchNpc.setAllMatchParticipants(true)
 	singlePlayerTestActive = true
-	requestingPlayer:SetAttribute(ATTR_JOIN_NEXT_MATCH, true)
+	roundStatus:SetAttribute(ATTR_SINGLE_PLAYER_TEST_REQUESTER, requestingPlayer.UserId)
+	for _, player in Players:GetPlayers() do
+		if player == requestingPlayer then
+			player:SetAttribute(ATTR_MATCH_PARTICIPANT, nil)
+			player:SetAttribute(ATTR_JOIN_NEXT_MATCH, true)
+		else
+			player:SetAttribute(ATTR_JOIN_NEXT_MATCH, false)
+			player:SetAttribute(ATTR_MATCH_PARTICIPANT, false)
+			player.Neutral = true
+			player.Team = nil
+		end
+	end
 	warn(`[LobbyService] Single-player test — {requestingPlayer.Name} + {npcCount} NPC(s).`)
 	startMatchFromLobby()
 	if matchPhase ~= PHASE_IN_MATCH then
 		singlePlayerTestActive = false
+		roundStatus:SetAttribute(ATTR_SINGLE_PLAYER_TEST_REQUESTER, nil)
 		MatchNpc.destroyAll()
 		return false
 	end

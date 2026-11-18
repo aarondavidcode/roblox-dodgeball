@@ -19,6 +19,7 @@ local MatchNpc = require(ServerScriptService:WaitForChild("DodgeballMatchNpc"))
 local MATCH_PHASE_IN_MATCH = "InMatch"
 local ATTR_MATCH_PARTICIPANT = "MatchParticipant"
 local ATTR_JOIN_NEXT_MATCH = Config.JOIN_NEXT_MATCH_ATTR
+local ATTR_SINGLE_PLAYER_TEST_REQUESTER = "SinglePlayerTestRequesterUserId"
 
 local TEAM_NAMES = Config.TEAM_NAMES
 
@@ -125,16 +126,35 @@ type BalanceEntry = {
 	assign: (Team) -> (),
 }
 
+local function getSinglePlayerTestRequesterUserId(): number?
+	local folder = getRoundStatusFolder()
+	if not folder then
+		return nil
+	end
+	local id = folder:GetAttribute(ATTR_SINGLE_PLAYER_TEST_REQUESTER)
+	if typeof(id) == "number" then
+		return id
+	end
+	return nil
+end
+
 local function collectBalanceEntries(): { BalanceEntry }
 	local entries: { BalanceEntry } = {}
+	local testRequesterId = if matchIsLive() then getSinglePlayerTestRequesterUserId() else nil
 
 	for _, player in sortedPlayers() do
-		if matchIsLive() and player:GetAttribute(ATTR_MATCH_PARTICIPANT) == false then
-			continue
-		end
-		if matchIsLive() and not isMatchParticipant(player) then
-			if player:GetAttribute(ATTR_JOIN_NEXT_MATCH) == false then
+		if typeof(testRequesterId) == "number" then
+			if player.UserId ~= testRequesterId then
 				continue
+			end
+		else
+			if matchIsLive() and player:GetAttribute(ATTR_MATCH_PARTICIPANT) == false then
+				continue
+			end
+			if matchIsLive() and not isMatchParticipant(player) then
+				if player:GetAttribute(ATTR_JOIN_NEXT_MATCH) == false then
+					continue
+				end
 			end
 		end
 		table.insert(entries, {
@@ -176,6 +196,7 @@ local function assignAllPlayersBalanced(needsRespawn: boolean): boolean
 		return false
 	end
 
+	local testRequesterId = if matchIsLive() then getSinglePlayerTestRequesterUserId() else nil
 	local redCount = 0
 	local blueCount = 0
 	local entries = collectBalanceEntries()
@@ -193,12 +214,18 @@ local function assignAllPlayersBalanced(needsRespawn: boolean): boolean
 	end
 
 	for _, player in sortedPlayers() do
-		if matchIsLive() and player:GetAttribute(ATTR_MATCH_PARTICIPANT) == false then
-			continue
-		end
-		if matchIsLive() and not isMatchParticipant(player) then
-			if player:GetAttribute(ATTR_JOIN_NEXT_MATCH) == false then
+		if typeof(testRequesterId) == "number" then
+			if player.UserId ~= testRequesterId then
 				continue
+			end
+		else
+			if matchIsLive() and player:GetAttribute(ATTR_MATCH_PARTICIPANT) == false then
+				continue
+			end
+			if matchIsLive() and not isMatchParticipant(player) then
+				if player:GetAttribute(ATTR_JOIN_NEXT_MATCH) == false then
+					continue
+				end
 			end
 		end
 		maybeLoadCharacter(player, needsRespawn)

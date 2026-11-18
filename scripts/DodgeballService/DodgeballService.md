@@ -1,6 +1,6 @@
 # DodgeballService
 
-**Purpose:** Server rules for dodgeballs: pickup on slow touch, hold timer, aim/throw from client aim data, OUT elimination with spherecast sweeps during throws, ball reset for rounds, and bridge hooks for **RoundService**.
+**Purpose:** Server rules for dodgeballs: pickup on slow touch, hold timer, aim/throw from client aim data, OUT elimination via physics contact during live throws, ball reset for rounds, and bridge hooks for **RoundService**.
 
 ## Explorer
 
@@ -45,7 +45,7 @@ On first run the service can create an **empty** `Dodgeballs` folder and warn in
 | Key | Role |
 |-----|------|
 | `PICKUP_MAX_SPEED`, `PICKUP_COOLDOWN_SECONDS` | Pickup rules |
-| `HIT_MIN_SPEED`, `THROW_OUT_WINDOW_SECONDS`, `DEBUG_ELIMINATION` | OUT detection |
+| `HIT_MIN_SPEED`, `THROW_OUT_WINDOW_SECONDS`, `HIT_FORCE_SERVER_PHYSICS_DURING_THROW`, `DEBUG_ELIMINATION` | OUT detection (physics contact) |
 | `THROW_IMPULSE`, `ACTIVE_THROW_PROFILE` | Throw strength and module |
 | `BALL_MAX_HOLD_SECONDS`, `HOLD_*`, `AIM_*` | Hold and aim server enforcement |
 | `THROWER_BALL_NOCOLLIDE_SECONDS` | Thrower–ball no-collide grace on release ([DodgeballThrowerCollision.md](../DodgeballThrowerCollision/DodgeballThrowerCollision.md)) |
@@ -60,4 +60,4 @@ On first run the service can create an **empty** `Dodgeballs` folder and warn in
 
 - Do not add RemoteEvents under `DodgeballRemotes` manually.
 - Do not paste into `DodgeballRoundBridge`.
-- Do not rely on `.Touched` alone for OUT — this service uses Heartbeat spherecasts during the throw window.
+- Live-throw OUT uses server **physics contact** (`.Touched` + `GetTouchingParts` while `InThrowWindow`), not Spherecast sweeps. Very fast throws can occasionally tunnel; tune throw speed or ball size if that matters.

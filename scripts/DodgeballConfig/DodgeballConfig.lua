@@ -15,6 +15,10 @@ local DodgeballConfig = {
 	-- Out: only hits within this many seconds after a throw can eliminate someone.
 	THROW_OUT_WINDOW_SECONDS = 3,
 
+	-- While a throw can eliminate, keep the ball server-simulated so OUT uses real physics contact
+	-- (Touched + GetTouchingParts), not client-owned prediction. Disable only if BallPhysics must stay client-owned.
+	HIT_FORCE_SERVER_PHYSICS_DURING_THROW = true,
+
 	-- Throw strength (impulse) at 100% power. Bigger = faster throws.
 	-- DefaultThrow multiplies this by the aim power bar (0–1) from the client.
 	THROW_IMPULSE = 150,

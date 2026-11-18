@@ -38,6 +38,7 @@ Paste from [DodgeballConfig.lua](./DodgeballConfig.lua).
 | Key | Meaning |
 |-----|---------|
 | `PICKUP_MAX_SPEED`, `HIT_MIN_SPEED`, `THROW_OUT_WINDOW_SECONDS` | Pickup vs elimination speed rules |
+| `HIT_FORCE_SERVER_PHYSICS_DURING_THROW` | Server sim + physics contact for OUT during live throws |
 | `THROW_IMPULSE` | Max throw strength at 100% power |
 | `AIM_POWER_CHARGE_SECONDS`, `AIM_MAX_SECONDS`, `BALL_MAX_HOLD_SECONDS` | Aim UI timing (mirrored on remotes as attributes for clients) |
 | `HOLD_PENALTY_*`, `HOLD_ROLL_IMPULSE` | Penalty when you hold a ball too long without aiming |

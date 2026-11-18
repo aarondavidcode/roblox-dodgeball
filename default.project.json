@@ -32,6 +32,9 @@
       "DodgeballThrowerCollision": {
         "$path": "scripts/DodgeballThrowerCollision/DodgeballThrowerCollision.lua"
       },
+      "DodgeballSpawnProtection": {
+        "$path": "scripts/DodgeballSpawnProtection/DodgeballSpawnProtection.lua"
+      },
       "DodgeballBallPhysicsDebug": {
         "$path": "scripts/DodgeballBallPhysicsDebug/DodgeballBallPhysicsDebug.lua"
       },

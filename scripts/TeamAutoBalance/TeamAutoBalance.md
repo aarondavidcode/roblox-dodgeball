@@ -23,7 +23,7 @@ Paste from [TeamAutoBalance.server.lua](./TeamAutoBalance.server.lua).
 | **Teams** | Under **Teams**, create **Team** objects named exactly `Red` and `Blue` (must match `TEAM_NAMES` in **DodgeballConfig**). |
 | Team colors | Each team needs a unique **TeamColor** (e.g. Really red / Really blue). |
 | **AutoAssignable** | Leave **unchecked** on both teams — this script assigns teams. |
-| Team spawns | In **Workspace**, **SpawnLocation**(s) per side: **Neutral** = off, **TeamColor** must **match** the team’s **TeamColor** (not just visual **Color**). Names like `RedSpawn` / `BlueSpawn` are fine — matching is by **TeamColor**, not name. |
+| Team spawns | In **Workspace**, **SpawnLocation**(s) per side: **Neutral** = off, **TeamColor** must **match** the team’s **TeamColor** (not just visual **Color**). Names like `RedSpawn` / `BlueSpawn` are fine — matching is by **TeamColor**, not name. **Duration** is forced to `0` at run time so players are not spawn-immune. |
 | Default center spawn | Remove or fix the baseplate **SpawnLocation** if it has **Neutral** on and steals spawns. |
 
 **Lobby pad:** **Neutral** on, lobby **TeamColor** — see [LobbyService.md](../LobbyService/LobbyService.md). Team pads must **not** use the lobby spawn name/tag from config.

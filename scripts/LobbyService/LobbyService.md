@@ -18,7 +18,7 @@ Paste from [LobbyService.server.lua](./LobbyService.server.lua).
 
 | Item | Details |
 |------|---------|
-| Lobby **SpawnLocation** | In **Workspace**. Default: rename to `LobbySpawn` (`LOBBY_SPAWN_NAME`). **TeamColor** = **Neutral**, **Neutral** on. **AllowTeamChangeOnTouch** off if you do not want team touch on that pad. |
+| Lobby **SpawnLocation** | In **Workspace**. Default: rename to `LobbySpawn` (`LOBBY_SPAWN_NAME`). **TeamColor** = **Neutral**, **Neutral** on. **AllowTeamChangeOnTouch** off if you do not want team touch on that pad. **Duration** on pads is forced to `0` at run time (**DodgeballSpawnProtection**) so respawns never show the default immunity sphere. |
 | Tag option | Or tag a SpawnLocation with the string in `LOBBY_SPAWN_TAG` (leave tag empty in config to use name only). |
 | Arena spawns | Team pads: **Neutral** off, **TeamColor** matches **Teams → Red** or **Blue** — same rules as [TeamAutoBalance.md](../TeamAutoBalance/TeamAutoBalance.md). |
 | Teams | `Red` and `Blue` with distinct **TeamColor** |
