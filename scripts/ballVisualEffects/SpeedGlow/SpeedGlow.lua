@@ -17,7 +17,7 @@ export type DebugSnapshot = {
 	highlightEnabled: boolean,
 	shellActive: boolean,
 	held: boolean,
-	inThrowWindow: boolean,
+	canEliminate: boolean,
 	particleRate: number,
 	particleSize: number,
 }
@@ -37,6 +37,7 @@ local stateByBall: { [BasePart]: State } = {}
 local Registry = require(script.Parent:WaitForChild("BallVisualEffectRegistry"))
 local BallVisualEffectColors = require(script.Parent:WaitForChild("BallVisualEffectColors"))
 local BallVisualEffectShell = require(script.Parent:WaitForChild("BallVisualEffectShell"))
+local BallVisualEffectThrowState = require(script.Parent:WaitForChild("BallVisualEffectThrowState"))
 local RemoteDefaults = require(script.Parent:WaitForChild("BallVisualEffectRemoteDefaults"))
 
 local function ballRadius(ball: BasePart): number
@@ -76,44 +77,6 @@ local function resolveSpeedGlow(context: Registry.EffectContext): Registry.Speed
 	}
 end
 
-local function throwOutWindowSeconds(windowSeconds: number): number
-	if typeof(windowSeconds) ~= "number" or windowSeconds <= 0 then
-		return 3
-	end
-	return windowSeconds
-end
-
-local function isWithinThrowOutWindow(ball: BasePart, windowSeconds: number): boolean
-	local throwTime = ball:GetAttribute("LastThrowTime")
-	if typeof(throwTime) ~= "number" or throwTime <= 0 then
-		return false
-	end
-	local elapsed = workspace:GetServerTimeNow() - throwTime
-	return elapsed >= 0 and elapsed <= throwOutWindowSeconds(windowSeconds)
-end
-
--- Client physics/replication can under-report speed during a live throw; server stores LastThrowSpeed.
-local function isBallHeldByPlayer(ball: BasePart): boolean
-	local holderId = ball:GetAttribute("HolderUserId")
-	return typeof(holderId) == "number" and holderId > 0
-end
-
-local function resolveGlowSpeed(ball: BasePart, context: Registry.EffectContext): number
-	local measured = ball.AssemblyLinearVelocity.Magnitude
-	local threshold = context.hitMinSpeed
-	if measured >= threshold then
-		return measured
-	end
-	local lastThrow = ball:GetAttribute("LastThrowSpeed")
-	if typeof(lastThrow) ~= "number" or lastThrow < threshold then
-		return measured
-	end
-	if not isWithinThrowOutWindow(ball, context.throwOutWindowSeconds) then
-		return measured
-	end
-	return lastThrow
-end
-
 local function glowColorsForContext(context: Registry.EffectContext, tunables: Registry.SpeedGlowTunables): (Color3, Color3)
 	local glowOpts: BallVisualEffectColors.GlowColorOptions = {
 		minOutlineLuminance = tunables.minOutlineLuminance,
@@ -130,7 +93,7 @@ end
 local function applyGlowAppearance(state: State, context: Registry.EffectContext)
 	local tunables = resolveSpeedGlow(context)
 	local ball = state.highlight.Adornee :: BasePart
-	local active = state.glowing and not isBallHeldByPlayer(ball)
+	local active = state.glowing and BallVisualEffectThrowState.shouldShowForLiveEliminationThrow(ball, context)
 
 	local fill, outline = glowColorsForContext(context, tunables)
 	state.highlight.FillColor = fill
@@ -177,15 +140,7 @@ local function applyGlowAppearance(state: State, context: Registry.EffectContext
 end
 
 local function updateGlowFromSpeed(state: State, speed: number, context: Registry.EffectContext)
-	local onThreshold = context.hitMinSpeed
-	local offThreshold = onThreshold * context.speedGlowHysteresisFraction
-	if state.glowing then
-		if speed < offThreshold then
-			state.glowing = false
-		end
-	elseif speed >= onThreshold then
-		state.glowing = true
-	end
+	state.glowing = BallVisualEffectThrowState.isAboveHitSpeedWithHysteresis(speed, context, state.glowing)
 end
 
 local function createState(ball: BasePart, context: Registry.EffectContext): State
@@ -235,9 +190,8 @@ local function createState(ball: BasePart, context: Registry.EffectContext): Sta
 end
 
 local function refreshGlowState(state: State, ball: BasePart, context: Registry.EffectContext)
-	state.lastSpeed = resolveGlowSpeed(ball, context)
-	local inWindow = isWithinThrowOutWindow(ball, context.throwOutWindowSeconds)
-	if isBallHeldByPlayer(ball) or not inWindow then
+	state.lastSpeed = BallVisualEffectThrowState.resolveEffectiveThrowSpeed(ball, context)
+	if not BallVisualEffectThrowState.shouldShowForLiveEliminationThrow(ball, context) then
 		state.glowing = false
 	else
 		updateGlowFromSpeed(state, state.lastSpeed, context)
@@ -290,7 +244,7 @@ function SpeedGlow.getDebugSnapshot(ball: BasePart, context: Registry.EffectCont
 		return nil
 	end
 	local onThreshold = context.hitMinSpeed
-	local offThreshold = onThreshold * context.speedGlowHysteresisFraction
+	local offThreshold = BallVisualEffectThrowState.hitSpeedOffThreshold(context)
 	local sizeKey = state.emitter.Size.Keypoints[1]
 	local particleSize = if sizeKey then sizeKey.Value else 0
 	local shouldGlow = state.glowing
@@ -305,8 +259,8 @@ function SpeedGlow.getDebugSnapshot(ball: BasePart, context: Registry.EffectCont
 		shellActive = if state.shell then state.shell.part.Transparency < 1 else false,
 		particleRate = state.emitter.Rate,
 		particleSize = particleSize,
-		held = isBallHeldByPlayer(ball),
-		inThrowWindow = isWithinThrowOutWindow(ball, context.throwOutWindowSeconds),
+		held = BallVisualEffectThrowState.isBallHeld(ball),
+		canEliminate = BallVisualEffectThrowState.canStillEliminate(ball, context.throwOutWindowSeconds),
 	}
 end
 

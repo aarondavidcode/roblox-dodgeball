@@ -25,6 +25,7 @@ export type EffectContext = {
 	speedGlowHysteresisFraction: number,
 	-- Matches DodgeballConfig THROW_OUT_WINDOW_SECONDS (replicated on remotes).
 	throwOutWindowSeconds: number,
+	-- Live-elimination throw gating: use BallVisualEffectThrowState (not raw LastThrowTime).
 	-- Resolved each frame by DodgeballBallVisualEffectsClient (see BallVisualEffectColors).
 	effectColor: Color3,
 	spectatorColor: Color3,

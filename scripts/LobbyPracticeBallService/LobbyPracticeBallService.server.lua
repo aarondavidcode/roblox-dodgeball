@@ -377,6 +377,14 @@ local function startRecoverSweep(ball: BasePart)
 			return
 		end
 
+		local currentSpeed = ball.AssemblyLinearVelocity.Magnitude
+		ball:SetAttribute("LastThrowSpeed", currentSpeed)
+		if currentSpeed < Config.HIT_MIN_SPEED then
+			ball:SetAttribute("InThrowWindow", false)
+			stopRecoverSweep(ball)
+			return
+		end
+
 		local currentPos = ball.Position
 		if isInsideExcludeZone(currentPos) then
 			recoverAndRespawnBall(ball, "exclude zone")

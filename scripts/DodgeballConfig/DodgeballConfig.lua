@@ -10,7 +10,7 @@ local DodgeballConfig = {
 	PICKUP_MAX_SPEED = 15,
 
 	-- Out: a thrown ball must be at least this fast when it hits someone.
-	HIT_MIN_SPEED = 60,
+	HIT_MIN_SPEED = 25,
 
 	-- Out: only hits within this many seconds after a throw can eliminate someone.
 	THROW_OUT_WINDOW_SECONDS = 3,

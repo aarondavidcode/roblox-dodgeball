@@ -85,6 +85,9 @@
           "BallVisualEffectRegistry": {
             "$path": "scripts/ballVisualEffects/BallVisualEffectRegistry/BallVisualEffectRegistry.lua"
           },
+          "BallVisualEffectThrowState": {
+            "$path": "scripts/ballVisualEffects/BallVisualEffectThrowState/BallVisualEffectThrowState.lua"
+          },
           "BallVisualEffectColors": {
             "$path": "scripts/ballVisualEffects/BallVisualEffectColors/BallVisualEffectColors.lua"
           },

@@ -1,6 +1,6 @@
 # SpeedGlow
 
-**Purpose:** Subtle team-colored aura only during an active throw: effective speed `>= HIT_MIN_SPEED` (off below `HIT_MIN_SPEED × SPEED_GLOW_HYSTERESIS_FRACTION`) **and** elapsed since `LastThrowTime` `<= THROW_OUT_WINDOW_SECONDS` — whichever limit is hit first ends the effect. Suppressed while `HolderUserId` is set. Within the window, if client velocity lags, falls back to replicated `LastThrowSpeed`. **Highlight** + **BallVisualEffectShell** + **ParticleEmitter** (parented on the ball Part). Colors via **BallVisualEffectColors**.
+**Purpose:** Subtle team-colored aura only while the ball **can still eliminate** ([**BallVisualEffectThrowState**](../BallVisualEffectThrowState/BallVisualEffectThrowState.md)) **and** effective speed `>= HIT_MIN_SPEED` (hysteresis off at `HIT_MIN_SPEED × SPEED_GLOW_HYSTERESIS_FRACTION`). Suppressed while held. Uses `resolveEffectiveThrowSpeed` when client velocity lags. **Highlight** + **BallVisualEffectShell** + **ParticleEmitter** (parented on the ball Part). Colors via **BallVisualEffectColors**.
 
 Replaced **Highlight** + shell (see [DodgeballBallVisualEffectsConfig.md](../../DodgeballBallVisualEffectsConfig/DodgeballBallVisualEffectsConfig.md) renderer notes).
 

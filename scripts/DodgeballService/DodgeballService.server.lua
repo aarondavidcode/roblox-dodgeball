@@ -122,6 +122,14 @@ local function startThrowSweep(ball: BasePart)
 			return
 		end
 
+		local currentSpeed = ball.AssemblyLinearVelocity.Magnitude
+		ball:SetAttribute("LastThrowSpeed", currentSpeed)
+		if currentSpeed < Config.HIT_MIN_SPEED then
+			ball:SetAttribute("InThrowWindow", false)
+			stopThrowSweep(ball)
+			return
+		end
+
 		local currentPos = ball.Position
 		local delta = currentPos - lastPos
 		local distance = delta.Magnitude
@@ -846,13 +854,7 @@ end
 
 tryEliminateOnHit = function(ball: BasePart, victim: Player, fromSweep: boolean): boolean
 	local live = isLiveThrow(ball)
-	local speed: number
-	if fromSweep or live then
-		local lastThrow = ball:GetAttribute("LastThrowSpeed")
-		speed = if typeof(lastThrow) == "number" then lastThrow else ball.AssemblyLinearVelocity.Magnitude
-	else
-		speed = ball.AssemblyLinearVelocity.Magnitude
-	end
+	local speed = ball.AssemblyLinearVelocity.Magnitude
 
 	if speed < Config.HIT_MIN_SPEED then
 		if fromSweep or live then

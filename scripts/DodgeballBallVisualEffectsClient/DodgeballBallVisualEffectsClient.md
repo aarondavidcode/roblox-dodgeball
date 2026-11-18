@@ -16,6 +16,7 @@ Child modules (required):
 | Module | Doc |
 |--------|-----|
 | `ballVisualEffects/BallVisualEffectRegistry` | [BallVisualEffectRegistry.md](../ballVisualEffects/BallVisualEffectRegistry/BallVisualEffectRegistry.md) |
+| `ballVisualEffects/BallVisualEffectThrowState` | [BallVisualEffectThrowState.md](../ballVisualEffects/BallVisualEffectThrowState/BallVisualEffectThrowState.md) |
 | `ballVisualEffects/SpeedGlow` | [SpeedGlow.md](../ballVisualEffects/SpeedGlow/SpeedGlow.md) |
 | `ballVisualEffects/BallVisualEffectColors` | [BallVisualEffectColors.md](../ballVisualEffects/BallVisualEffectColors/BallVisualEffectColors.md) |
 | `ballVisualEffects/BallVisualEffectShell` | [BallVisualEffectShell.md](../ballVisualEffects/BallVisualEffectShell/BallVisualEffectShell.md) |
