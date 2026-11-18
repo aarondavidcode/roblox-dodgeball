@@ -30,10 +30,16 @@ local FOLDER_NAME = "DodgeballTestNpcs"
 
 local SPAWN_Y_OFFSET = 4
 local WALK_RADIUS = 36
+local MOVE_TO_TIMEOUT_SECONDS = 10
+
+-- Default Roblox walk (server rigs lack the client Animate script).
+local WALK_ANIMATION_R15 = "rbxassetid://507777826"
+local WALK_ANIMATION_R6 = "rbxassetid://180426744"
 
 local npcRecords: { NpcRecord } = {}
 local npcFolder: Folder? = nil
 local randomWalkRunning = false
+local walkTracks: { [Model]: AnimationTrack } = {}
 
 local DodgeballMatchNpc = {}
 
@@ -119,6 +125,52 @@ local function applyRecordAttributes(model: Model, record: NpcRecord)
 	CollectionService:AddTag(model, NPC_TAG)
 end
 
+local function stopWalkAnimation(model: Model)
+	local track = walkTracks[model]
+	if track then
+		track:Stop(0.15)
+		walkTracks[model] = nil
+	end
+end
+
+local function walkAnimationId(humanoid: Humanoid): string
+	if humanoid.RigType == Enum.HumanoidRigType.R6 then
+		return WALK_ANIMATION_R6
+	end
+	return WALK_ANIMATION_R15
+end
+
+local function ensureAnimator(humanoid: Humanoid): Animator
+	local animator = humanoid:FindFirstChildOfClass("Animator")
+	if animator then
+		return animator
+	end
+	animator = Instance.new("Animator")
+	animator.Parent = humanoid
+	return animator
+end
+
+local function playWalkAnimation(model: Model, humanoid: Humanoid)
+	local existing = walkTracks[model]
+	if existing and existing.IsPlaying then
+		return
+	end
+	local animator = ensureAnimator(humanoid)
+	local anim = Instance.new("Animation")
+	anim.AnimationId = walkAnimationId(humanoid)
+	local ok, track = pcall(function()
+		return animator:LoadAnimation(anim)
+	end)
+	anim:Destroy()
+	if not ok or not track then
+		return
+	end
+	track.Looped = true
+	track.Priority = Enum.AnimationPriority.Movement
+	track:Play(0.1)
+	walkTracks[model] = track
+end
+
 local function createNpcModel(record: NpcRecord): Model?
 	local ok, model = pcall(function()
 		return Players:CreateHumanoidModelFromUserId(156)
@@ -132,12 +184,16 @@ local function createNpcModel(record: NpcRecord): Model?
 	local humanoid = model:FindFirstChildOfClass("Humanoid")
 	if humanoid then
 		humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+		ensureAnimator(humanoid)
 	end
 	model.Parent = ensureFolder()
 	return model
 end
 
 local function destroyModel(model: Model?)
+	if model then
+		stopWalkAnimation(model)
+	end
 	if model and model.Parent then
 		model:Destroy()
 	end
@@ -263,6 +319,7 @@ function DodgeballMatchNpc.eliminate(npc: Model)
 		if record.model == npc then
 			record.isOut = true
 			record.walkToken += 1
+			stopWalkAnimation(npc)
 			npc:SetAttribute(ATTR_IS_OUT, true)
 			local humanoid = npc:FindFirstChildOfClass("Humanoid")
 			if humanoid and humanoid.Health > 0 then
@@ -373,11 +430,25 @@ local function runRandomWalkLoop()
 				record.walkToken += 1
 				local token = record.walkToken
 				local target = randomWalkPoint(hrp.Position)
+				playWalkAnimation(model, humanoid)
 				humanoid:MoveTo(target)
-				task.wait(1.5 + math.random() * 2.5)
+				local moveDone = false
+				local moveConn = humanoid.MoveToFinished:Connect(function()
+					moveDone = true
+				end)
+				local deadline = os.clock() + MOVE_TO_TIMEOUT_SECONDS
+				while not moveDone and record.walkToken == token and os.clock() < deadline do
+					if humanoid.Health <= 0 or not model.Parent then
+						break
+					end
+					task.wait(0.1)
+				end
+				moveConn:Disconnect()
+				stopWalkAnimation(model)
 				if record.walkToken ~= token then
 					continue
 				end
+				task.wait(0.35 + math.random() * 1.25)
 			end
 			task.wait(0.35)
 		end
