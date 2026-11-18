@@ -14,6 +14,10 @@ Paste from [DodgeballMatchNpc.lua](./DodgeballMatchNpc.lua).
 
 NPC bodies live under `Workspace/DodgeballTestNpcs` while a test match is active.
 
+### Walk animation (optional)
+
+Server rigs do not run the client **Animate** script. For walk cycles in Studio, add an **Animation** instance named **`DodgeballTestNpcWalk`** under **ServerStorage** (or **ReplicatedStorage**) using a walk clip **owned by your experience** — Studio blocks untrusted default `rbxassetid` walks. If missing, NPCs still move via `MoveTo` without playing a walk track.
+
 ## Related
 
 | Script | Role |

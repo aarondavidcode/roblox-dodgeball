@@ -307,13 +307,45 @@ for _, player in Players:GetPlayers() do
 	hookPlayer(player)
 end
 
-if bridge then
-	local elim = bridge:FindFirstChild("PlayerEliminated")
-	if elim and elim:IsA("BindableEvent") then
-		elim.Event:Connect(function()
-			task.defer(evaluateWinCondition)
+local function wireWinEvaluationBridge(bridgeFolder: Folder)
+	local eliminatedHooked = false
+
+	local function hookPlayerEliminated()
+		if eliminatedHooked then
+			return
+		end
+		local elim = bridgeFolder:FindFirstChild("PlayerEliminated")
+		if elim and elim:IsA("BindableEvent") then
+			eliminatedHooked = true
+			elim.Event:Connect(function()
+				task.defer(evaluateWinCondition)
+			end)
+		end
+	end
+
+	hookPlayerEliminated()
+	if not eliminatedHooked then
+		bridgeFolder.ChildAdded:Connect(function(child: Instance)
+			if child.Name == "PlayerEliminated" and child:IsA("BindableEvent") then
+				hookPlayerEliminated()
+			end
 		end)
 	end
+
+	local evalFn = bridgeFolder:FindFirstChild("EvaluateWinCondition")
+	if not evalFn then
+		evalFn = Instance.new("BindableFunction")
+		evalFn.Name = "EvaluateWinCondition"
+		evalFn.Parent = bridgeFolder
+	end
+	(evalFn :: BindableFunction).OnInvoke = function(): boolean
+		task.defer(evaluateWinCondition)
+		return true
+	end
+end
+
+if bridge then
+	wireWinEvaluationBridge(bridge)
 
 	local beginMatch = bridge:FindFirstChild("BeginMatchRound")
 	if not beginMatch then

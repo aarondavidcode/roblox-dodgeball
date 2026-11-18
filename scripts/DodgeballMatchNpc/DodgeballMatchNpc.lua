@@ -6,6 +6,8 @@
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ServerScriptService = game:GetService("ServerScriptService")
+local ServerStorage = game:GetService("ServerStorage")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Teams = game:GetService("Teams")
 local Workspace = game:GetService("Workspace")
 
@@ -18,6 +20,7 @@ export type NpcRecord = {
 	matchParticipant: boolean,
 	model: Model?,
 	walkToken: number,
+	walkAnimUnavailable: boolean,
 }
 
 local ATTR_IS_NPC = "DodgeballTestNpc"
@@ -32,9 +35,10 @@ local SPAWN_Y_OFFSET = 4
 local WALK_RADIUS = 36
 local MOVE_TO_TIMEOUT_SECONDS = 10
 
--- Default Roblox walk (server rigs lack the client Animate script).
-local WALK_ANIMATION_R15 = "rbxassetid://507777826"
-local WALK_ANIMATION_R6 = "rbxassetid://180426744"
+local PLACE_WALK_ANIMATION_NAME = "DodgeballTestNpcWalk"
+local FALLBACK_WALK_ANIMATION_R15 = "rbxassetid://507777826"
+
+local walkAnimHelpWarned = false
 
 local npcRecords: { NpcRecord } = {}
 local npcFolder: Folder? = nil
@@ -133,11 +137,49 @@ local function stopWalkAnimation(model: Model)
 	end
 end
 
-local function walkAnimationId(humanoid: Humanoid): string
-	if humanoid.RigType == Enum.HumanoidRigType.R6 then
-		return WALK_ANIMATION_R6
+local function findRecordForModel(model: Model): NpcRecord?
+	for _, record in npcRecords do
+		if record.model == model then
+			return record
+		end
 	end
-	return WALK_ANIMATION_R15
+	return nil
+end
+
+local function findWalkAnimationInModel(model: Model): Animation?
+	for _, child in model:GetDescendants() do
+		if child:IsA("Animation") then
+			local nameLower = string.lower(child.Name)
+			if string.find(nameLower, "walk", 1, true) and not string.find(nameLower, "run", 1, true) then
+				return child
+			end
+		end
+	end
+	return nil
+end
+
+local function findPlaceWalkAnimation(): Animation?
+	for _, parent in { ServerStorage, ReplicatedStorage } do
+		local inst = parent:FindFirstChild(PLACE_WALK_ANIMATION_NAME)
+		if inst and inst:IsA("Animation") then
+			return inst
+		end
+	end
+	return nil
+end
+
+local function resolveWalkAnimationSource(model: Model): Animation?
+	local embedded = findWalkAnimationInModel(model)
+	if embedded then
+		return embedded
+	end
+	local placeAnim = findPlaceWalkAnimation()
+	if placeAnim then
+		return placeAnim
+	end
+	local fallback = Instance.new("Animation")
+	fallback.AnimationId = FALLBACK_WALK_ANIMATION_R15
+	return fallback
 end
 
 local function ensureAnimator(humanoid: Humanoid): Animator
@@ -151,18 +193,33 @@ local function ensureAnimator(humanoid: Humanoid): Animator
 end
 
 local function playWalkAnimation(model: Model, humanoid: Humanoid)
+	local record = findRecordForModel(model)
+	if record and record.walkAnimUnavailable then
+		return
+	end
 	local existing = walkTracks[model]
 	if existing and existing.IsPlaying then
 		return
 	end
 	local animator = ensureAnimator(humanoid)
-	local anim = Instance.new("Animation")
-	anim.AnimationId = walkAnimationId(humanoid)
+	local animSource = resolveWalkAnimationSource(model)
+	local ownsFallbackInstance = animSource.Parent == nil
 	local ok, track = pcall(function()
-		return animator:LoadAnimation(anim)
+		return animator:LoadAnimation(animSource)
 	end)
-	anim:Destroy()
+	if ownsFallbackInstance then
+		animSource:Destroy()
+	end
 	if not ok or not track then
+		if record then
+			record.walkAnimUnavailable = true
+		end
+		if not walkAnimHelpWarned then
+			walkAnimHelpWarned = true
+			warn(
+				`[DodgeballMatchNpc] Walk animation failed to load. Add an Animation named {PLACE_WALK_ANIMATION_NAME} under ServerStorage (use a walk clip owned by this experience), or paste an R15 walk from the Animation Editor. NPCs will still MoveTo without walk cycles.`
+			)
+		end
 		return
 	end
 	track.Looped = true
@@ -173,8 +230,14 @@ end
 
 local function createNpcModel(record: NpcRecord): Model?
 	local ok, model = pcall(function()
-		return Players:CreateHumanoidModelFromUserId(156)
+		local description = Players:GetHumanoidDescriptionFromUserId(156)
+		return Players:CreateHumanoidModelFromDescription(description, Enum.HumanoidRigType.R15)
 	end)
+	if not ok or not model or not model:IsA("Model") then
+		ok, model = pcall(function()
+			return Players:CreateHumanoidModelFromUserId(156)
+		end)
+	end
 	if not ok or not model or not model:IsA("Model") then
 		warn("[DodgeballMatchNpc] Failed to create humanoid model for test NPC.")
 		return nil
@@ -228,6 +291,7 @@ function DodgeballMatchNpc.spawnMany(count: number): boolean
 			matchParticipant = false,
 			model = nil,
 			walkToken = 0,
+			walkAnimUnavailable = false,
 		}
 		local model = createNpcModel(record)
 		if not model then
@@ -308,6 +372,12 @@ local function fireEliminatedBridge()
 	local ev = bridge:FindFirstChild("PlayerEliminated")
 	if ev and ev:IsA("BindableEvent") then
 		ev:Fire()
+	end
+	local evalFn = bridge:FindFirstChild("EvaluateWinCondition")
+	if evalFn and evalFn:IsA("BindableFunction") then
+		pcall(function()
+			(evalFn :: BindableFunction):Invoke()
+		end)
 	end
 end
 
