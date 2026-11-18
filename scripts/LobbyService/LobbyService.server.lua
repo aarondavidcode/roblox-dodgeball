@@ -12,6 +12,8 @@ local Teams = game:GetService("Teams")
 local Workspace = game:GetService("Workspace")
 
 local Config = require(ServerScriptService:WaitForChild("DodgeballConfig"))
+local DebugConfig = require(ServerScriptService:WaitForChild("DodgeballDebugConfig"))
+local MatchNpc = require(ServerScriptService:WaitForChild("DodgeballMatchNpc"))
 
 local PHASE_LOBBY = "Lobby"
 local PHASE_IN_MATCH = "InMatch"
@@ -23,6 +25,7 @@ local matchPhase: string = PHASE_LOBBY
 local matchScores: { [string]: number } = {}
 local lobbyCountdownEndsAt: number? = nil
 local countdownPaused = true
+local singlePlayerTestActive = false
 
 local function initMatchScores()
 	matchScores = {}
@@ -237,6 +240,7 @@ local function respawnAllPlayersAtTeamArena()
 		end
 		spawnPlayerAtTeamArena(player)
 	end
+	MatchNpc.respawnActiveAtTeamArenas()
 end
 
 local function teleportCharacterToLobbySpawn(player: Player)
@@ -426,6 +430,8 @@ end
 
 local function enterLobbyPhase(reason: string)
 	matchPhase = PHASE_LOBBY
+	singlePlayerTestActive = false
+	MatchNpc.destroyAll()
 	clearAllMatchParticipants()
 	initMatchScores()
 	resetLobbyCountdownFull()
@@ -435,6 +441,13 @@ local function enterLobbyPhase(reason: string)
 		respawnAllAtLobby()
 		afterLobbyPopulationChange()
 	end)
+end
+
+local function optedInCountSufficientForMatchStart(): boolean
+	if singlePlayerTestActive then
+		return countOptedInPlayers() >= 1
+	end
+	return countOptedInPlayers() >= 2
 end
 
 local function invokeBridge(functionName: string): boolean
@@ -458,9 +471,13 @@ local function invokeBridge(functionName: string): boolean
 end
 
 local function startMatchFromLobby()
-	if countOptedInPlayers() < 2 then
+	if not optedInCountSufficientForMatchStart() then
 		resetLobbyCountdownFull()
-		warn("[LobbyService] Match start blocked — need 2+ players opted in for next match.")
+		if singlePlayerTestActive then
+			warn("[LobbyService] Match start blocked — test match needs 1 opted-in player.")
+		else
+			warn("[LobbyService] Match start blocked — need 2+ players opted in for next match.")
+		end
 		return
 	end
 	matchPhase = PHASE_IN_MATCH
@@ -495,6 +512,8 @@ local function startMatchFromLobby()
 		end
 	end
 
+	MatchNpc.spawnAllAtTeamArenas()
+
 	local bridge = ServerScriptService:FindFirstChild("DodgeballRoundBridge")
 	if bridge then
 		local ev = bridge:FindFirstChild("BeginMatchRound")
@@ -502,6 +521,37 @@ local function startMatchFromLobby()
 			ev:Fire()
 		end
 	end
+end
+
+local function startSinglePlayerTestMatch(requestingPlayer: Player, npcCount: number): boolean
+	if DebugConfig.SINGLE_PLAYER_TESTING ~= true then
+		warn("[LobbyService] StartSinglePlayerTestMatch — SINGLE_PLAYER_TESTING is off.")
+		return false
+	end
+	if matchPhase ~= PHASE_LOBBY then
+		warn("[LobbyService] StartSinglePlayerTestMatch — not in lobby phase.")
+		return false
+	end
+	if typeof(npcCount) ~= "number" or npcCount < 1 then
+		return false
+	end
+	if not requestingPlayer.Parent then
+		return false
+	end
+	if not MatchNpc.spawnMany(npcCount) then
+		return false
+	end
+	MatchNpc.setAllMatchParticipants(true)
+	singlePlayerTestActive = true
+	requestingPlayer:SetAttribute(ATTR_JOIN_NEXT_MATCH, true)
+	warn(`[LobbyService] Single-player test — {requestingPlayer.Name} + {npcCount} NPC(s).`)
+	startMatchFromLobby()
+	if matchPhase ~= PHASE_IN_MATCH then
+		singlePlayerTestActive = false
+		MatchNpc.destroyAll()
+		return false
+	end
+	return true
 end
 
 local function onLobbyTick()
@@ -611,6 +661,23 @@ local function wireRoundBridge()
 			sidelineOutCharacterAtLobby(player)
 		end
 		return true
+	end
+
+	local testMatchFn = bridge:FindFirstChild("StartSinglePlayerTestMatch")
+	if not testMatchFn then
+		testMatchFn = Instance.new("BindableFunction")
+		testMatchFn.Name = "StartSinglePlayerTestMatch"
+		testMatchFn.Parent = bridge
+	end
+
+	(testMatchFn :: BindableFunction).OnInvoke = function(requestingPlayer: Instance, npcCount: any): boolean
+		if not requestingPlayer or not requestingPlayer:IsA("Player") then
+			return false
+		end
+		if typeof(npcCount) ~= "number" then
+			return false
+		end
+		return startSinglePlayerTestMatch(requestingPlayer, npcCount)
 	end
 end
 

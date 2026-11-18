@@ -17,7 +17,7 @@ The playable game is always your **Roblox place** (arena, teams, spawns). GitHub
 
 **Typical flow:** Players wait on a **lobby spawn** → opt in to the next match → countdown → Red/Blue on arena pads → rounds until one team is all OUT → first to **3** round wins wins the match → back to lobby.
 
-**Test in Studio:** **F5** for one player, **Test → 2 Players** (or more) for teams and lobby logic. Watch **View → Output** for `[TeamAutoBalance]`, `[LobbyService]`, `[DodgeballService]`, `[RoundService]`.
+**Test in Studio:** **F5** for one player, **Test → 2 Players** (or more) for teams and lobby logic. For solo arena testing, set `SINGLE_PLAYER_TESTING = true` in **DodgeballDebugConfig** and chat `/testmatch [npcCount]` — see [DodgeballSinglePlayerTest.md](scripts/DodgeballSinglePlayerTest/DodgeballSinglePlayerTest.md). Watch **View → Output** for `[TeamAutoBalance]`, `[LobbyService]`, `[DodgeballService]`, `[RoundService]`.
 
 ## Scripts → Studio location → doc
 
@@ -46,6 +46,8 @@ Copy from the `.lua` file in each folder under [scripts/](scripts/) on GitHub (*
 | [scripts/ballVisualEffects/SpeedGlow/SpeedGlow.lua](scripts/ballVisualEffects/SpeedGlow/SpeedGlow.lua) | `StarterPlayer/StarterPlayerScripts/ballVisualEffects/SpeedGlow` | ModuleScript | [SpeedGlow.md](scripts/ballVisualEffects/SpeedGlow/SpeedGlow.md) |
 | [scripts/DodgeballBallVisualEffectsConfig/DodgeballBallVisualEffectsConfig.lua](scripts/DodgeballBallVisualEffectsConfig/DodgeballBallVisualEffectsConfig.lua) | `ServerScriptService/DodgeballBallVisualEffectsConfig` | ModuleScript | [DodgeballBallVisualEffectsConfig.md](scripts/DodgeballBallVisualEffectsConfig/DodgeballBallVisualEffectsConfig.md) |
 | [scripts/DodgeballDebugConfig/DodgeballDebugConfig.lua](scripts/DodgeballDebugConfig/DodgeballDebugConfig.lua) | `ServerScriptService/DodgeballDebugConfig` | ModuleScript | [DodgeballDebugConfig.md](scripts/DodgeballDebugConfig/DodgeballDebugConfig.md) |
+| [scripts/DodgeballMatchNpc/DodgeballMatchNpc.lua](scripts/DodgeballMatchNpc/DodgeballMatchNpc.lua) | `ServerScriptService/DodgeballMatchNpc` | ModuleScript | [DodgeballMatchNpc.md](scripts/DodgeballMatchNpc/DodgeballMatchNpc.md) |
+| [scripts/DodgeballSinglePlayerTest/DodgeballSinglePlayerTest.server.lua](scripts/DodgeballSinglePlayerTest/DodgeballSinglePlayerTest.server.lua) | `ServerScriptService/DodgeballSinglePlayerTest` | Script | [DodgeballSinglePlayerTest.md](scripts/DodgeballSinglePlayerTest/DodgeballSinglePlayerTest.md) |
 | [scripts/DodgeballBallPhysicsDebug/DodgeballBallPhysicsDebug.lua](scripts/DodgeballBallPhysicsDebug/DodgeballBallPhysicsDebug.lua) | `ServerScriptService/DodgeballBallPhysicsDebug` | ModuleScript | [DodgeballBallPhysicsDebug.md](scripts/DodgeballBallPhysicsDebug/DodgeballBallPhysicsDebug.md) |
 
 **Third-party:** [thaalish/ball-physics](https://github.com/thaalish/ball-physics) v1.0.0 (MIT) — vendored under `scripts/ball-physics/`.

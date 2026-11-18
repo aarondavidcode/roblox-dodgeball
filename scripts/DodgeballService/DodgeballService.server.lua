@@ -18,6 +18,7 @@ local Workspace = game:GetService("Workspace")
 
 local Config = require(ServerScriptService:WaitForChild("DodgeballConfig"))
 local DebugConfig = require(ServerScriptService:WaitForChild("DodgeballDebugConfig"))
+local MatchNpc = require(ServerScriptService:WaitForChild("DodgeballMatchNpc"))
 local VisualEffectsConfig = require(ServerScriptService:WaitForChild("DodgeballBallVisualEffectsConfig"))
 local BallTemplate = require(ServerScriptService:WaitForChild("DodgeballBallTemplate"))
 local ThrowerCollision = require(ServerScriptService:WaitForChild("DodgeballThrowerCollision"))
@@ -104,7 +105,7 @@ local function playerFromPart(part: BasePart): Player?
 end
 
 local dropBallFromPlayer: (Player) -> ()
-local tryEliminateOnHit: (BasePart, Player, boolean) -> boolean
+local tryEliminateOnHit: (BasePart, Player?, Model?, boolean) -> boolean
 
 local function startThrowSweep(ball: BasePart)
 	stopThrowSweep(ball)
@@ -158,13 +159,15 @@ local function startThrowSweep(ball: BasePart)
 			return
 		end
 
-		local victim = playerFromPart(result.Instance)
-		if not victim then
+		local victimPlayer = playerFromPart(result.Instance)
+		local victimNpc = if victimPlayer then nil else MatchNpc.npcFromPart(result.Instance)
+		if not victimPlayer and not victimNpc then
 			return
 		end
 
-		debugElimination(`sweep hit detected on {victim.Name}`)
-		if tryEliminateOnHit(ball, victim, true) then
+		local victimLabel = if victimPlayer then victimPlayer.Name else victimNpc.Name
+		debugElimination(`sweep hit detected on {victimLabel}`)
+		if tryEliminateOnHit(ball, victimPlayer, victimNpc, true) then
 			stopThrowSweep(ball)
 		end
 	end)
@@ -852,7 +855,43 @@ local function tryPickup(player: Player, ball: BasePart)
 	attachBallToPlayer(player, ball)
 end
 
-tryEliminateOnHit = function(ball: BasePart, victim: Player, fromSweep: boolean): boolean
+local function victimTeamName(victimPlayer: Player?, victimNpc: Model?): string?
+	if victimPlayer then
+		local team = victimPlayer.Team
+		return if team then team.Name else nil
+	end
+	if victimNpc then
+		return MatchNpc.getTeamName(victimNpc)
+	end
+	return nil
+end
+
+local function victimDisplayName(victimPlayer: Player?, victimNpc: Model?): string
+	if victimPlayer then
+		return victimPlayer.Name
+	end
+	if victimNpc then
+		return victimNpc.Name
+	end
+	return "unknown"
+end
+
+local function isVictimOut(victimPlayer: Player?, victimNpc: Model?): boolean
+	if victimPlayer then
+		return isPlayerOut(victimPlayer)
+	end
+	if victimNpc then
+		return MatchNpc.isOut(victimNpc)
+	end
+	return true
+end
+
+tryEliminateOnHit = function(
+	ball: BasePart,
+	victimPlayer: Player?,
+	victimNpc: Model?,
+	fromSweep: boolean
+): boolean
 	local live = isLiveThrow(ball)
 	local speed = ball.AssemblyLinearVelocity.Magnitude
 
@@ -876,30 +915,42 @@ tryEliminateOnHit = function(ball: BasePart, victim: Player, fromSweep: boolean)
 		debugElimination("throw window expired")
 		return false
 	end
-	if victim.UserId == throwerId then
+	if victimPlayer and victimPlayer.UserId == throwerId then
 		debugElimination("victim is thrower")
 		return false
 	end
 	local thrower = Players:GetPlayerByUserId(throwerId)
-	if not thrower or not thrower.Team or not victim.Team then
+	local victimTeam = victimTeamName(victimPlayer, victimNpc)
+	if not thrower or not thrower.Team or not victimTeam then
 		debugElimination("thrower or victim has no team")
 		return false
 	end
-	if thrower.Team == victim.Team then
+	if thrower.Team.Name == victimTeam then
 		debugElimination("same team (friendly)")
 		return false
 	end
-	if isPlayerOut(victim) then
+	if victimNpc and not MatchNpc.isMatchParticipant(victimNpc) then
+		debugElimination("victim npc not in match")
+		return false
+	end
+	if isVictimOut(victimPlayer, victimNpc) then
 		debugElimination("victim already out")
 		return false
 	end
 
 	ball:SetAttribute("InThrowWindow", false)
 	stopThrowSweep(ball)
-	setPlayerOut(victim)
-	dropBallFromPlayer(victim)
-	debugElimination(`elimination success: {victim.Name} is OUT (hit by throw from user {throwerId})`)
-	warn(`[DodgeballService] {victim.Name} is OUT (hit by throw from user {throwerId}).`)
+	local victimName = victimDisplayName(victimPlayer, victimNpc)
+	if victimPlayer then
+		setPlayerOut(victimPlayer)
+		dropBallFromPlayer(victimPlayer)
+	else
+		if victimNpc then
+			MatchNpc.eliminate(victimNpc)
+		end
+	end
+	debugElimination(`elimination success: {victimName} is OUT (hit by throw from user {throwerId})`)
+	warn(`[DodgeballService] {victimName} is OUT (hit by throw from user {throwerId}).`)
 	return true
 end
 
@@ -909,8 +960,9 @@ local function onBallTouched(ball: BasePart, hit: BasePart)
 	if touchDebounce[ball] then
 		return
 	end
-	local victim = playerFromPart(hit)
-	if not victim then
+	local victimPlayer = playerFromPart(hit)
+	local victimNpc = if victimPlayer then nil else MatchNpc.npcFromPart(hit)
+	if not victimPlayer and not victimNpc then
 		return
 	end
 	touchDebounce[ball] = true
@@ -930,9 +982,9 @@ local function onBallTouched(ball: BasePart, hit: BasePart)
 
 	local speed = ball.AssemblyLinearVelocity.Magnitude
 	if speed >= Config.HIT_MIN_SPEED then
-		tryEliminateOnHit(ball, victim, false)
-	else
-		tryPickup(victim, ball)
+		tryEliminateOnHit(ball, victimPlayer, victimNpc, false)
+	elseif victimPlayer then
+		tryPickup(victimPlayer, ball)
 	end
 end
 
@@ -1002,6 +1054,7 @@ local function clearEveryPlayerOut()
 		setPlayerCharacterAutoLoads(player, true)
 		clearHoldPenaltyForPlayer(player)
 	end
+	MatchNpc.clearAllOuts()
 end
 
 local function hookOutRespawnGate(player: Player)

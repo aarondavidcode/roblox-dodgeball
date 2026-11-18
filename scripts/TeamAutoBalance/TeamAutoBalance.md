@@ -14,6 +14,8 @@ Paste from [TeamAutoBalance.server.lua](./TeamAutoBalance.server.lua).
 
 **Depends on:** `DodgeballConfig` ModuleScript in the same parent. Works with **LobbyService** / **RoundStatus** `MatchPhase`.
 
+**Single-player testing:** When test NPCs are active ([DodgeballMatchNpc](../DodgeballMatchNpc/DodgeballMatchNpc.md)), they are balanced onto Red/Blue in the same pass as human players (sort key `NpcSortId`).
+
 ## What you build in Studio
 
 | Item | Details |
